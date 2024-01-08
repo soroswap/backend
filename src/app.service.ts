@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { OptimalRouteRequestBodyDto, OptimalRouteResponseDto } from './dto';
 import { Network } from './types';
+import { PrismaService } from './prisma/prisma.service';
 
 @Injectable()
 export class AppService {
-  getHello(): { message: string } {
-    return { message: 'Hello World!' };
+  constructor(private prisma: PrismaService) {}
+
+  async getHello(): Promise<{ message: string }> {
+    const hello = await this.prisma.hello.findUnique({
+      where: {
+        id: 'hello',
+      },
+    });
+    return { message: hello?.name };
   }
 
   getOptimalRoute(

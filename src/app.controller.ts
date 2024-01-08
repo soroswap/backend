@@ -1,4 +1,4 @@
-import { ApiOkResponse } from '@nestjs/swagger';
+import { ApiHeader, ApiOkResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { NetworkApiQuery } from './decorators';
@@ -8,6 +8,10 @@ import {
   OptimalRouteResponseDto,
 } from './dto';
 
+@ApiHeader({
+  name: 'apiKey',
+  description: 'API Key',
+})
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
@@ -24,7 +28,7 @@ export class AppController {
     },
   })
   @Get('/hello')
-  getHello(): { message: string } {
+  getHello(): Promise<{ message: string }> {
     return this.appService.getHello();
   }
 
