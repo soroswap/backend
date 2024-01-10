@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "4000:4000"
+    networks:
+      - app-network
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - pgdb
+  
+  pgdb:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mydb
+  
+networks: 
+  app-network:
+    driver: bridge
+
+volumes: 
+  db-volume:
+
