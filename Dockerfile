@@ -4,12 +4,10 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+COPY entrypoint.sh /entrypoint.sh
 
-COPY . .
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 4000
 
-RUN npx prisma generate
-
-CMD npm run start:dev
+ENTRYPOINT ["/entrypoint.sh"]
