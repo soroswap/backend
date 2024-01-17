@@ -1,7 +1,7 @@
 # Soroswap Backend
 
-npm install
+yarn install
 
-npm run start / npm run start:dev
+yarn start / yarn start:dev
 
 docs: http://localhost:4000/docs
