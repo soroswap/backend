@@ -1,9 +1,9 @@
 #!/bin/sh
 
-npm install
+yarn install
 
-npx prisma migrate deploy
+yarn prisma migrate deploy
 
-npx prisma generate
+yarn prisma generate
 
-exec npm run start:dev
+exec yarn start:dev
