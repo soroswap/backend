@@ -69,9 +69,9 @@ export class AppController {
     return { network: query.network };
   }
 
-  @Get('/pair_counter')
-  getPairCounter() {
-    return this.appService.getPairCounter();
+  @Get('/pools')
+  getPools() {
+    return this.appService.getPools();
   }
 
 }

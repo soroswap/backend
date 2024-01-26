@@ -10,6 +10,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      - ../mercury-sdk:/mercury-sdk
     depends_on:
       - pgdb
 
