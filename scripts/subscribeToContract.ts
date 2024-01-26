@@ -1,4 +1,5 @@
 import { Mercury } from 'mercury-sdk';
+import axios from "axios";
 
 (async function() {
   const mercuryInstance = new Mercury({
@@ -8,7 +9,9 @@ import { Mercury } from 'mercury-sdk';
     password: process.env.MERCURY_TESTER_PASSWORD,
   });
   
-  const contractId = process.env.FACTORY_CONTRACT_ID;
+  const { data } = await axios.get('https://api.soroswap.finance/api/factory');
+  const testnetData = data.find(item => item.network === 'testnet');
+  const contractId = testnetData.factory_address;
   
   const args = {
     contractId,
@@ -22,5 +25,3 @@ import { Mercury } from 'mercury-sdk';
   
   console.log(subscribeResponse);
 })()
-
-// To run: yarn ts-node scripts/subscribeToContract.ts

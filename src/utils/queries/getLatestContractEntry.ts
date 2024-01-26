@@ -6,6 +6,7 @@ query MyQuery($contractId: String!, $ledgerKey: String!) {
       edges {
         node {
           id
+          keyXdr
           valueXdr
         }
       }
