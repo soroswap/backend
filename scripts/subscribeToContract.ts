@@ -1,5 +1,5 @@
 import { Mercury } from 'mercury-sdk';
-import axios from "axios";
+import getFactoryAddress from './getFactoryAddress';
 
 (async function() {
   const mercuryInstance = new Mercury({
@@ -9,9 +9,7 @@ import axios from "axios";
     password: process.env.MERCURY_TESTER_PASSWORD,
   });
   
-  const { data } = await axios.get('https://api.soroswap.finance/api/factory');
-  const testnetData = data.find(item => item.network === 'testnet');
-  const contractId = testnetData.factory_address;
+  const contractId = getFactoryAddress();
   
   const args = {
     contractId,
