@@ -14,6 +14,7 @@ export async function getPairCounter(mercuryInstance:Mercury) {
 
     if (mercuryResponse && mercuryResponse.ok) {
         const parsedEntries = factoryInstanceParser(mercuryResponse.data);
-        return parsedEntries[0].AllPairs.length;
+        // return parsedEntries[0].allPairs.length;
+        return parsedEntries;
     }
 }
