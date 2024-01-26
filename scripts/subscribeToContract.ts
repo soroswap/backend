@@ -1,5 +1,5 @@
 import { Mercury } from 'mercury-sdk';
-import getFactoryAddress from './getFactoryAddress';
+import { getFactoryAddress } from '../src/utils/getFactoryAddress';
 
 (async function() {
   const mercuryInstance = new Mercury({
@@ -9,7 +9,7 @@ import getFactoryAddress from './getFactoryAddress';
     password: process.env.MERCURY_TESTER_PASSWORD,
   });
   
-  const contractId = getFactoryAddress();
+  const contractId = await getFactoryAddress();
   
   const args = {
     contractId,
