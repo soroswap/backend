@@ -6,7 +6,11 @@ import { User, Prisma } from '@prisma/client';
 import { GET_LAST_CONTRACT_ENTRY } from './queries/getLastContractEntry';
 import { getFactoryAddress } from './getFactoryAddress';
 
-
+/**
+ * Function to get the total number of pairs created by the factory.
+ * @param mercuryInstance The Mercury instance to be used to make the request.
+ * @returns The total number of pairs created by the factory.
+ */
 export async function getPairCounter(mercuryInstance:Mercury) {
     const contractId = await getFactoryAddress();
     const mercuryResponse = await mercuryInstance.getCustomQuery({ request: GET_LAST_CONTRACT_ENTRY, variables: { contractId, ledgerKey: "AAAAFA==" } })
