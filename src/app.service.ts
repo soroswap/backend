@@ -12,8 +12,6 @@ const mercuryInstance = new Mercury({
   password: process.env.MERCURY_TESTER_PASSWORD,
 });
 
-const contractId = process.env.FACTORY_CONTRACT_ID;
-
 @Injectable()
 export class AppService {
   constructor(private prisma: PrismaService) {}
@@ -58,7 +56,7 @@ export class AppService {
   }
 
   async getPools() {
-    const newCounter = getPairCounter(mercuryInstance);
+    const newCounter = await getPairCounter(mercuryInstance);
     return { response: newCounter };
   }
 }

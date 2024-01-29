@@ -13,7 +13,7 @@ import { getFactoryAddress } from '../src/utils/getFactoryAddress';
   
   const args = {
     contractId,
-    keyXdr: "AAAFA==",
+    keyXdr: "AAAAFA==",
     durability: "persistent"
   }
   

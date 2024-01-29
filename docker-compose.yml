@@ -7,6 +7,8 @@ services:
       - app-network
     environment:
       DATABASE_URL: ${DATABASE_URL}
+    env_file:
+      - .env
     volumes:
       - .:/app
       - /app/node_modules

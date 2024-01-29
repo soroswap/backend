@@ -3831,10 +3831,10 @@ memfs@^3.4.1:
   dependencies:
     fs-monkey "^1.0.4"
 
-mercury-sdk@^0.1.13:
-  version "0.1.13"
-  resolved "https://registry.yarnpkg.com/mercury-sdk/-/mercury-sdk-0.1.13.tgz#93fe32cb4902dc436206e040a17eb75eb580f2e6"
-  integrity sha512-fcPrXdavfvzUJD5th4sendX5PVlvjrMt11d9shLtFoRVsRMQxbC7rvVfUQsafUyLOQpfscmr1CzLfwIWr7nNew==
+mercury-sdk@^0.1.14:
+  version "0.1.14"
+  resolved "https://registry.yarnpkg.com/mercury-sdk/-/mercury-sdk-0.1.14.tgz#ddac83c6ae3baec4df0cd3aa0ba03af8bdb4a351"
+  integrity sha512-YPrDNxEdLKoNTHgZe6HhuJRR1WAbCOHbICmPvYxTsNY7lgbidHYnbwTDKNCXB26DrY3SVJwRRBV2WzEp6xQfzA==
   dependencies:
     "@stellar/stellar-sdk" "^11.1.0"
     axios "^1.6.2"

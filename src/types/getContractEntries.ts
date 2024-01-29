@@ -1,5 +1,5 @@
 export interface ContractEntriesResponse {
-    entryUpdateByContractId: ContractEntries;
+    entryUpdateByContractIdAndKey: ContractEntries;
   }
   
   export interface ContractEntries {
@@ -11,6 +11,7 @@ export interface ContractEntriesResponse {
   }
   
   export interface Node {
+    id: string;
     keyXdr: string;
     valueXdr: string;
   }
