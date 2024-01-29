@@ -16,7 +16,7 @@ export interface ContractEntriesResponse {
     valueXdr: string;
   }
   
-  export interface ParsedRouterEntry {
+  export interface ParsedFactoryInstanceEntry {
     FeeTo: string;
     FeeToSetter: string;
     totalPairs: number;
