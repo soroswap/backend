@@ -19,7 +19,7 @@ export async function getPairCounter(mercuryInstance:Mercury) {
         if (parsedEntry.length === 0) {
             return 0;
         }
-        return parsedEntry[0].AllPairs.length;
+        return parsedEntry[0].totalPairs;
     }
     
 }

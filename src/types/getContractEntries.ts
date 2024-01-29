@@ -19,16 +19,8 @@ export interface ContractEntriesResponse {
   export interface ParsedRouterEntry {
     FeeTo: string;
     FeeToSetter: string;
-    AllPairs: string[];
-    PairsMapping: PairMapping;
-    PairWasmHash: string;
+    totalPairs: number;
+    FeesEnabled?: boolean;
   }
-  
-  export interface PairMapping {
-    pairs: Pair[];
-  }  
-  
-  export interface Pair {
-    [pairsAdresses: string]: string;
-  }
+
   

@@ -33,7 +33,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "joi": "^17.11.0",
-    "mercury-sdk": "^0.1.14",
+    "mercury-sdk": "^0.1.16",
     "passport": "^0.7.0",
     "passport-headerapikey": "^1.2.2",
     "passport-local": "^1.0.0",

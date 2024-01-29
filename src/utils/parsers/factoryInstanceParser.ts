@@ -7,10 +7,8 @@ import * as StellarSdk from "@stellar/stellar-sdk";
 enum DataKey {
   feeTo = 0,        // address public feeTo;
   feeToSetter = 1,  // address public feeToSetter;
-  allPairs = 2,     //  address[] public allPairs;
-  pairsMapping = 3, // Map of pairs
-  pairWasmHash = 4,
-  feesEnabled = 5,  // bool is taking fees?
+  totalPairs = 2, // addresses of pairs created by the Factory.
+  feesEnabled = 3,  // bool is taking fees?
 }
 
 /**
