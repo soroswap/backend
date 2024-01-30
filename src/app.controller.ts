@@ -68,4 +68,10 @@ export class AppController {
   } {
     return { network: query.network };
   }
+
+  @Get('/pools')
+  getPools() {
+    return this.appService.getPools();
+  }
+
 }

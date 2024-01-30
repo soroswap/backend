@@ -2,6 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { OptimalRouteRequestBodyDto, OptimalRouteResponseDto } from './dto';
 import { Network } from './types';
 import { PrismaService } from './prisma/prisma.service';
+import { Mercury } from 'mercury-sdk';
+import { getPairCounter } from './utils/getPairCounter';
+
+const mercuryInstance = new Mercury({
+  backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
+  graphqlEndpoint: process.env.MERCURY_GRAPHQL_ENDPOINT,
+  email: process.env.MERCURY_TESTER_EMAIL,
+  password: process.env.MERCURY_TESTER_PASSWORD,
+});
 
 @Injectable()
 export class AppService {
@@ -44,5 +53,10 @@ export class AppService {
 
   getInfo(): { message: string } {
     return { message: 'Hello World!' };
+  }
+
+  async getPools() {
+    const newCounter = await getPairCounter(mercuryInstance);
+    return { response: newCounter };
   }
 }
