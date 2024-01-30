@@ -36,9 +36,9 @@ export async function subscribeToPairs(first: number, last: number) {
   }
 };
 
-(async () => {
-  const pairCounter = await getPairCounter(mercuryInstance);
-  console.log("Pair Counter:", pairCounter);
+// (async () => {
+//   const pairCounter = await getPairCounter(mercuryInstance);
+//   console.log("Pair Counter:", pairCounter);
 
-  await subscribeToPairs(0, pairCounter);
-})();
+//   await subscribeToPairs(0, pairCounter);
+// })();
