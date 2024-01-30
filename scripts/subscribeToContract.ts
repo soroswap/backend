@@ -8,12 +8,19 @@ import { getFactoryAddress } from '../src/utils/getFactoryAddress';
     email: process.env.MERCURY_TESTER_EMAIL,
     password: process.env.MERCURY_TESTER_PASSWORD,
   });
+
+  const keyXdr = process.argv[2];
+
+  if (!keyXdr) {
+    console.error("You must provide a keyXdr as an argument.");
+    process.exit(1);
+  }
   
   const contractId = await getFactoryAddress();
   
   const args = {
     contractId,
-    keyXdr: "AAAAFA==",
+    keyXdr,
     durability: "persistent"
   }
   
