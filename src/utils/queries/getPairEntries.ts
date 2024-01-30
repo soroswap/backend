@@ -12,7 +12,7 @@ export function buildGetPairEntriesQuery(pairCount: number) {
   for (let i = 0; i < pairCount; i++) {
     variables += `, $ledgerKey${i + 1}: String!`;
     queryBody += `
-      pair${pairCount - i - 1}: entryUpdateByContractIdAndKey(
+      pair${i}: entryUpdateByContractIdAndKey(
         contract: $contractId
         ledgerKey: $ledgerKey${i + 1}
         lastN: 1
@@ -20,6 +20,7 @@ export function buildGetPairEntriesQuery(pairCount: number) {
         edges {
           node {
             id
+            keyXdr
             valueXdr
           }
         }

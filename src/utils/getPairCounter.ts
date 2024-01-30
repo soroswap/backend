@@ -10,6 +10,7 @@ import { getFactoryAddress } from './getFactoryAddress';
  * Function to get the total number of pairs created by the factory.
  * @param mercuryInstance The Mercury instance to be used to make the request.
  * @returns The total number of pairs created by the factory.
+ * @throws Error if Mercury request fails.
  */
 export async function getPairCounter(mercuryInstance:Mercury) {
     const contractId = await getFactoryAddress();
@@ -24,6 +25,8 @@ export async function getPairCounter(mercuryInstance:Mercury) {
             return 0;
         }
         return parsedEntry[0].totalPairs;
+    } else {
+        throw new Error("Error getting pair counter")
     }
     
 }
