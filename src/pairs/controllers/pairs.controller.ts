@@ -1,5 +1,6 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { PairsService } from '../services/pairs.service';
+import { subscribeToLedgerEntriesDto } from '../dto/subscribe.dto';
 
 @Controller('pairs')
 export class PairsController {
@@ -10,7 +11,7 @@ export class PairsController {
   }
 
   @Post()
-  async subscribeToPairs() {
-    return await this.pairsService.subscribeToPairs();
+  async subscribeToPairs(@Body() body: subscribeToLedgerEntriesDto) {
+    return await this.pairsService.subscribeToPairs(body);
   }
 }

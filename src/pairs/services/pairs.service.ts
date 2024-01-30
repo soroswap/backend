@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { Mercury, factoryInstanceParser } from 'mercury-sdk'
 import { getFactoryAddress } from 'src/utils/getFactoryAddress';
+import { subscribeToLedgerEntriesDto } from '../dto/subscribe.dto';
 
 
 const mercuryInstance = new Mercury({
@@ -36,15 +37,38 @@ export class PairsService {
     }
     //WIP: Retrieve pairs from mercury
     //WIP: Subscribe to multiple pairs
-    async subscribeToPairs() {
-        const pairsAdrresses = ['CAPETQIBGHZF6Q2FJPZUWCJDTNGLLQH7URFLPVQKYOXTJBCFOLQIVKIH', 'CBH7XVMGG3UF3TF5PV5PRTLD7KRY5SLPFDJJRWWBBQQKKCNVXX3JXLJL', 'CBOUTXJ63FREGO6J363WY3EDFJYGIQAQKGFB6TVLBRLXA2PIFSYZWRDC']
-        const args = {
-            contractId: pairsAdrresses,
-            keyXdr: "AAAAFA==",
-            durability: "persistent",
-            hydrate: true
+    async subscribeToPairs(data: subscribeToLedgerEntriesDto) {
+        if (data.contractId.length > 1 ){
+            const response = []
+            for (let i = 0; i < data.contractId.length; i++) {
+                const args = {
+                    contractId: data.contractId[i],
+                    keyXdr: data.keyXdr,
+                    durability: data.durability,
+                    hydrate: data.hydrate
+                }
+                const subscribeToPairs = await mercuryInstance.subscribeToLedgerEntries(args)
+                response.push(subscribeToPairs)
+            }
+            return response;
         }
-        const subscribeToPairs = await mercuryInstance.subscribeToMultipleLedgerEntries(args)
-        return subscribeToPairs;
+        else 
+        if(data.contractId.length === 1) {
+            const args = {
+                contractId: data.contractId[0],
+                keyXdr: data.keyXdr,
+                durability: data.durability,
+                hydrate: data.hydrate
+            }
+            const subscribeToPairs = await mercuryInstance.subscribeToLedgerEntries(args)
+            return subscribeToPairs;
+        }
+        if(
+            data.contractId.length === 0 || 
+            !data.contractId || 
+            !data.keyXdr
+            ) {
+            throw new BadRequestException('Please double check your request body')
+        }
     }
 }
