@@ -5,10 +5,15 @@ import { getKeyXdrForPair } from './keyXdr/getKeyXdrForPair';
 import { Mercury } from 'mercury-sdk';
 import { pairInstanceParser } from './parsers/getPairEntriesParser';
 
+
+/**
+ * Function to create object with variables to be used in the Mercury instance query.
+ * @param pairCount Number of pairs to be retrieved.
+ * @returns Object with the query variables.
+ */
 async function createVariablesForPairs(pairCount: number) {
     const contractId = await getFactoryAddress();
 
-    // Crear el objeto de variables
     let variables = { contractId };
 
     for (let i = 0; i < pairCount; i++) {
@@ -19,6 +24,11 @@ async function createVariablesForPairs(pairCount: number) {
     return variables;
 }
 
+/**
+ * Function to get array with all pair addresses stored in Factory Contract.
+ * @returns Array with pair addresses.
+ * @throws Error if Mercury request fails.
+ */
 export async function getPairAddresses() {
     const mercuryInstance = new Mercury({
         backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
@@ -47,7 +57,8 @@ export async function getPairAddresses() {
     
 };
 
-(async () => {
-  const pairAddreses = await getPairAddresses();
-  console.log(pairAddreses);
-})();
+// Usage:
+// (async () => {
+//   const pairAddreses = await getPairAddresses();
+//   console.log(pairAddreses);
+// })();

@@ -2,11 +2,14 @@ import { ContractEntriesResponse } from "../../types";
 import { scValToJs } from "mercury-sdk";
 import * as StellarSdk from "@stellar/stellar-sdk";
 
-export const pairInstanceParser = (data: ContractEntriesResponse) => {
-    // if (!data.entryUpdateByContractIdAndKey) {
-    //   throw new Error("No entries provided")
-    // }
 
+/**
+ * Parses the data from a ContractEntriesResponse object and returns an array of pair addresses.
+ * @param data The ContractEntriesResponse object to be parsed.
+ * @returns An array of pair addresses.
+ * @throws If no valueXdr is found in an entry.
+ */
+export const pairInstanceParser = (data: ContractEntriesResponse) => {
     const parsedEntries: any[] = [];
 
     let key: keyof typeof data;

@@ -33,6 +33,6 @@ export function buildGetPairEntriesQuery(pairCount: number) {
   return query;
 }
 
-// Ejemplo de uso
-// const queryForTwoPairs = buildGetPairEntriesQuery(3);
+// Usage:
+// const queryForTwoPairs = buildGetPairEntriesQuery(2);
 // console.log(queryForTwoPairs);
