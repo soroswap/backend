@@ -34,5 +34,17 @@ export class PairsService {
             return parsedEntries;
         }
     }
-    
+    //WIP: Retrieve pairs from mercury
+    //WIP: Subscribe to multiple pairs
+    async subscribeToPairs() {
+        const pairsAdrresses = ['CAPETQIBGHZF6Q2FJPZUWCJDTNGLLQH7URFLPVQKYOXTJBCFOLQIVKIH', 'CBH7XVMGG3UF3TF5PV5PRTLD7KRY5SLPFDJJRWWBBQQKKCNVXX3JXLJL', 'CBOUTXJ63FREGO6J363WY3EDFJYGIQAQKGFB6TVLBRLXA2PIFSYZWRDC']
+        const args = {
+            contractId: pairsAdrresses,
+            keyXdr: "AAAAFA==",
+            durability: "persistent",
+            hydrate: true
+        }
+        const subscribeToPairs = await mercuryInstance.subscribeToMultipleLedgerEntries(args)
+        return subscribeToPairs;
+    }
 }

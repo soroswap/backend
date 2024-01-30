@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { PairsService } from '../services/pairs.service';
 
 @Controller('pairs')
@@ -7,5 +7,10 @@ export class PairsController {
   @Get()
   async findAll() {
     return await this.pairsService.findAllPairs();
+  }
+
+  @Post()
+  async subscribeToPairs() {
+    return await this.pairsService.subscribeToPairs();
   }
 }
