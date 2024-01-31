@@ -7,6 +7,7 @@ import { envSchema } from './config/env-schema';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PairsModule } from './pairs/pairs.module';
+import { PoolsModule } from './pools/pools.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { PairsModule } from './pairs/pairs.module';
     }),
     AuthModule,
     PrismaModule,
-    PairsModule
+    PairsModule,
+    PoolsModule
   ],
   controllers: [AppController],
   providers: [AppService],
