@@ -14,4 +14,9 @@ export class PairsController {
   async subscribeToPairs(@Body() body: subscribeToLedgerEntriesDto) {
     return await this.pairsService.subscribeToPairs(body);
   }
+
+  @Get('count')
+  async getPairsCount() {
+    return await this.pairsService.getMercuryPairsCount();
+  }
 }
