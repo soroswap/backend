@@ -1,12 +1,13 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import {
+  IsArray,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
 export class subscribeToLedgerEntriesDto {
     @ApiProperty()
-    @IsString()
+    @IsArray()
     @IsNotEmpty()
     contractId: string[];
     @ApiProperty()
