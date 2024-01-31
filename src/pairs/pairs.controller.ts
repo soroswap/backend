@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { PairsService } from '../services/pairs.service';
-import { subscribeToLedgerEntriesDto } from '../dto/subscribe.dto';
+import { PairsService } from './pairs.service';
+import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
 @Controller('pairs')
 export class PairsController {
