@@ -49,18 +49,6 @@ export async function getPairAddresses() {
 
     if (mercuryResponse && mercuryResponse.ok) {
         const parsedEntries = pairInstanceParser(mercuryResponse.data);
-        // Subscribe to pairs (for testing purposes):
-        // for (let i = 0; i < parsedEntries.length; i++) {
-        //     const args = {
-        //         contractId: parsedEntries[i],
-        //         keyXdr: "AAAAFA==",
-        //         durability: "persistent"
-        //     }
-        //     const subscribeResponse = await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
-        //         console.error(err)
-        //     });
-        //     console.log(subscribeResponse);
-        // };
         return parsedEntries;
     } else {
         throw new Error("Error getting pair addresses")
