@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Mercury } from 'mercury-sdk'
 import { getFactoryAddress } from 'src/utils/getFactoryAddress';
-import { subscribeToLedgerEntriesDto } from '../dto/subscribe.dto';
-import { factoryInstanceParser } from '../../utils/parsers/factoryInstanceParser';
-import { GET_LAST_CONTRACT_ENTRY } from '../../utils/queries/getLastContractEntry';
+import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
+import { factoryInstanceParser } from '../utils/parsers/factoryInstanceParser';
+import { GET_LAST_CONTRACT_ENTRY } from '../utils/queries/getLastContractEntry';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { get } from 'http';
 

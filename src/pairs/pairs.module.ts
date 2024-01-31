@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { PairsService } from './services/pairs.service';
-import { PairsController } from './controllers/pairs.controller';
+import { PairsService } from './pairs.service';
+import { PairsController } from './pairs.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 @Module({
     imports: [ PrismaModule ],
