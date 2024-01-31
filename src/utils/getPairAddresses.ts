@@ -1,4 +1,4 @@
-import { buildGetPairEntriesQuery } from './queries/getPairEntries';
+import { buildGetPairAddressesQuery } from './queries/getPairAddresses';
 import { getPairCounter } from './getPairCounter';
 import { getFactoryAddress } from './getFactoryAddress';
 import { getKeyXdrForPair } from './keyXdr/getKeyXdrForPair';
@@ -39,26 +39,37 @@ export async function getPairAddresses() {
 
     const pairCounter = await getPairCounter(mercuryInstance);
 
-    const query = buildGetPairEntriesQuery(pairCounter);
+    const query = buildGetPairAddressesQuery(pairCounter);
     const variables = await createVariablesForPairs(pairCounter);
 
     const mercuryResponse = await mercuryInstance.getCustomQuery({ request: query, variables })
-    .catch((err: any) => {
-        console.log(err)
-    });
+        .catch((err: any) => {
+            console.log(err)
+        });
 
     if (mercuryResponse && mercuryResponse.ok) {
         const parsedEntries = pairInstanceParser(mercuryResponse.data);
+        // Subscribe to pairs (for testing purposes):
+        // for (let i = 0; i < parsedEntries.length; i++) {
+        //     const args = {
+        //         contractId: parsedEntries[i],
+        //         keyXdr: "AAAAFA==",
+        //         durability: "persistent"
+        //     }
+        //     const subscribeResponse = await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
+        //         console.error(err)
+        //     });
+        //     console.log(subscribeResponse);
+        // };
         return parsedEntries;
     } else {
         throw new Error("Error getting pair addresses")
     }
 
-    
 };
 
 // Usage:
 // (async () => {
-//   const pairAddreses = await getPairAddresses();
-//   console.log(pairAddreses);
+//     const pairAddreses = await getPairAddresses();
+//     console.log(pairAddreses);
 // })();

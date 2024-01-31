@@ -12,12 +12,12 @@ const mercuryInstance = new Mercury({
 console.log("Mercury Instance:", mercuryInstance);
 
 /**
- * Function to subscribe to a specific group of pairs.
+ * Function to subscribe to a specific group of pairs from the PairAddressesNIndexed array of a Factory Contract.
  * @param first Index of the first pair of the group.
  * @param last Index of the last pair of the group.
  * @returns Nothing.
  */
-export async function subscribeToPairs(first: number, last: number) {
+export async function subscribeToPairsOnFactory(first: number, last: number) {
   const contractId = await getFactoryAddress();
   console.log("Contract ID:", contractId);
 

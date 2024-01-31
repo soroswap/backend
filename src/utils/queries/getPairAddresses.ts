@@ -2,11 +2,11 @@ import { gql } from "graphql-request";
 
 
 /**
- * Function to build a graphql query to retrieve a specific number of pair entries.
- * @param pairCount Number of pair entries to retrieve.
+ * Function to build a graphql query to retrieve a specific number of pair addresses.
+ * @param pairCount Number of pair addresses to retrieve.
  * @returns The query.
  */
-export function buildGetPairEntriesQuery(pairCount: number) {
+export function buildGetPairAddressesQuery(pairCount: number) {
   let queryBody = '';
   let variables = '$contractId: String!';
 
