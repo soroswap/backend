@@ -87,7 +87,7 @@ export class PairsService {
      * @param mercuryInstance The Mercury instance to be used to make the request.
      * @returns The total number of pairs created by the factory.
      */
-    async getPairCounter(mercuryInstance: Mercury) {
+    async getPairCounter() {
         const contractId = await getFactoryAddress();
         const mercuryResponse = await mercuryInstance.getCustomQuery({ request: GET_LAST_CONTRACT_ENTRY, variables: { contractId, ledgerKey: "AAAAFA==" } })
             .catch((err: any) => {
@@ -107,17 +107,16 @@ export class PairsService {
      * Saves the count of Mercury pairs.
      * @returns The saved counter object.
      */
-    async saveMercuryPairsCount() {
+    async saveMercuryPairsCount(count: number) {
         const counter = await this.prisma.counter.upsert({
             where: {
                 id: 1
             },
             update: {
-                count: await this.getPairCounter(mercuryInstance)
-                //count: await this.getPairCounter(mercuryInstance)
+                count: count
             },
             create: {
-                count: await this.getPairCounter(mercuryInstance)
+                count: count
             }
         })
         return counter;
