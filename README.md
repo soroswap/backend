@@ -1,57 +1,44 @@
 # Soroswap Backend
-
-  
+Read more about the Soroswap.Finance Stack in in docs.soroswap.finance
 
 ## 1. Set up
-
-  
 
 First, create the `.env` file from the `.env.example` file and fill in the environment variables.
 
 You can copy the `.env.example` by running the following command:
 
-  
-
 ```bash
-
 cp  .env.example  .env
-
 ```
 
 Once created: fill the `DATABASE_URL` variable with the connection string to your database, in the following format:
 
-  
-
 ```bash
-
 DATABASE_URL=protocol://user:password@host:port/database_name
-
 ``` 
 and fill in the remaining values.
+
+If you are developing locally and using the PostgreSQL container of the Docker Compose, your setup should be:
+
+```bash
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=postgresdb
+DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgdb:5432/${POSTGRES_DB}?schema=public
+```
   
 
 ## 2. Build and run the app using Docker
 
-  
-
 To run the app, execute the following command:
 
-  
-
 ```bash
-
 docker-compose  up
-
 ```
-
-  
 
 If any changes are made to the code, you can rebuild the app by running:
 
-  
-
 ```bash
-
 docker-compose  up  --build
 ```
 
@@ -71,12 +58,8 @@ docker exec -it <CONTAINER_NAME> bash
 
 Once inside the container, run the following commands:
 
-  
-
 ```bash
-
 docker-compose  up  --build
-
 ```
 
 ## 4. Inspect database:
@@ -97,8 +80,8 @@ To connect to your database in pgAdmin, register a new server with the following
 | **Connection** | | |
 ||Host name / address: | pgdb |
 ||Port:|5432
-||Username:|`.env.PGADMIN_DEFAULT_EMAIL`
-||Password:|`.env.PGADMIN_DEFAULT_PASSWORD`
+||Username:|`.env.POSTGRES_USER`
+||Password:|`.env.POSTGRES_PASSWORD`
 
 Click "Save" after entering the configuration details.
 
@@ -107,3 +90,21 @@ Click "Save" after entering the configuration details.
 To inspect the tables within your database, navigate to the following location in pgAdmin:
 
 `Servers > Backend > Databases > postgresdb > Schemas > public > Tables`
+
+
+## 5. Test that everything is working:
+```bash
+curl -X POST \
+  http://0.0.0.0:4000/pairs \
+  -H 'apiKey: cualquiercosa' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contractId": [
+      "CBV3WDVJ7NC3RKVPBKLWXD46I6HL6GBZHSRBMJ6SLUAUISGITAB3DQO7"
+    ],
+    "keyXdr": "AAAAFA==",
+    "durability": "persistent"
+  }'
+```
+
+Will this work??
