@@ -1,4 +1,5 @@
 # Soroswap Backend
+Read more about the Soroswap.Finance Stack in in docs.soroswap.finance
 
 ## 1. Set up
 
@@ -14,9 +15,19 @@ Once created: fill the `DATABASE_URL` variable with the connection string to you
 ```bash
 DATABASE_URL=protocol://user:password@host:port/database_name
 ``` 
-and fill in the remaining values.  
+and fill in the remaining values.
 
+If you are developing locally and using the PostgreSQL container of the Docker Compose, your setup should be:
+
+```bash
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=postgresdb
+DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgdb:5432/${POSTGRES_DB}?schema=public
+```
+  
 ## 2. Build and run the app using Docker
+
 To run the app, execute the following command:
 
 ```bash
@@ -70,8 +81,8 @@ To connect to your database in pgAdmin, register a new server with the following
 | **Connection** | | |
 ||Host name / address: | pgdb |
 ||Port:|5432
-||Username:|`.env.PGADMIN_DEFAULT_EMAIL`
-||Password:|`.env.PGADMIN_DEFAULT_PASSWORD`
+||Username:|`.env.POSTGRES_USER`
+||Password:|`.env.POSTGRES_PASSWORD`
 
 Click "Save" after entering the configuration details.
 
