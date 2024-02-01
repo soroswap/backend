@@ -1,8 +1,10 @@
+version: "3"
 services:
   backend:
-    build: .
+    image: node:lts
     ports:
       - "4000:4000"
+    working_dir: /app
     networks:
       - app-network
     environment:
@@ -11,10 +13,11 @@ services:
       - .env
     volumes:
       - .:/app
-      - /app/node_modules
       - ../mercury-sdk:/mercury-sdk
     depends_on:
       - pgdb
+    stdin_open: true
+    tty: true
 
   pgdb:
     image: postgres:14
@@ -28,7 +31,20 @@ services:
       - app-network
     env_file:
       - .env
-  
+      
+  pgadmin:
+    image: dpage/pgadmin4
+    env_file:
+      - .env
+    ports:
+      - "5050:80"
+    depends_on:
+      - pgdb
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    networks:
+      - app-network
+
 networks: 
   app-network:
     driver: bridge

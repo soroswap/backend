@@ -6,6 +6,7 @@ import { configLoader } from './config/config-loader';
 import { envSchema } from './config/env-schema';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { PairsModule } from './pairs/pairs.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { PrismaModule } from './prisma/prisma.module';
     }),
     AuthModule,
     PrismaModule,
+    PairsModule
   ],
   controllers: [AppController],
   providers: [AppService],

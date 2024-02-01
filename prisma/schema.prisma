@@ -99,3 +99,8 @@ model SwapEventPath {
   tokenOut Token @relation(fields: [tokenOutAddress], references: [address], name: "TokenOutToSwapEventPath")
   tokenOutAddress String
 }
+
+model Counter {
+  id Int @id @default(autoincrement())
+  count Int
+}
