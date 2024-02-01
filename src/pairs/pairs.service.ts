@@ -1,3 +1,4 @@
+import { AllPoolsRequestBodyDto, AllPoolsResponseDto } from './dto/pools.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Mercury } from 'mercury-sdk'
 import { getFactoryAddress } from 'src/utils/getFactoryAddress';
@@ -5,8 +6,29 @@ import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 import { factoryInstanceParser } from '../utils/parsers/factoryInstanceParser';
 import { GET_LAST_CONTRACT_ENTRY } from '../utils/queries/getLastContractEntry';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { get } from 'http';
 
+const allPools = {
+    pools:[
+        {
+            "token0": "CKL2NBVVBU7N6BYO2GVNPZCOCZMDAU2EJC5DM5E7R6AKBKTLNFW4BD",
+            "token1": "CQWEM34J34WSVJEI2CPXDKBL7JZX34CXI47Y57NUPAVZZXYGBXPDNF4N",
+            "reserve0": "20000",
+            "reserve1":"199453",
+        },
+        {
+            "token0": "CBUHSDNBVVBU7N6BYO2GVNPZCOCZMDAU2EJC5DM5E7R6AKBKTLNFW4BD",
+            "token1": "CCR3M34J34WSVJEI2CPXDKBL7JZX34CXI47Y57NUPAVZZXYGBXPDNF4N",
+            "reserve0": "10000",
+            "reserve1":"3453453",
+        },
+        {
+            "token0": "CJUHSDNBVVBU7N6BYO2GVNPZCOCZMDAU2EJC5DM5E7R6AKBKTLNFW4BD",
+            "token1": "CJR3M34J34WSVJEI2CPXDKBL7JZX34CXI47Y57NUPAVZZXYGBXPDNF4N",
+            "reserve0": "10000",
+            "reserve1":"3453453"
+        },
+    ]
+}
 
 const mercuryInstance = new Mercury({
     backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
@@ -134,4 +156,15 @@ export class PairsService {
         })
         return counter.count;
     }
+
+        async getAllPools(body: AllPoolsRequestBodyDto): Promise<AllPoolsResponseDto> {
+            const newCounter = await this.getPairCounter();
+            const addressess = body.addresses;
+            const oldCounter = await this.getMercuryPairsCount();
+            if( newCounter > oldCounter) {
+                console.log('New pairs found');
+                this.saveMercuryPairsCount(newCounter);
+            }
+            return allPools
+        }
 }
