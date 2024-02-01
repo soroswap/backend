@@ -94,9 +94,8 @@ To inspect the tables within your database, navigate to the following location i
 
 ## 5. Available Requests
 
-**1. Subscribe to pairs:**
 
-Bash
+**1. Subscribe to pairs:**
 
 ```
 curl -X POST \
@@ -110,12 +109,9 @@ curl -X POST \
     "keyXdr": "AAAAFA==",
     "durability": "persistent"
   }'
-
 ```
+
 **2. Set counter value:**
-
-Bash
-
 ```
 curl -X POST \
   http://0.0.0.0:4000/pairs/count \
@@ -128,18 +124,13 @@ curl -X POST \
 ```
 **3. Get mercury pairs count:**
 
-Bash
-
 ```
 curl -X GET \
   http://0.0.0.0:4000/pairs/mercury-count \
   -H 'apiKey: <your_api_key>'
 
 ```
-
 **4. Get DB count:**
-
-Bash
 
 ```
 curl -X GET \
@@ -147,5 +138,13 @@ curl -X GET \
   -H 'apiKey: <your_api_key>'
 
 ```
->[!Note]
->Replace `<your_api_key>` with your actual API key in the cURL commands.**
+
+**5. Get all liquidity pools:**
+
+```
+curl -X POST \
+  http://0.0.0.0:4000/pairs/all?network=testnet \
+  -H 'apiKey: <your_api_key>'
+
+```
+
