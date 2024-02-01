@@ -71,11 +71,11 @@ docker exec -it <CONTAINER_NAME> bash
 
 Once inside the container, run the following commands:
 
+  
+
 ```bash
-yarn install
-yarn prisma migrate dev
-yarn prisma generate
-yarn start:dev
+
+docker-compose  up  --build
 
 ```
 
