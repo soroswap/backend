@@ -41,20 +41,7 @@ export class PairsService {
      * @throws BadRequestException if the contract ID array is empty, or if either the contract ID or keyXdr is missing.
      */
     async subscribeToPairs(data: subscribeToLedgerEntriesDto) {
-        if (data.contractId.length > 1) {
-            const response = []
-            for (let i = 0; i < data.contractId.length; i++) {
-                const args = {
-                    contractId: data.contractId[i],
-                    keyXdr: data.keyXdr,
-                    durability: data.durability,
-                    hydrate: data.hydrate
-                }
-                const subscribeToPairs = await mercuryInstance.subscribeToLedgerEntries(args)
-                response.push(subscribeToPairs)
-            }
-            return response;
-        }
+        
         if (
             data.contractId.length === 0 ||
             !data.contractId ||
@@ -62,6 +49,48 @@ export class PairsService {
         ) {
             throw new BadRequestException('Please double check your request body')
         }
+
+        const response = []
+        let subscribeResponse;
+        for (let i = 0; i < data.contractId.length; i++) {
+            let subscriptionExists = await this.prisma.pairSubscription.findFirst({
+                where: {
+                    contractId: data.contractId[i],
+                    keyXdr: data.keyXdr
+                },
+            })
+
+            if (!subscriptionExists) {
+                
+                const args = {
+                    contractId: data.contractId[i],
+                    keyXdr: data.keyXdr,
+                    durability: data.durability,
+                    hydrate: data.hydrate
+                }
+                
+                subscribeResponse = await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
+                    throw new Error(`Error subscribing to pair ${i}: ${err}`);
+                });
+
+                let subscription = await this.prisma.pairSubscription.create({
+                    data: {
+                    contractId: data.contractId[i],
+                    keyXdr: data.keyXdr,
+                    }
+                });
+
+                response.push(subscribeResponse)
+                console.log("Subscription created:", subscription);
+            } else {
+                console.log("Subscription already exists for pair with:");
+                console.log("contractId:", data.contractId[i]);
+                console.log("key_xdr:", data.keyXdr);
+            }
+
+        }
+        return response;
+        
     }
 
     /**
@@ -72,26 +101,44 @@ export class PairsService {
      */
     async subscribeToPairsOnFactory(first: number, last: number) {
         const contractId = await getFactoryAddress();
-        //console.log("Contract ID:", contractId);
 
         let key_xdr;
         let subscribeResponse;
         let args;
         for (let i = first; i < last; i++) {
             key_xdr = this.getKeyXdrForPair(i);
-            //console.log("keyXdr:", key_xdr);
 
-            args = {
-                contractId,
-                key_xdr,
-                durability: "persistent"
+            let subscriptionExists = await this.prisma.pairSubscription.findFirst({
+                where: {
+                    contractId,
+                    keyXdr: key_xdr
+                },
+            })
+          
+            if (!subscriptionExists) {
+                args = {
+                    contractId,
+                    key_xdr,
+                    durability: "persistent"
+                }
+                
+                subscribeResponse = await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
+                    throw new Error(`Error subscribing to pair ${i}: ${err}`);
+                });
+
+                let subscription = await this.prisma.pairSubscription.create({
+                    data: {
+                    contractId,
+                    keyXdr: key_xdr,
+                    }
+                });
+
+                console.log("Subscription created:", subscription);
+            } else {
+                console.log("Subscription already exists for pair with:");
+                console.log("contractId:", contractId);
+                console.log("key_xdr:", key_xdr);
             }
-
-            subscribeResponse = await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
-                console.error(err)
-            });
-
-            //console.log("Subscribe Response:", subscribeResponse);
         }
     };
 
