@@ -13,7 +13,6 @@ services:
       - .env
     volumes:
       - .:/app
-      - ../mercury-sdk:/mercury-sdk
     depends_on:
       - pgdb
     stdin_open: true
