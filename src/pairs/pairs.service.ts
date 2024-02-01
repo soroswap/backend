@@ -55,17 +55,6 @@ export class PairsService {
             }
             return response;
         }
-        else
-            if (data.contractId.length === 1) {
-                const args = {
-                    contractId: data.contractId[0],
-                    keyXdr: data.keyXdr,
-                    durability: data.durability,
-                    hydrate: data.hydrate
-                }
-                const subscribeToPairs = await mercuryInstance.subscribeToLedgerEntries(args)
-                return subscribeToPairs;
-            }
         if (
             data.contractId.length === 0 ||
             !data.contractId ||
