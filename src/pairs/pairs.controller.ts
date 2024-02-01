@@ -39,7 +39,7 @@ export class PairsController {
 
   @ApiOkResponse({ description: 'return all pools', type: [AllPoolsResponseDto] })
   @NetworkApiQuery()
-  @Post('/all_pools')
+  @Post('/all')
   getAllPools(@Query() query: QueryNetworkDto){
     if(query.network === 'testnet'){
       return this.pairsService.getAllPools();
