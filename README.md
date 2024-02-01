@@ -94,23 +94,58 @@ To inspect the tables within your database, navigate to the following location i
 
 ## 5. Available Requests
 
-### 1. Set counter value
+**1. Subscribe to pairs:**
 
-**Endpoint:** `http://0.0.0.0:4000/pairs/count`
-
-**Method:** POST
-
-**Headers:**
-
--   `apiKey: <your_api_key>`
--   `Content-Type: application/json`
-
-**Body:**
-
-JSON
+Bash
 
 ```
-{
-  "number": 8
-}
+curl -X POST \
+  http://0.0.0.0:4000/pairs \
+  -H 'apiKey: <your_api_key>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contractId": [
+      "CBV3WDVJ7NC3RKVPBKLWXD46I6HL6GBZHSRBMJ6SLUAUISGITAB3DQO7"
+    ],
+    "keyXdr": "AAAAFA==",
+    "durability": "persistent"
+  }'
+
 ```
+**2. Set counter value:**
+
+Bash
+
+```
+curl -X POST \
+  http://0.0.0.0:4000/pairs/count \
+  -H 'apiKey: <your_api_key>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "number": 8
+  }'
+
+```
+**3. Get mercury pairs count:**
+
+Bash
+
+```
+curl -X GET \
+  http://0.0.0.0:4000/pairs/mercury-count \
+  -H 'apiKey: <your_api_key>'
+
+```
+
+**4. Get DB count:**
+
+Bash
+
+```
+curl -X GET \
+  http://0.0.0.0:4000/pairs/count \
+  -H 'apiKey: <your_api_key>'
+
+```
+>[!Note]
+>Replace `<your_api_key>` with your actual API key in the cURL commands.**

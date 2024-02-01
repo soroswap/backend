@@ -11,10 +11,6 @@ import { QueryNetworkDto } from 'src/dto';
 @Controller('pairs')
 export class PairsController {
   constructor(private readonly pairsService: PairsService) { }
-  @Get()
-  async findAll() {
-    return await this.pairsService.findAllPairs();
-  }
 
   @Post()
   async subscribeToPairs(@Body() body: subscribeToLedgerEntriesDto) {
@@ -34,7 +30,12 @@ export class PairsController {
   async savePairsCount(@Body() body: {number:number}) {
     return await this.pairsService.saveMercuryPairsCount(body.number);
   }
-
+  
+  @Get('mercury-count')
+  async getCount() {
+    const counter = await this.pairsService.getPairCounter();
+    return { 'Pairs count on mercury': counter }
+  }
 
   @ApiOkResponse({ description: 'return all pools', type: [AllPoolsResponseDto] })
   @NetworkApiQuery()
