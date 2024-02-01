@@ -55,6 +55,7 @@ If any changes are made to the code, you can rebuild the app by running:
 docker-compose  up  --build
 ```
 
+
 ## 3. Run the Prisma migrations, generate the Prisma client and run the app
 
 To see the running containers, run:
@@ -71,12 +72,11 @@ docker exec -it <CONTAINER_NAME> bash
 
 Once inside the container, run the following commands:
 
-  
-
 ```bash
-
-docker-compose  up  --build
-
+yarn install
+yarn prisma migrate dev
+yarn prisma generate
+yarn start:dev
 ```
 
 ## 4. Inspect database:
