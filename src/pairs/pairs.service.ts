@@ -3,40 +3,11 @@ import { Mercury } from 'mercury-sdk'
 import * as sdk from 'stellar-sdk';
 
 import { PrismaService } from 'src/prisma/prisma.service';
-import { getFactoryAddress } from 'src/utils/getFactoryAddress';
-import { AllPoolsRequestBodyDto, AllPoolsResponseDto } from './dto/pools.dto';
 import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
-import { factoryInstanceParser } from '../utils/parsers/factoryInstanceParser';
-import { pairAddressesParser } from '../utils/parsers/getPairEntriesParser';
-import { pairInstanceParser } from '../utils/parsers/pairInstanceParser';
-
-import { GET_LAST_CONTRACT_ENTRY } from '../utils/queries/getLastContractEntry';
-import { buildGetPairAddressesQuery } from '../utils/queries/getPairAddresses';
-import { buildGetPairWithTokensAndReservesQuery } from '../utils/queries/getPairWithTokensAndReserves';
-
-const allPools = {
-    pools: [
-        {
-            "token0": "CKL2NBVVBU7N6BYO2GVNPZCOCZMDAU2EJC5DM5E7R6AKBKTLNFW4BD",
-            "token1": "CQWEM34J34WSVJEI2CPXDKBL7JZX34CXI47Y57NUPAVZZXYGBXPDNF4N",
-            "reserve0": "20000",
-            "reserve1": "199453",
-        },
-        {
-            "token0": "CBUHSDNBVVBU7N6BYO2GVNPZCOCZMDAU2EJC5DM5E7R6AKBKTLNFW4BD",
-            "token1": "CCR3M34J34WSVJEI2CPXDKBL7JZX34CXI47Y57NUPAVZZXYGBXPDNF4N",
-            "reserve0": "10000",
-            "reserve1": "3453453",
-        },
-        {
-            "token0": "CJUHSDNBVVBU7N6BYO2GVNPZCOCZMDAU2EJC5DM5E7R6AKBKTLNFW4BD",
-            "token1": "CJR3M34J34WSVJEI2CPXDKBL7JZX34CXI47Y57NUPAVZZXYGBXPDNF4N",
-            "reserve0": "10000",
-            "reserve1": "3453453"
-        },
-    ]
-}
+import { getFactoryAddress } from 'src/utils';
+import { factoryInstanceParser, pairAddressesParser, pairInstanceParser } from 'src/utils/parsers';
+import { GET_LAST_CONTRACT_ENTRY, buildGetPairAddressesQuery, buildGetPairWithTokensAndReservesQuery } from 'src/utils/queries';
 
 const mercuryInstance = new Mercury({
     backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
@@ -268,7 +239,7 @@ export class PairsService {
         } else {
             throw new Error("Error getting pair addresses")
         }
-};
+    };
 
     async getAllPools() {
         //const res = await this.saveMercuryPairsCount(12);
