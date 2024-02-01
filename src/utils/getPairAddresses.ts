@@ -3,7 +3,7 @@ import { getPairCounter } from './getPairCounter';
 import { getFactoryAddress } from './getFactoryAddress';
 import { getKeyXdrForPair } from './keyXdr/getKeyXdrForPair';
 import { Mercury } from 'mercury-sdk';
-import { pairInstanceParser } from './parsers/getPairEntriesParser';
+import { pairAddressesParser } from './parsers/getPairEntriesParser';
 
 
 /**
@@ -48,7 +48,7 @@ export async function getPairAddresses() {
         });
 
     if (mercuryResponse && mercuryResponse.ok) {
-        const parsedEntries = pairInstanceParser(mercuryResponse.data);
+        const parsedEntries = pairAddressesParser(mercuryResponse.data);
         return parsedEntries;
     } else {
         throw new Error("Error getting pair addresses")

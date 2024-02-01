@@ -9,7 +9,7 @@ import * as StellarSdk from "@stellar/stellar-sdk";
  * @returns An array of pair addresses.
  * @throws If no valueXdr is found in an entry.
  */
-export const pairInstanceParser = (data: ContractEntriesResponse) => {
+export const pairAddressesParser = (data: ContractEntriesResponse) => {
     const parsedEntries: any[] = [];
 
     let key: keyof typeof data;
