@@ -22,15 +22,24 @@ export class PairsController {
   }
 
   @Get('count')
-  async getPairsCount() {
+  async getPairsCount(){
+    const count = await this.pairsService.getMercuryPairsCount();
+    if (!count) {
+      await this.pairsService.saveMercuryPairsCount(0)
+    }
     return await this.pairsService.getMercuryPairsCount();
+  }
+  
+  @Post('count')
+  async savePairsCount(@Body() body: {number:number}) {
+    return await this.pairsService.saveMercuryPairsCount(body.number);
   }
 
 
   @ApiOkResponse({ description: 'return all pools', type: [AllPoolsResponseDto] })
   @NetworkApiQuery()
   @Post('/all_pools')
-  getAllPools(@Body() body: AllPoolsRequestBodyDto, @Query() query: QueryNetworkDto): Promise<AllPoolsResponseDto>{
-      return this.pairsService.getAllPools(body);
+  getAllPools(@Query() query: QueryNetworkDto){
+      return this.pairsService.getAllPools();
   }
 }

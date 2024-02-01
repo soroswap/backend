@@ -1,60 +1,33 @@
 # Soroswap Backend
 
-  
-
 ## 1. Set up
-
-  
 
 First, create the `.env` file from the `.env.example` file and fill in the environment variables.
 
 You can copy the `.env.example` by running the following command:
 
-  
-
 ```bash
-
 cp  .env.example  .env
-
 ```
-
-Once created: fill the `DATABASE_URL` variable with the connection string to your database, in the following format:
-
-  
+Once created: fill the `DATABASE_URL` variable with the connection string to your database, in the following format: 
 
 ```bash
-
 DATABASE_URL=protocol://user:password@host:port/database_name
-
 ``` 
-and fill in the remaining values.
-  
+and fill in the remaining values.  
 
 ## 2. Build and run the app using Docker
-
-  
-
 To run the app, execute the following command:
 
-  
-
 ```bash
-
 docker-compose  up
-
 ```
-
-  
 
 If any changes are made to the code, you can rebuild the app by running:
 
-  
-
 ```bash
-
 docker-compose  up  --build
 ```
-
 
 ## 3. Run the Prisma migrations, generate the Prisma client and run the app
 
@@ -107,3 +80,26 @@ Click "Save" after entering the configuration details.
 To inspect the tables within your database, navigate to the following location in pgAdmin:
 
 `Servers > Backend > Databases > postgresdb > Schemas > public > Tables`
+
+## 5. Available Requests
+
+### 1. Set counter value
+
+**Endpoint:** `http://0.0.0.0:4000/pairs/count`
+
+**Method:** POST
+
+**Headers:**
+
+-   `apiKey: <your_api_key>`
+-   `Content-Type: application/json`
+
+**Body:**
+
+JSON
+
+```
+{
+  "number": 8
+}
+```
