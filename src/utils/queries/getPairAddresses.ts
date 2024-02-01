@@ -30,7 +30,6 @@ export function buildGetPairAddressesQuery(pairCount: number) {
   }
 
   const query = gql`query MyQuery(${variables}) { ${queryBody} }`;
-
   return query;
 }
 

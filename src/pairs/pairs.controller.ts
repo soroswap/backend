@@ -1,4 +1,4 @@
-import { Query, Body, Controller, Get, Post } from '@nestjs/common';
+import { Query, Body, Controller, Get, Post, BadRequestException } from '@nestjs/common';
 import { ApiOkResponse } from '@nestjs/swagger';
 
 import { NetworkApiQuery } from 'src/decorators';
@@ -41,6 +41,11 @@ export class PairsController {
   @NetworkApiQuery()
   @Post('/all_pools')
   getAllPools(@Query() query: QueryNetworkDto){
+    if(query.network === 'testnet'){
       return this.pairsService.getAllPools();
+    } else {
+      throw new BadRequestException('Network not supported')
+    }
+
   }
 }
