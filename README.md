@@ -165,3 +165,36 @@ curl -X POST \
     "keyXdr": "AAAAFA==",
     "durability": "persistent"
   }'
+
+
+curl -X POST \
+  http://0.0.0.0:4000/pairs/count \
+  -H 'apiKey: <your_api_key>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "number": 8
+  }'
+
+
+  curl -X POST \
+  http://0.0.0.0:4000/pairs/count \
+  -H 'apiKey: cualquiercosa' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "number": 8
+  }'
+
+
+  curl -X GET \
+  http://0.0.0.0:4000/pairs/mercury-count \
+  -H 'apiKey: cualquiercosa'
+
+
+  curl -X GET \
+  http://0.0.0.0:4000/pairs/count \
+  -H 'apiKey: cualquiercosa'
+
+
+  curl -X POST \
+  http://0.0.0.0:4000/pairs/all?network=testnet \
+  -H 'apiKey: cualquiercosa'
