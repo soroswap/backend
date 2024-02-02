@@ -42,25 +42,30 @@ docker-compose  up  --build
 
 ## 3. Run the Prisma migrations, generate the Prisma client and run the app
 
-To see the running containers, run:
+This should be made inside the `backend_backend_1` container, so in toder to do this. First, enter to the backend Docker container by running:
 
 ```bash
-docker ps
-```
-
-Enter the Docker container of the backend by running:
-
-```bash
-docker exec -it <CONTAINER_NAME> bash
+docker exec -it backend_backend_1 bash
 ```
 
 Once inside the container, run the following commands:
 
 ```bash
-yarn install
-yarn prisma migrate dev
-yarn prisma generate
-yarn start:dev
+yarn install # need to run this only once
+yarn prisma migrate dev # need to run this only once
+yarn prisma generate # need to run this only once
+yarn start:dev # need to run this every time
+```
+
+**Note:** If you want to check what are the containers name, you can just run:
+
+```bash
+docker ps
+```
+Whith this, you can enter to any Docker container's terminal by running:
+
+```bash
+docker exec -it <CONTAINER_NAME> bash
 ```
 
 ## 4. Inspect database:
@@ -77,7 +82,7 @@ To connect to your database in pgAdmin, register a new server with the following
 
 | General |  | |
 |--|--|--|
-|  | Name: Backend| |
+|  | Name: | Backend |
 | **Connection** | | |
 ||Host name / address: | pgdb |
 ||Port:|5432
@@ -148,3 +153,15 @@ curl -X POST \
 
 ```
 
+
+curl -X POST \
+  http://0.0.0.0:4000/pairs \
+  -H 'apiKey: cualquiercosa' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contractId": [
+      "CBV3WDVJ7NC3RKVPBKLWXD46I6HL6GBZHSRBMJ6SLUAUISGITAB3DQO7"
+    ],
+    "keyXdr": "AAAAFA==",
+    "durability": "persistent"
+  }'
