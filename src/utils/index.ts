@@ -1,0 +1,1 @@
+export { getFactoryAddress } from './getFactoryAddress'

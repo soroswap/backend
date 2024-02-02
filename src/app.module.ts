@@ -16,7 +16,7 @@ import { PairsModule } from './pairs/pairs.module';
     }),
     AuthModule,
     PrismaModule,
-    PairsModule
+    PairsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

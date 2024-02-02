@@ -104,3 +104,9 @@ model Counter {
   id Int @id @default(autoincrement())
   count Int
 }
+
+model PairSubscription {
+  id Int @id @default(autoincrement())
+  contractId String
+  keyXdr String
+}
