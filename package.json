@@ -6,7 +6,6 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "postinstall": "prisma migrate deploy && prisma generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -19,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "create:pair": "ts-node scripts/createPair.ts"
+    "create:pair": "ts-node scripts/createPair.ts",
+    "start:migrate:prod": "prisma migrate deploy && yarn start:prod"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

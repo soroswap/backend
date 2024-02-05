@@ -1,38 +1,23 @@
-# Builder stage
 FROM node:lts AS builder
 
 WORKDIR /app
 
-# Copy the application code
-COPY . .
+COPY package.json yarn.lock ./
+COPY prisma ./prisma/
 
-# Install dependencies
 RUN yarn install
 
+COPY . .
 
-# Generate Prisma client
-RUN yarn prisma migrate dev
-RUN yarn prisma generate
+RUN yarn build
 
-# Build your NestJS application
-CMD ["yarn", "start:dev"]
+FROM node:lts
 
-# # Runtime stage
-# FROM node:lts AS runtime
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/yarn.lock ./
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
 
-# WORKDIR /app
-
-# # Copy package.json and yarn.lock to /app directory
-# COPY package.json yarn.lock ./
-
-# # Install only production dependencies
-# RUN yarn install --production --frozen-lockfile
-
-# # Copy built assets from the builder stage
-# COPY --from=builder /app/dist ./dist
-
-# # Your application will listen on port 4000
-# EXPOSE 4000
-
-# # Command to run your app
-# CMD ["yarn", "start:prod"]
+EXPOSE 4000
+CMD [  "yarn", "start:migrate:prod" ]
