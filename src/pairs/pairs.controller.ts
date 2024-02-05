@@ -1,4 +1,11 @@
-import { Query, Body, Controller, Get, Post, BadRequestException } from '@nestjs/common';
+import {
+  Query,
+  Body,
+  Controller,
+  Get,
+  Post,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiOkResponse } from '@nestjs/swagger';
 
 import { NetworkApiQuery } from 'src/decorators';
@@ -10,7 +17,7 @@ import { QueryNetworkDto } from 'src/dto';
 
 @Controller('pairs')
 export class PairsController {
-  constructor(private readonly pairsService: PairsService) { }
+  constructor(private readonly pairsService: PairsService) {}
 
   @Post()
   async subscribeToPairs(@Body() body: subscribeToLedgerEntriesDto) {
@@ -18,34 +25,36 @@ export class PairsController {
   }
 
   @Get('count')
-  async getPairsCount(){
-    const count = await this.pairsService.getMercuryPairsCount();
+  async getPairsCount() {
+    const count = await this.pairsService.getPairsCountFromDB();
     if (!count) {
-      await this.pairsService.saveMercuryPairsCount(0)
+      await this.pairsService.saveMercuryPairsCount(0);
     }
-    return await this.pairsService.getMercuryPairsCount();
+    return await this.pairsService.getPairsCountFromDB();
   }
-  
+
   @Post('count')
-  async savePairsCount(@Body() body: {number:number}) {
+  async savePairsCount(@Body() body: { number: number }) {
     return await this.pairsService.saveMercuryPairsCount(body.number);
   }
-  
+
   @Get('mercury-count')
   async getCount() {
-    const counter = await this.pairsService.getPairCounter();
-    return { 'Pairs count on mercury': counter }
+    const counter = await this.pairsService.getPairsCountFromMercury();
+    return { 'Pairs count on mercury': counter };
   }
 
-  @ApiOkResponse({ description: 'return all pools', type: [AllPoolsResponseDto] })
+  @ApiOkResponse({
+    description: 'return all pools',
+    type: [AllPoolsResponseDto],
+  })
   @NetworkApiQuery()
   @Post('/all')
-  getAllPools(@Query() query: QueryNetworkDto){
-    if(query.network === 'testnet'){
+  getAllPools(@Query() query: QueryNetworkDto) {
+    if (query.network === 'testnet') {
       return this.pairsService.getAllPools();
     } else {
-      throw new BadRequestException('Network not supported')
+      throw new BadRequestException('Network not supported');
     }
-
   }
 }
