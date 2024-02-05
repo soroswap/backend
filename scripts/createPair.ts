@@ -1,16 +1,11 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { getRouterAddress } from '../src/utils/getRouterAddress';
-// const sorobanDir = '/workspace/.soroban';
 
-const server: StellarSdk.Horizon.Server = new StellarSdk.Horizon.Server(
-  'https://horizon-testnet.stellar.org/',
-);
 const sorobanServer: SorobanRpc.Server = new SorobanRpc.Server(
-  'http://localhost:8000/soroban/rpc',
-  { allowHttp: true },
+  'https://soroban-testnet.stellar.org/',
 );
-const friendbot = 'http://localhost:8000/friendbot?addr=';
+const friendbot = 'https://friendbot.stellar.org/?addr=';
 const passphrase = 'Test SDF Network ; September 2015';
 
 function createToken(name: string, issuerPublicKey: string) {
@@ -66,130 +61,54 @@ function generateRandomName() {
   return part1 + part2;
 }
 
-// async function classic_mint(
-//   user: StellarSdk.Keypair,
-//   asset: StellarSdk.Asset,
-//   amount: string,
-//   source: StellarSdk.Keypair,
-// ) {
-//   const operation = StellarSdk.Operation.payment({
-//     amount: amount,
-//     asset: asset,
-//     destination: user.publicKey(),
-//     source: source.publicKey(),
-//   });
-//   await invokeClassicOp(operation, source);
-// }
-
-// async function createTxBuilder(source: StellarSdk.Keypair) {
-//   try {
-//     const account = await server.loadAccount(source.publicKey());
-//     return new StellarSdk.TransactionBuilder(account, {
-//       fee: '10000',
-//       timebounds: { minTime: 0, maxTime: 0 },
-//       networkPassphrase: passphrase,
-//     });
-//   } catch (e) {
-//     console.error(e);
-//     throw Error('unable to create txBuilder');
-//   }
-// }
-
-// async function invokeClassicOp(operation: any, source: StellarSdk.Keypair) {
-//   const txBuilder = await createTxBuilder(source);
-//   txBuilder.addOperation(operation);
-//   const tx = txBuilder.build();
-//   tx.sign(source);
-//   try {
-//     await server.submitTransaction(tx);
-//     // const tx_hash = response.hash;
-//     // Poll this until the status is not "NOT_FOUND"
-//     // while (status === 'PENDING' || status === 'NOT_FOUND') {
-//     //   // See if the transaction is complete
-//     //   await new Promise((resolve) => setTimeout(resolve, 2000));
-//     //   // console.log('checking tx...');
-//     //   response = await server.getTransaction(tx_hash);
-//     //   status = response.status;
-//     // }
-//     // // console.log('Transaction status:', response.status);
-//     // if (status === 'ERROR') {
-//     //   console.log(response);
-//     // }
-//     // console.log('Classic op TX submitted:', tx_hash);
-//     // return tx_hash;
-//   } catch (e) {
-//     console.error(e.response.data.extras);
-//     throw Error('failed to submit classic op TX');
-//   }
-// }
-
-// async function classic_trustline(
-//   user: StellarSdk.Keypair,
-//   asset: StellarSdk.Asset,
-// ) {
-//   const operation = StellarSdk.Operation.changeTrust({
-//     source: user.publicKey(),
-//     asset: new StellarSdk.Asset(asset.code, asset.issuer),
-//   });
-
-//   const source = await server.loadAccount(user.publicKey());
-//   try {
-//     const tx = new StellarSdk.TransactionBuilder(source, {
-//       fee: '100',
-//       networkPassphrase: passphrase,
-//     })
-//       .addOperation(operation)
-//       .setTimeout(StellarSdk.TimeoutInfinite)
-//       .build();
-//     tx.sign(user);
-//     await server.submitTransaction(tx);
-//   } catch (error) {
-//     console.log(error);
-//   }
-
-//   // await invokeClassicOp(operation, user);
-// }
-
 async function main() {
-  const adminKeypair = StellarSdk.Keypair.fromSecret(
-    'SDLOPMZLHNXXTZPJBPDQDUXHTZ4WDQDO5YTMXDYQ7AO2QEUSATPDYZ7I',
-  );
+  console.log('========== Initializing Admin Keypair ==========');
+  const adminKeypair = StellarSdk.Keypair.random();
+  console.log('Admin Keypair Secret:', adminKeypair.secret());
+  console.log('Admin Keypair Public:', adminKeypair.publicKey());
+
   try {
+    console.log('\n========== Funding Admin Account ==========');
     await fetch(friendbot + adminKeypair.publicKey());
+    console.log('Admin account funded successfully.');
   } catch (error) {
-    console.log('already funded. skipping');
+    console.log('Funding Error: Already funded. Skipping...');
   }
 
+  console.log('\n========== Token Initialization ==========');
   const nameA = generateRandomName();
   const symbolA = nameA.substring(0, 4).toUpperCase();
-
+  console.log('Token Symbol:', symbolA);
   const token_a = createToken(symbolA, adminKeypair.publicKey());
+  const xlmAddress = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
 
+  console.log('\n========== Wrapping Asset in Soroban ==========');
   await wrapStellarAsset({
     adminKeypair,
     code: token_a.code,
     issuer: token_a.issuer,
   });
+  console.log('Token wrapped successfully.');
 
-  console.log('token_a', token_a.contractId(passphrase));
+  console.log('\n========== Token Contract Information ==========');
+  console.log(symbolA, 'Contract ID:', token_a.contractId(passphrase));
 
+  console.log('\n========== Liquidity Pool Operations ==========');
   const routerAddress = await getRouterAddress();
-  console.log('🚀 « routerAddress:', routerAddress);
 
   console.log(
-    await getBalance(token_a.contractId(passphrase), 'balance', adminKeypair),
+    'Creating liquidity pair and adding liquidity between XLM and',
+    symbolA,
   );
 
-  // Creating pair and Adding Liquidity
-  // await createPair(
-  //   adminKeypair,
-  //   routerAddress,
-  //   token_a.contractId(passphrase),
-  //   token_b.contractId(passphrase),
-  // );
+  await createPair(
+    adminKeypair,
+    routerAddress,
+    token_a.contractId(passphrase),
+    xlmAddress,
+  );
+  console.log('Liquidity pool created successfully.');
 }
-
-main();
 
 async function createPair(
   adminKeypair: StellarSdk.Keypair,
@@ -197,51 +116,31 @@ async function createPair(
   tokenA: string,
   tokenB: string,
 ) {
-  const args = [
+  const scValParams: StellarSdk.xdr.ScVal[] = [
     new StellarSdk.Address(tokenA).toScVal(),
     new StellarSdk.Address(tokenB).toScVal(),
-    StellarSdk.nativeToScVal(1000000), //   desiredAScVal
-    StellarSdk.nativeToScVal(1000000), //   desiredBScVal
-    StellarSdk.nativeToScVal(0), //   minAScVal
-    StellarSdk.nativeToScVal(0), //   minBScVal
-    new StellarSdk.Address(adminKeypair.publicKey()).toScVal,
-    StellarSdk.nativeToScVal(1000),
+    StellarSdk.nativeToScVal(1000000000000, { type: 'i128' }),
+    StellarSdk.nativeToScVal(100000000, { type: 'i128' }),
+    StellarSdk.nativeToScVal(0, { type: 'i128' }),
+    StellarSdk.nativeToScVal(0, { type: 'i128' }),
+    new StellarSdk.Address(adminKeypair.publicKey()).toScVal(),
+    StellarSdk.nativeToScVal(getCurrentTimePlusOneHour(), { type: 'u64' }),
   ];
 
-  const txn = await contractTransaction(
-    adminKeypair,
-    routerAddress,
-    'add_liquidity',
-    args,
-  );
+  const routerContract = new StellarSdk.Contract(routerAddress);
+  const op = routerContract.call('add_liquidity', ...scValParams);
+  const transaction = await buildTransaction(adminKeypair, op);
+  const preparedTransaction =
+    await sorobanServer.prepareTransaction(transaction);
+  preparedTransaction.sign(adminKeypair);
 
   try {
-    const preparedTxn = await sorobanServer.prepareTransaction(txn);
-    console.log('🚀 « preparedTxn:', preparedTxn);
-    // txn.sign(adminKeypair);
-
-    // return await sorobanServer.sendTransaction(txn);
+    const txRes = await sorobanServer.sendTransaction(preparedTransaction);
+    const confirmation = await waitForConfirmation(txRes.hash);
+    return confirmation;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
-}
-
-async function contractTransaction(
-  adminKeypair: StellarSdk.Keypair,
-  contractAddress: string,
-  method: string,
-  args: any,
-): Promise<StellarSdk.Transaction> {
-  const source = await sorobanServer.getAccount(adminKeypair.publicKey());
-
-  const contract = new StellarSdk.Contract(contractAddress);
-  return new StellarSdk.TransactionBuilder(source, {
-    fee: '100',
-    networkPassphrase: passphrase,
-  })
-    .addOperation(contract.call(method, ...args))
-    .setTimeout(StellarSdk.TimeoutInfinite)
-    .build();
 }
 
 export async function wrapStellarAsset({
@@ -271,35 +170,10 @@ export async function wrapStellarAsset({
     txn = await sorobanServer.prepareTransaction(txn);
     txn.sign(adminKeypair);
 
-    return await sorobanServer.sendTransaction(txn);
+    const txnSent = await sorobanServer.sendTransaction(txn);
+    return await waitForConfirmation(txnSent.hash);
   } catch (error) {
     console.log(error);
-  }
-}
-
-async function getBalance(
-  contractId: string,
-  method: string,
-  user: StellarSdk.Keypair,
-) {
-  try {
-    const operation = StellarSdk.Operation.invokeContractFunction({
-      contract: contractId,
-      function: method,
-      args: [new StellarSdk.Address(user.publicKey()).toScVal()],
-    });
-
-    const tx = await buildTransaction(user, operation);
-    const preparedTransaction = await sorobanServer.prepareTransaction(tx);
-    const simulated =
-      await sorobanServer.simulateTransaction(preparedTransaction);
-    const parsedResult = StellarSdk.scValToNative(
-      simulated.result.retval,
-    ).toString();
-
-    return simulated;
-  } catch (error) {
-    console.log(`Error reading contract: ${contractId}`, error);
   }
 }
 
@@ -318,3 +192,34 @@ async function buildTransaction(source, ...operations) {
 
   return builtTransaction;
 }
+
+export async function waitForConfirmation(
+  hash: string,
+): Promise<
+  | SorobanRpc.Api.GetSuccessfulTransactionResponse
+  | SorobanRpc.Api.GetFailedTransactionResponse
+> {
+  console.log('waiting for confirmation hash:', hash);
+  let confirmation;
+  do {
+    confirmation = await sorobanServer.getTransaction(hash);
+    if (confirmation.status !== SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  } while (true);
+  return confirmation;
+}
+
+export const getCurrentTimePlusOneHour = (): number => {
+  // Get the current time in milliseconds
+  const now = Date.now();
+
+  // Add one hour (3600000 milliseconds)
+  const oneHourLater = now + 36000000;
+
+  const oneHourLaterSeconds = Math.floor(oneHourLater / 1000);
+  return oneHourLaterSeconds;
+};
+
+main();
