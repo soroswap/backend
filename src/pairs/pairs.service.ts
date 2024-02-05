@@ -92,7 +92,7 @@ export class PairsService {
         });
 
         response.push(subscribeResponse);
-        console.log('Subscription created:', subscription);
+        console.log('Subscribed to pair', subscription.contractId);
       } else {
         console.log('Subscription already exists for pair with:');
         console.log('contractId:', data.contractId[i]);
@@ -144,7 +144,7 @@ export class PairsService {
           },
         });
 
-        console.log('Subscription created:', subscription);
+        console.log('Subscribed to pair index', i);
       } else {
         console.log('Subscription already exists for pair with:');
         console.log('contractId:', contractId);
@@ -158,7 +158,7 @@ export class PairsService {
    * @param mercuryInstance The Mercury instance to be used to make the request.
    * @returns The total number of pairs created by the factory.
    */
-  async getPairCounter() {
+  async getPairsCountFromMercury() {
     const contractId = await getFactoryAddress();
     const mercuryResponse = await mercuryInstance
       .getCustomQuery({
@@ -203,7 +203,7 @@ export class PairsService {
    * Retrieves the count of Mercury pairs.
    * @returns The count of Mercury pairs.
    */
-  async getMercuryPairsCount() {
+  async getPairsCountFromDB() {
     const counter = await this.prisma.counter.findUnique({
       where: {
         id: 1,
@@ -236,7 +236,7 @@ export class PairsService {
    * @throws Error if Mercury request fails.
    */
   async getPairAddresses() {
-    const pairCounter = await this.getPairCounter();
+    const pairCounter = await this.getPairsCountFromMercury();
     const query = buildGetPairAddressesQuery(pairCounter);
     const variables = await this.createVariablesForPairsAddresses(pairCounter);
     const mercuryResponse = await mercuryInstance
@@ -293,25 +293,25 @@ export class PairsService {
 
   async getAllPools() {
     //const res = await this.saveMercuryPairsCount(12);
-    const newCounter = await this.getPairCounter();
-    const oldCounter = await this.getMercuryPairsCount();
+    const newCounter = await this.getPairsCountFromMercury();
+    console.log('Pairs count in Mercury:', newCounter);
+    const oldCounter = await this.getPairsCountFromDB();
+    console.log('Pairs count in db:', oldCounter);
     if (newCounter > oldCounter) {
       console.log('New pairs found');
-      this.subscribeToPairsOnFactory(oldCounter, newCounter);
-      console.log('Subscribed to new pairs on factory');
+      await this.subscribeToPairsOnFactory(oldCounter, newCounter);
       const addresses = await this.getPairAddresses();
       const newAddresses = addresses.slice(oldCounter, newCounter);
-      this.subscribeToPairs({
+      await this.subscribeToPairs({
         contractId: newAddresses,
         keyXdr: 'AAAAFA==',
         durability: 'persistent',
         hydrate: true,
       });
-      console.log('Subscribed to new pairs');
       this.saveMercuryPairsCount(newCounter);
       console.log('Updated pairs count on database');
       console.log('Fetching Liquidity pools...');
-      const pools = await this.getPairWithTokensAndReserves(newAddresses);
+      const pools = await this.getPairWithTokensAndReserves(addresses);
       console.log('done');
       return pools;
     } else {
