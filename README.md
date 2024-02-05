@@ -10,10 +10,10 @@ You can copy the `.env.example` by running the following command:
 ```bash
 cp  .env.example  .env
 ```
-Once created: fill the `DATABASE_URL` variable with the connection string to your database, in the following format: 
+Once created: fill the `POSTGRES_URL` variable with the connection string to your database, in the following format: 
 
 ```bash
-DATABASE_URL=protocol://user:password@host:port/database_name
+POSTGRES_URL=protocol://user:password@host:port/database_name
 ``` 
 and fill in the remaining values.
 
@@ -22,8 +22,8 @@ If you are developing locally and using the PostgreSQL container of the Docker C
 ```bash
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=password
-POSTGRES_DB=postgresdb
-DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgdb:5432/${POSTGRES_DB}?schema=public
+POSTGRES_DATABASE=postgresdb
+POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgdb:5432/${POSTGRES_DATABASE}?schema=public
 ```
   
 ## 2. Build and run the app using Docker

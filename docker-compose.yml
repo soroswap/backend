@@ -3,12 +3,12 @@ services:
   backend:
     image: node:lts
     ports:
-      - "4000:4000"
+      - "${PORT}:${PORT}"
     working_dir: /app
     networks:
       - app-network
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_URL: ${POSTGRES_URL}
     env_file:
       - .env
     volumes:
