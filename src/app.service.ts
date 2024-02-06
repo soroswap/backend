@@ -1,19 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { OptimalRouteRequestBodyDto, OptimalRouteResponseDto } from './dto';
-import { Network } from './types';
 import { PrismaService } from './prisma/prisma.service';
+import { Network } from './types';
 
 @Injectable()
 export class AppService {
   constructor(private prisma: PrismaService) {}
 
-  async getHello(): Promise<{ message: string }> {
-    const hello = await this.prisma.hello.findUnique({
-      where: {
-        id: 'hello',
-      },
-    });
-    return { message: hello?.name };
+  getHealth(): { status: string; time: string; database: string } {
+    let dbStatus = 'Disconnected';
+    try {
+      const isConnected = this.prisma.isConnected();
+      dbStatus = isConnected ? 'Connected' : 'Disconnected';
+    } catch (error) {
+      dbStatus = 'Error connecting to DB';
+    }
+
+    return {
+      status: 'OK',
+      time: new Date().toISOString(),
+      database: dbStatus,
+    };
   }
 
   getOptimalRoute(
@@ -45,5 +52,4 @@ export class AppService {
   getInfo(): { message: string } {
     return { message: 'Hello World!' };
   }
-
 }
