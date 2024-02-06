@@ -7,106 +7,29 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
-
 model Hello{
   id String @id @default(uuid())
   name String
-}
-
-model User {
-  publicKey String @id
-  addEvents AddEvent[]
-  removeEvents RemoveEvent[]
-  swapEvents SwapEvent[]
-}
-
-model Token {
-  address      String          @id
-  name         String          @unique
-  code         String          @unique
-  issuer       String          @default("Stellar")
-  stellarAsset Boolean         @default(true)
-  liquidityPoolTokenA  LiquidityPool[] @relation("TokenAToLiquidityPool")
-  liquidityPoolTokenB  LiquidityPool[] @relation("TokenBToLiquidityPool")
-  swapEventsTokenIn   SwapEvent[] @relation("TokenInToSwapEvent")
-  swapEventsTokenOut  SwapEvent[] @relation("TokenOutToSwapEvent")
-  swapEventPathsTokenIn   SwapEventPath[] @relation("TokenInToSwapEventPath")
-  swapEventPathsTokenOut  SwapEventPath[] @relation("TokenOutToSwapEventPath")
-}
-
-model LiquidityPool {
-  address       String   @id
-  tokenA        Token    @relation(fields: [tokenAAddress], references: [address], name: "TokenAToLiquidityPool")
-  tokenAAddress String
-  tokenB        Token    @relation(fields: [tokenBAddress], references: [address], name: "TokenBToLiquidityPool")
-  tokenBAddress String
-  addEvents     AddEvent[]
-  removeEvents  RemoveEvent[]
-  swapEventPaths SwapEventPath[]
-}
-
-model AddEvent {
-  id Int @id @default(autoincrement())
-  user User @relation(fields: [userPublicKey], references: [publicKey])
-  userPublicKey String
-  pool LiquidityPool @relation(fields: [poolAddress], references: [address])
-  poolAddress String
-  amountA Int
-  amountB Int
-  liquidity Int
-  ledger Int
-  timestamp String
-}
-
-model RemoveEvent {
-  id Int @id @default(autoincrement())
-  user User @relation(fields: [userPublicKey], references: [publicKey])
-  userPublicKey String
-  pool LiquidityPool @relation(fields: [poolAddress], references: [address])
-  poolAddress String
-  amountA Int
-  amountB Int
-  liquidity Int
-  ledger Int
-  timestamp String
-}
-
-model SwapEvent {
-  id Int @id @default(autoincrement())
-  user User @relation(fields: [userPublicKey], references: [publicKey])
-  userPublicKey String
-  amountIn Int
-  amountOut Int
-  tokenIn Token @relation(fields: [tokenInAddress], references: [address], name: "TokenInToSwapEvent")
-  tokenInAddress String
-  tokenOut Token @relation(fields: [tokenOutAddress], references: [address], name: "TokenOutToSwapEvent")
-  tokenOutAddress String
-  ledger Int
-  timestamp String
-  swapEventPaths SwapEventPath[]
-}
-
-model SwapEventPath {
-  id Int @id @default(autoincrement())
-  swapEvent SwapEvent @relation(fields: [swapEventId], references: [id])
-  swapEventId Int
-  pool LiquidityPool @relation(fields: [poolAddress], references: [address])
-  poolAddress String
-  amountIn Int
-  amountOut Int
-  tokenIn Token @relation(fields: [tokenInAddress], references: [address], name: "TokenInToSwapEventPath")
-  tokenInAddress String
-  tokenOut Token @relation(fields: [tokenOutAddress], references: [address], name: "TokenOutToSwapEventPath")
-  tokenOutAddress String
-}
-
-model Counter {
-  id Int @id @default(autoincrement())
-  count Int
 }
 
 model PairSubscription {
   id Int @id @default(autoincrement())
   contractId String
   keyXdr String
+
+  @@unique([contractId, keyXdr])
+}
+
+model FactorySubscription {
+  id Int @id @default(autoincrement())
+  contractId String @unique
+  protocol String @default("soroswap")
+}
+
+model FactoryPairIndexSubscription {
+  id Int @id @default(autoincrement())
+  contractId String
+  keyXdr String
+
+  @@unique([contractId, keyXdr])
 }
