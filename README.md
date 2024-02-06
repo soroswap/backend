@@ -77,11 +77,9 @@ docker exec -it <CONTAINER_NAME> bash
 By default, Prisma provides a "studio" to inspect the tables.
 
 to open it inside the docker container you can run
-
 ```bash
 yarn prisma studio
 ```
-
 ## 5. Available Requests
 
 **1. Subscribe to pairs:**

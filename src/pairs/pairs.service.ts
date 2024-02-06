@@ -190,6 +190,7 @@ export class PairsService {
         contractId: await getFactoryAddress(),
       },
     });
+
     return count;
   }
 
