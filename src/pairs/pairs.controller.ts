@@ -6,7 +6,7 @@ import {
   Post,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiOkResponse } from '@nestjs/swagger';
+import { ApiHeader, ApiOkResponse } from '@nestjs/swagger';
 
 import { NetworkApiQuery } from 'src/decorators';
 import { PairsService } from './pairs.service';
@@ -15,6 +15,10 @@ import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 import { AllPoolsRequestBodyDto, AllPoolsResponseDto } from './dto/pools.dto';
 import { QueryNetworkDto } from 'src/dto';
 
+@ApiHeader({
+  name: 'apiKey',
+  description: 'API Key',
+})
 @Controller('pairs')
 export class PairsController {
   constructor(private readonly pairsService: PairsService) {}

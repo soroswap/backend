@@ -209,7 +209,7 @@ export class PairsService {
         id: 1,
       },
     });
-    return counter.count;
+    return counter?.count ?? 0;
   }
 
   /**
