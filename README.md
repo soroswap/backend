@@ -1,4 +1,5 @@
 # Soroswap Backend
+
 Read more about the Soroswap.Finance Stack in in docs.soroswap.finance
 
 ## 1. Set up
@@ -10,11 +11,13 @@ You can copy the `.env.example` by running the following command:
 ```bash
 cp  .env.example  .env
 ```
-Once created: fill the `POSTGRES_URL` variable with the connection string to your database, in the following format: 
+
+Once created: fill the `POSTGRES_URL` variable with the connection string to your database, in the following format:
 
 ```bash
 POSTGRES_URL=protocol://user:password@host:port/database_name
-``` 
+```
+
 and fill in the remaining values.
 
 If you are developing locally and using the PostgreSQL container of the Docker Compose, your setup should be:
@@ -25,7 +28,7 @@ POSTGRES_PASSWORD=password
 POSTGRES_DATABASE=postgresdb
 POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgdb:5432/${POSTGRES_DATABASE}?schema=public
 ```
-  
+
 ## 2. Build and run the app using Docker
 
 To run the app, execute the following command:
@@ -62,6 +65,7 @@ yarn start:dev # need to run this every time
 ```bash
 docker ps
 ```
+
 Whith this, you can enter to any Docker container's terminal by running:
 
 ```bash
@@ -71,23 +75,25 @@ docker exec -it <CONTAINER_NAME> bash
 ## 4. Inspect database:
 
 By default, the development container creates a pgAdmin instance to inspect your data. You can access it in two ways:
--  **Through a web browser:**  Open  `http://localhost:5050`  in your browser.
--  **Through the command line:**  Use the  `pgAdmin`  command-line interface provided within the container.
+
+- **Through a web browser:** Open `http://localhost:5050` in your browser.
+- **Through the command line:** Use the `pgAdmin` command-line interface provided within the container.
 
 **Credentials:**
--   Log in using the credentials set in your  `.env`  file.
+
+- Log in using the credentials set in your `.env` file.
 
 **Registering the Postgres Server:**
 To connect to your database in pgAdmin, register a new server with the following configuration:
 
-| General |  | |
-|--|--|--|
-|  | Name: | Backend |
-| **Connection** | | |
-||Host name / address: | pgdb |
-||Port:|5432
-||Username:|`.env.POSTGRES_USER`
-||Password:|`.env.POSTGRES_PASSWORD`
+| General        |                      |                          |
+| -------------- | -------------------- | ------------------------ |
+|                | Name:                | Backend                  |
+| **Connection** |                      |                          |
+|                | Host name / address: | pgdb                     |
+|                | Port:                | 5432                     |
+|                | Username:            | `.env.POSTGRES_USER`     |
+|                | Password:            | `.env.POSTGRES_PASSWORD` |
 
 Click "Save" after entering the configuration details.
 
@@ -98,7 +104,6 @@ To inspect the tables within your database, navigate to the following location i
 `Servers > Backend > Databases > postgresdb > Schemas > public > Tables`
 
 ## 5. Available Requests
-
 
 **1. Subscribe to pairs:**
 
@@ -116,18 +121,7 @@ curl -X POST \
   }'
 ```
 
-**2. Set counter value:**
-```
-curl -X POST \
-  http://0.0.0.0:4000/pairs/count \
-  -H 'apiKey: <your_api_key>' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "number": 8
-  }'
-
-```
-**3. Get mercury pairs count:**
+**2. Get mercury pairs count:**
 
 ```
 curl -X GET \
@@ -135,7 +129,8 @@ curl -X GET \
   -H 'apiKey: <your_api_key>'
 
 ```
-**4. Get DB count:**
+
+**3. Get DB count:**
 
 ```
 curl -X GET \
@@ -144,7 +139,7 @@ curl -X GET \
 
 ```
 
-**5. Get all liquidity pools:**
+**4. Get all liquidity pools:**
 
 ```
 curl -X POST \
@@ -153,48 +148,42 @@ curl -X POST \
 
 ```
 
+curl -X POST \
+ http://0.0.0.0:4000/pairs \
+ -H 'apiKey: cualquiercosa' \
+ -H 'Content-Type: application/json' \
+ -d '{
+"contractId": [
+"CBV3WDVJ7NC3RKVPBKLWXD46I6HL6GBZHSRBMJ6SLUAUISGITAB3DQO7"
+],
+"keyXdr": "AAAAFA==",
+"durability": "persistent"
+}'
 
 curl -X POST \
-  http://0.0.0.0:4000/pairs \
-  -H 'apiKey: cualquiercosa' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "contractId": [
-      "CBV3WDVJ7NC3RKVPBKLWXD46I6HL6GBZHSRBMJ6SLUAUISGITAB3DQO7"
-    ],
-    "keyXdr": "AAAAFA==",
-    "durability": "persistent"
-  }'
-
+ http://0.0.0.0:4000/pairs/count \
+ -H 'apiKey: <your_api_key>' \
+ -H 'Content-Type: application/json' \
+ -d '{
+"number": 8
+}'
 
 curl -X POST \
-  http://0.0.0.0:4000/pairs/count \
-  -H 'apiKey: <your_api_key>' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "number": 8
-  }'
+ http://0.0.0.0:4000/pairs/count \
+ -H 'apiKey: cualquiercosa' \
+ -H 'Content-Type: application/json' \
+ -d '{
+"number": 8
+}'
 
+curl -X GET \
+ http://0.0.0.0:4000/pairs/mercury-count \
+ -H 'apiKey: cualquiercosa'
 
-  curl -X POST \
-  http://0.0.0.0:4000/pairs/count \
-  -H 'apiKey: cualquiercosa' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "number": 8
-  }'
+curl -X GET \
+ http://0.0.0.0:4000/pairs/count \
+ -H 'apiKey: cualquiercosa'
 
-
-  curl -X GET \
-  http://0.0.0.0:4000/pairs/mercury-count \
-  -H 'apiKey: cualquiercosa'
-
-
-  curl -X GET \
-  http://0.0.0.0:4000/pairs/count \
-  -H 'apiKey: cualquiercosa'
-
-
-  curl -X POST \
-  http://0.0.0.0:4000/pairs/all?network=testnet \
-  -H 'apiKey: cualquiercosa'
+curl -X POST \
+ http://0.0.0.0:4000/pairs/all?network=testnet \
+ -H 'apiKey: cualquiercosa'

@@ -1,2 +1,5 @@
 export { Network } from './network';
-export { ContractEntriesResponse, ParsedFactoryInstanceEntry } from "./getContractEntries";
+export {
+  ContractEntriesResponse,
+  ParsedFactoryInstanceEntry,
+} from './getContractEntries';

@@ -117,12 +117,13 @@ export class PairsService {
     for (let i = first; i < last; i++) {
       key_xdr = this.getKeyXdrForPair(i);
 
-      let subscriptionExists = await this.prisma.pairSubscription.findFirst({
-        where: {
-          contractId,
-          keyXdr: key_xdr,
-        },
-      });
+      let subscriptionExists =
+        await this.prisma.factoryPairIndexSubscription.findFirst({
+          where: {
+            contractId,
+            keyXdr: key_xdr,
+          },
+        });
 
       if (!subscriptionExists) {
         args = {
@@ -137,18 +138,17 @@ export class PairsService {
             throw new Error(`Error subscribing to pair ${i}: ${err}`);
           });
 
-        let subscription = await this.prisma.pairSubscription.create({
-          data: {
-            contractId,
-            keyXdr: key_xdr,
-          },
-        });
+        let subscription =
+          await this.prisma.factoryPairIndexSubscription.create({
+            data: {
+              contractId,
+              keyXdr: key_xdr,
+            },
+          });
 
         console.log('Subscribed to pair index', i);
       } else {
-        console.log('Subscription already exists for pair with:');
-        console.log('contractId:', contractId);
-        console.log('key_xdr:', key_xdr);
+        console.log('Subscription already exists for pair index:', i);
       }
     }
   }
@@ -181,35 +181,16 @@ export class PairsService {
   }
 
   /**
-   * Saves the count of Mercury pairs.
-   * @returns The saved counter object.
-   */
-  async saveMercuryPairsCount(count: number) {
-    const counter = await this.prisma.counter.upsert({
-      where: {
-        id: 1,
-      },
-      update: {
-        count: count,
-      },
-      create: {
-        count: count,
-      },
-    });
-    return counter;
-  }
-
-  /**
    * Retrieves the count of Mercury pairs.
    * @returns The count of Mercury pairs.
    */
   async getPairsCountFromDB() {
-    const counter = await this.prisma.counter.findUnique({
+    const count = await this.prisma.factoryPairIndexSubscription.count({
       where: {
-        id: 1,
+        contractId: await getFactoryAddress(),
       },
     });
-    return counter.count;
+    return count;
   }
 
   /**
@@ -292,7 +273,6 @@ export class PairsService {
   }
 
   async getAllPools() {
-    //const res = await this.saveMercuryPairsCount(12);
     const newCounter = await this.getPairsCountFromMercury();
     console.log('Pairs count in Mercury:', newCounter);
     const oldCounter = await this.getPairsCountFromDB();
@@ -308,8 +288,6 @@ export class PairsService {
         durability: 'persistent',
         hydrate: true,
       });
-      this.saveMercuryPairsCount(newCounter);
-      console.log('Updated pairs count on database');
       console.log('Fetching Liquidity pools...');
       const pools = await this.getPairWithTokensAndReserves(addresses);
       console.log('done');
