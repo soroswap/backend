@@ -1,7 +1,7 @@
-import { Mercury } from 'mercury-sdk';
 import { PrismaClient } from '@prisma/client';
-import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../src/utils/queries';
+import { Mercury } from 'mercury-sdk';
 import { getFactoryAddress } from '../src/utils';
+import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../src/utils/queries';
 
 async function main() {
   const mercuryInstance = new Mercury({
@@ -25,9 +25,9 @@ async function main() {
   let pairSubs = 0;
   let pairIndexSubs = 0;
   let oldFactoryPairSubs = 0;
-  for (let sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
+  for (const sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
     .edges) {
-    let node = sub.node;
+    const node = sub.node;
     if (node.contractId === factoryAddress && node.keyXdr === 'AAAAFA==') {
       await prisma.factorySubscription.upsert({
         where: {

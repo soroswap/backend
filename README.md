@@ -72,13 +72,24 @@ Whith this, you can enter to any Docker container's terminal by running:
 docker exec -it <CONTAINER_NAME> bash
 ```
 
-## 4. Inspect database:
+## 4. Postgres Database:
 
-By default, Prisma provides a "studio" to inspect the tables.
+**Update / Populate:** If you need to update your database with the latest information on mercury or if you are starting from scratch and an empty database you need to run this script.
+
+```bash
+yarn db:populate
+```
+
+**Inspect:** By default, Prisma provides a "studio" to inspect the tables.
 
 to open it inside the docker container you can run
 ```bash
 yarn prisma studio
+```
+
+**Reset:** if for some reason you need to reset your database you can run the following
+```bash 
+yarn prisma db push --force-reset
 ```
 ## 5. Available Requests
 
