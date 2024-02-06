@@ -1,11 +1,11 @@
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiHeader, ApiOkResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { NetworkApiQuery } from './decorators';
 import {
-  QueryNetworkDto,
   OptimalRouteRequestBodyDto,
   OptimalRouteResponseDto,
+  QueryNetworkDto,
 } from './dto';
 
 @ApiHeader({
@@ -27,9 +27,9 @@ export class AppController {
       },
     },
   })
-  @Get('/hello')
-  getHello(): Promise<{ message: string }> {
-    return this.appService.getHello();
+  @Get('/')
+  getHealth() {
+    return this.appService.getHealth();
   }
 
   @ApiOkResponse({
@@ -68,5 +68,4 @@ export class AppController {
   } {
     return { network: query.network };
   }
-
 }

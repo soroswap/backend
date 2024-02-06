@@ -4,6 +4,7 @@ services:
     image: node:lts
     ports:
       - "${PORT}:${PORT}"
+      - 5555:5555
     working_dir: /app
     networks:
       - app-network
@@ -31,19 +32,6 @@ services:
     env_file:
       - .env
       
-  pgadmin:
-    image: dpage/pgadmin4
-    env_file:
-      - .env
-    ports:
-      - "5050:80"
-    depends_on:
-      - pgdb
-    volumes:
-      - ./pgadmin:/var/lib/pgadmin
-    networks:
-      - app-network
-
 networks: 
   app-network:
     driver: bridge

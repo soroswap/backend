@@ -74,34 +74,13 @@ docker exec -it <CONTAINER_NAME> bash
 
 ## 4. Inspect database:
 
-By default, the development container creates a pgAdmin instance to inspect your data. You can access it in two ways:
+By default, Prisma provides a "studio" to inspect the tables.
 
-- **Through a web browser:** Open `http://localhost:5050` in your browser.
-- **Through the command line:** Use the `pgAdmin` command-line interface provided within the container.
+to open it inside the docker container you can run
 
-**Credentials:**
-
-- Log in using the credentials set in your `.env` file.
-
-**Registering the Postgres Server:**
-To connect to your database in pgAdmin, register a new server with the following configuration:
-
-| General        |                      |                          |
-| -------------- | -------------------- | ------------------------ |
-|                | Name:                | Backend                  |
-| **Connection** |                      |                          |
-|                | Host name / address: | pgdb                     |
-|                | Port:                | 5432                     |
-|                | Username:            | `.env.POSTGRES_USER`     |
-|                | Password:            | `.env.POSTGRES_PASSWORD` |
-
-Click "Save" after entering the configuration details.
-
-**Navigating to the Tables:**
-
-To inspect the tables within your database, navigate to the following location in pgAdmin:
-
-`Servers > Backend > Databases > postgresdb > Schemas > public > Tables`
+```bash
+yarn prisma studio
+```
 
 ## 5. Available Requests
 
