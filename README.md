@@ -1,4 +1,5 @@
 # Soroswap Backend
+
 Read more about the Soroswap.Finance Stack in in docs.soroswap.finance
 
 ## 1. Set up
@@ -10,11 +11,13 @@ You can copy the `.env.example` by running the following command:
 ```bash
 cp  .env.example  .env
 ```
-Once created: fill the `POSTGRES_URL` variable with the connection string to your database, in the following format: 
+
+Once created: fill the `POSTGRES_URL` variable with the connection string to your database, in the following format:
 
 ```bash
 POSTGRES_URL=protocol://user:password@host:port/database_name
-``` 
+```
+
 and fill in the remaining values.
 
 If you are developing locally and using the PostgreSQL container of the Docker Compose, your setup should be:
@@ -25,7 +28,7 @@ POSTGRES_PASSWORD=password
 POSTGRES_DATABASE=postgresdb
 POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgdb:5432/${POSTGRES_DATABASE}?schema=public
 ```
-  
+
 ## 2. Build and run the app using Docker
 
 To run the app, execute the following command:
@@ -62,22 +65,33 @@ yarn start:dev # need to run this every time
 ```bash
 docker ps
 ```
+
 Whith this, you can enter to any Docker container's terminal by running:
 
 ```bash
 docker exec -it <CONTAINER_NAME> bash
 ```
 
-## 4. Inspect database:
+## 4. Postgres Database:
 
-By default, Prisma provides a "studio" to inspect the tables.
+**Update / Populate:** If you need to update your database with the latest information on mercury or if you are starting from scratch and an empty database you need to run this script.
+
+```bash
+yarn db:populate
+```
+
+**Inspect:** By default, Prisma provides a "studio" to inspect the tables.
 
 to open it inside the docker container you can run
 ```bash
 yarn prisma studio
 ```
-## 5. Available Requests
 
+**Reset:** if for some reason you need to reset your database you can run the following
+```bash 
+yarn prisma db push --force-reset
+```
+## 5. Available Requests
 
 **1. Subscribe to pairs:**
 
@@ -95,18 +109,7 @@ curl -X POST \
   }'
 ```
 
-**2. Set counter value:**
-```
-curl -X POST \
-  http://0.0.0.0:4000/pairs/count \
-  -H 'apiKey: <your_api_key>' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "number": 8
-  }'
-
-```
-**3. Get mercury pairs count:**
+**2. Get mercury pairs count:**
 
 ```
 curl -X GET \
@@ -114,7 +117,8 @@ curl -X GET \
   -H 'apiKey: <your_api_key>'
 
 ```
-**4. Get DB count:**
+
+**3. Get DB count:**
 
 ```
 curl -X GET \
@@ -123,7 +127,7 @@ curl -X GET \
 
 ```
 
-**5. Get all liquidity pools:**
+**4. Get all liquidity pools:**
 
 ```
 curl -X POST \
@@ -132,48 +136,42 @@ curl -X POST \
 
 ```
 
+curl -X POST \
+ http://0.0.0.0:4000/pairs \
+ -H 'apiKey: cualquiercosa' \
+ -H 'Content-Type: application/json' \
+ -d '{
+"contractId": [
+"CBV3WDVJ7NC3RKVPBKLWXD46I6HL6GBZHSRBMJ6SLUAUISGITAB3DQO7"
+],
+"keyXdr": "AAAAFA==",
+"durability": "persistent"
+}'
 
 curl -X POST \
-  http://0.0.0.0:4000/pairs \
-  -H 'apiKey: cualquiercosa' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "contractId": [
-      "CBV3WDVJ7NC3RKVPBKLWXD46I6HL6GBZHSRBMJ6SLUAUISGITAB3DQO7"
-    ],
-    "keyXdr": "AAAAFA==",
-    "durability": "persistent"
-  }'
-
+ http://0.0.0.0:4000/pairs/count \
+ -H 'apiKey: <your_api_key>' \
+ -H 'Content-Type: application/json' \
+ -d '{
+"number": 8
+}'
 
 curl -X POST \
-  http://0.0.0.0:4000/pairs/count \
-  -H 'apiKey: <your_api_key>' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "number": 8
-  }'
+ http://0.0.0.0:4000/pairs/count \
+ -H 'apiKey: cualquiercosa' \
+ -H 'Content-Type: application/json' \
+ -d '{
+"number": 8
+}'
 
+curl -X GET \
+ http://0.0.0.0:4000/pairs/mercury-count \
+ -H 'apiKey: cualquiercosa'
 
-  curl -X POST \
-  http://0.0.0.0:4000/pairs/count \
-  -H 'apiKey: cualquiercosa' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "number": 8
-  }'
+curl -X GET \
+ http://0.0.0.0:4000/pairs/count \
+ -H 'apiKey: cualquiercosa'
 
-
-  curl -X GET \
-  http://0.0.0.0:4000/pairs/mercury-count \
-  -H 'apiKey: cualquiercosa'
-
-
-  curl -X GET \
-  http://0.0.0.0:4000/pairs/count \
-  -H 'apiKey: cualquiercosa'
-
-
-  curl -X POST \
-  http://0.0.0.0:4000/pairs/all?network=testnet \
-  -H 'apiKey: cualquiercosa'
+curl -X POST \
+ http://0.0.0.0:4000/pairs/all?network=testnet \
+ -H 'apiKey: cualquiercosa'

@@ -30,16 +30,7 @@ export class PairsController {
 
   @Get('count')
   async getPairsCount() {
-    const count = await this.pairsService.getPairsCountFromDB();
-    if (!count) {
-      await this.pairsService.saveMercuryPairsCount(0);
-    }
     return await this.pairsService.getPairsCountFromDB();
-  }
-
-  @Post('count')
-  async savePairsCount(@Body() body: { number: number }) {
-    return await this.pairsService.saveMercuryPairsCount(body.number);
   }
 
   @Get('mercury-count')
