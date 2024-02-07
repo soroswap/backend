@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OptimalRouteRequestBodyDto, OptimalRouteResponseDto } from './dto';
 import { PrismaService } from './prisma/prisma.service';
+import { populateDatabase } from './scripts/populateDatabase';
 import { Network } from './types';
 
 @Injectable()
@@ -51,5 +52,9 @@ export class AppService {
 
   getInfo(): { message: string } {
     return { message: 'Hello World!' };
+  }
+
+  async updateDatabase() {
+    await populateDatabase();
   }
 }

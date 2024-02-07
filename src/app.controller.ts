@@ -68,4 +68,10 @@ export class AppController {
   } {
     return { network: query.network };
   }
+
+  @NetworkApiQuery()
+  @Post('/update_database')
+  updateDatabase() {
+    return this.appService.updateDatabase();
+  }
 }
