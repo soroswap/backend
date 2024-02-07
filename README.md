@@ -74,11 +74,7 @@ docker exec -it <CONTAINER_NAME> bash
 
 ## 4. Postgres Database:
 
-**Update / Populate:** If you need to update your database with the latest information on mercury or if you are starting from scratch and an empty database you need to run this script.
-
-```bash
-yarn db:populate
-```
+**Update / Populate:** Every time the app starts will populate any missing data from mecury.
 
 **Inspect:** By default, Prisma provides a "studio" to inspect the tables.
 
