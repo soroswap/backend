@@ -12,6 +12,7 @@ export interface Edge {
 
 export interface Node {
   id: string;
+  contractId: string;
   keyXdr: string;
   valueXdr: string;
 }

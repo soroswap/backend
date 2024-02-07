@@ -1,5 +1,4 @@
-import { gql } from "graphql-request";
-
+import { gql } from 'graphql-request';
 
 /**
  * Function to build a graphql query to retrieve a specific number of pairs with the respective tokens and reserves.
@@ -24,6 +23,7 @@ export function buildGetPairWithTokensAndReservesQuery(pairCount: number) {
         edges {
           node {
             id
+            contractId
             keyXdr
             valueXdr
           }
