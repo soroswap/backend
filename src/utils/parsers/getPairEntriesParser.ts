@@ -13,7 +13,7 @@ export const pairAddressesParser = (data: ContractEntriesResponse) => {
 
   let key: keyof typeof data;
   for (key in data) {
-    const base64Xdr = data[key].edges[0].node.valueXdr;
+    const base64Xdr = data?.[key]?.edges?.[0]?.node?.valueXdr;
     if (!base64Xdr) {
       throw new Error('No valueXdr found in the entry');
     }
