@@ -1,195 +1,108 @@
-import * as sdk from 'stellar-sdk'
-import { getRouterAddress } from '../src/utils/getRouterAddress';
-import { build } from 'joi';
+import * as sdk from 'stellar-sdk';
+
 const server = new sdk.Horizon.Server('https://horizon-testnet.stellar.org');
 
-class LpCallResponse {
-    records: LiquidityPoolRecords[]
-}
-class LiquidityPoolRecords  {
-    _links: {
-        self: {
-            href: string
-        }
-    }
-    id: string;
-    paging_token: string;
-    fee_bp: number;
-    type: string;
-    total_trustlines: string;
-    total_shares: string;
-    reserves: any[];
-    last_modified_ledger: number;
-    last_modified_time: string;
-    self: any[];
-    transactions: any[];
-    operations: any[];
+class LiquidityPool {
+  _links: {};
+  id: string;
+  paging_token: string;
+  fee_bp: number;
+  type: string;
+  total_shares: string;
+  reserves: { asset: string, amount: string }[];
+  last_modified_ledger: number;
+  last_modified_time: string;
 }
 
-const testAccounts = [
-    {
-        //Issuer
-        publicKey: "GCSAMANOLBUIM5FWTAGATTSCNQDKGMNNO47H333DP4PESK7LV2KDU5N5",
-        secretKey: "SAB27TN7TRCTSOAR3RYZQ5C5XM3FDX3NJE7O7ELYMAFE4NFMGDELT2ZK"
-    },
-    {
-        //User 1 account
-        publicKey: "GAYBUBHPPOU6EQ2ESR6ZAFDRRJW7W3JQCRPVB7ATINN2LFX5QRLNR4J2",
-        secretKey: "SAMBXTVQTN5DE5OTW4NUGQNW4FQZ5TU4QII2RAYANLUSVIWVCZYGVBJ3"
-    },
-    {
-        //User 2 account
-        publicKey: "GCOWELIU2CNYAT3VS3B7SNEMDKEBZ4OQW6X3USFOMTRVY5FQRUEFIMD5",
-        secretKey: "SD3U42AJYCETBI2PXWUJRENVEVAZW7R2LD55RVUJPLJIQDFPV7RRMDDH"
-    },
-]
+// accounts
+const accounts = [
+  {   // issuer
+    publicKey: "GCGWVN2S5XKAIZPGS2Q3SWX747MGIT4WKMJD6BGROFXV4DG73ECYLUKI",
+    secretKey: "SB2MZXAWNGIOR23U7JVVQUTX4KBY7VSYU6UEKMLYE2SLH7QAOQ72YRLP"
+  },
+  {   // account 1
+    publicKey: "GAALDIAGTB2IVBBEDDH63DM24WUHSI5R5EKXA4XR25OGPRAD6SXFPIL3",
+    secretKey: "SC7H2ZUCRVNB6ASWYVD6TE6KBY5FW3CDYRGIEWR4NBHD6FP3ICZW5A3Q"
+  },
+  {   // account 2
+    publicKey: "GDQOERLYYOGW7F76WYBR5X4XLQPGZVBM5DGXOAAV33EPE6XJ7MUFMVSF",
+    secretKey: "SAMR4UNRZSIO6W7URK2ADIG6GXKX6KUWRUA4BDG4O7E7KOINTOUXDPKK"
+  },
+];
 
-class TxMaker {
-    private horizonServer: sdk.Horizon.Server;
-    private sorobanServer: sdk.SorobanRpc.Server;
-    private friendbotURI: string;
-    private routerContractAddress: string;
-    private network: string;
+const kps = accounts.map((account) => sdk.Keypair.fromSecret(account.secretKey));
 
-    constructor(
-        horizonServer: string,
-        sorobanServer: string,
-        friendbotURI: string,
-        routerContractAddress: string,
-        network: string
-    ) {
-        this.horizonServer = new sdk.Horizon.Server(horizonServer, {
-            allowHttp: true
-        });
-        this.sorobanServer = new sdk.SorobanRpc.Server(sorobanServer, {
-            allowHttp: true
-        });
-        this.friendbotURI = friendbotURI;
-        this.routerContractAddress = routerContractAddress;
-        this.network = network;
-    }
-    buildTx(source: sdk.Account, signer: sdk.Keypair, ...ops: sdk.xdr.Operation[]): sdk.Transaction {
-        let tx: sdk.TransactionBuilder = new sdk.TransactionBuilder(source, {
-            fee: sdk.BASE_FEE,
-            networkPassphrase: sdk.Networks.TESTNET,
-        });
-
-        ops.forEach((op) => tx.addOperation(op));
-
-        const txBuilt: sdk.Transaction = tx.setTimeout(30).build();
-        txBuilt.sign(signer);
-
-        return txBuilt;
-    }
-    async fundAccount(account): Promise<void> {
-        try {
-            const response = await fetch(
-                `${this.friendbotURI}${encodeURIComponent(
-                    account.publicKey,
-                )}`,
-            );
-            const responseJSON = await response.json();
-            if (responseJSON.successful) {
-                console.log("SUCCESS! You have a new account :)\n");
-            } else {
-                if (
-                    responseJSON.detail ===
-                    "createAccountAlreadyExist (AAAAAAAAAGT/////AAAAAQAAAAAAAAAA/////AAAAAA=)"
-                ) {
-                    console.log("Account already exists");
-                } else {
-                    console.error("ERROR! :(\n", responseJSON);
-                }
-            }
-        } catch (error) {
-            console.error("ERROR!", error);
-        }
-    }
-
-}
-
-const txMaker = new TxMaker(
-    "https://horizon-testnet.stellar.org",
-    "https://soroban-testnet.stellar.org",
-    "https://friendbot.stellar.org/?addr=",
-    "CA7CSMGY7KHVWETXFZXURSF7WRGIBHYZGEL6UKR3GU3C54TV36PJULOU",
-    "testnet"
-);
-
-async function fundAccounts(accounts: any[]): Promise<string>  {
-    for (const account of accounts) {
-        await txMaker.fundAccount(account);
-    }
-    return "Accounts funded";
-}
-fundAccounts(testAccounts)
-
-const USDC = new sdk.Asset("USDC", "GCSAMANOLBUIM5FWTAGATTSCNQDKGMNNO47H333DP4PESK7LV2KDU5N5");
 const XLM = sdk.Asset.native();
 
-function liquidityPoolAsset(assetA: sdk.Asset, assetB: sdk.Asset) {
-    return new sdk.LiquidityPoolAsset(assetA, assetB, sdk.LiquidityPoolFeeV18);
-}
-
-const poolShareAsset = new sdk.LiquidityPoolAsset(
-    USDC,
-    XLM,
-    sdk.LiquidityPoolFeeV18
-)
-
-
-function establishPoolTrustline(account, keyPair, poolAsset) {
-    return server.submitTransaction(
-        txMaker.buildTx(
-            account,
-            keyPair,
-            sdk.Operation.changeTrust({
-                asset: poolAsset,
-                limit: "1000000000",
-            }),
-        ),
-        )
-}
-
-establishPoolTrustline(testAccounts[0], sdk.Keypair.fromSecret(testAccounts[0].secretKey), poolShareAsset)
-//Define prices
-const XLMPrice = 0.1082;
-const USDCPrice = 1;
-
-
-//router_address()
-// Calculate liquidity
-function getLiquidity(reserve0: number, reserve1: number, price0: number, price1: number) {
-    return (reserve0 * price0) + (reserve1 * price1);
-}
-// Get liquidity pools (by default returns 10)
-/* server.liquidityPools().limit(200).call().then((response: any) => {
+(async function () {
+  // get liquidity pools and return XLM / USDC pool
+  const liquidityPool: LiquidityPool = await server.liquidityPools().limit(200).call().then((response) => {
     for (const key in response.records) {
-        const element = response.records[key]
-        //console.log(element.reserves)
-        if (element.reserves[0].asset.includes('native') && element.reserves[1].asset.includes('USD')) {
-            const liquidity = getLiquidity(parseFloat(element.reserves[0].amount), parseFloat(element.reserves[1].amount), XLMPrice, USDCPrice);
-            if(liquidity>0){
-                console.log(element);
-                console.log('Liquidity: ' + liquidity);
-                }
-            }
-        }
-    });
- */
-/* // Get liquidity pools with queries
-server.liquidityPools().limit(10).call().then((response) => {
-    console.log(response[2].reserves);
-    }); */
-
-// Get changes of liquidity pools on stream
-/* server.liquidityPools().stream({
-    onmessage: (response) => {
-        console.log(response);
+      const element = response.records[key];
+      if (element.reserves[0].asset.includes('native') && element.reserves[1].asset.includes('USDC')) {
+        return element;
+      }
     }
-}); */
+  })
+  .catch((e) => {
+    console.log('Error: ', e);
+    return null;
+  });
 
-/* 
-    Encontrar LP con XLM y USDC
-    Crear usuario, fondear con XLM, comprar USDC
-*/
+  // Create a transaction builder
+  function buildTx(source, signer, ...ops) {
+    let tx = new sdk.TransactionBuilder(source, {
+      fee: sdk.BASE_FEE,
+      networkPassphrase: sdk.Networks.TESTNET,
+    });
+    ops.forEach((op) => tx.addOperation(op));
+    const transaction = tx.setTimeout(200).build();
+    transaction.sign(signer);
+    return transaction;
+  }
+
+  /**
+   * Trusts an asset by changing the trustline of the source account.
+   * 
+   * @param server - The Horizon server instance.
+   * @param source - The source account.
+   * @param sourceKeys - The keypair of the source account.
+   * @param asset - The asset to trust.
+   */
+  const trustAsset = async (
+    server: sdk.Horizon.Server,
+    source: sdk.Account,
+    sourceKeys: sdk.Keypair,
+    asset: sdk.Asset | sdk.LiquidityPoolAsset,
+  ) => {
+    try {
+      const transaction = buildTx(
+        source,
+        sourceKeys,
+        sdk.Operation.changeTrust({
+          asset: asset,
+          source: source.accountId(),
+        })
+      );
+      server.submitTransaction(transaction).catch((e) => console.log('Error: ', e.response.data)).then((response) => console.log(response));
+      account.incrementSequenceNumber();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // Define USDC token
+  const USDCIssuer = liquidityPool.reserves[1].asset.split(':')[1];
+  const USDC = new sdk.Asset("USDC", USDCIssuer);
+
+  const accountData = await server.accounts().accountId(accounts[1].publicKey).call();
+  const account = new sdk.Account(accountData.id, accountData.sequence);
+
+  const liquidityPoolAsset = new sdk.LiquidityPoolAsset(XLM, USDC, 30)
+  // Establish trustline with USDC token & LiquidityPoolAsset
+  const tokenTrustline = await trustAsset(server, account, kps[1], USDC)
+  const LPTrustline = await trustAsset(server, account, kps[1], liquidityPoolAsset)
+  tokenTrustline
+  LPTrustline
+  
+})();
