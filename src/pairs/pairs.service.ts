@@ -219,18 +219,23 @@ export class PairsService {
    */
   async getPairAddresses() {
     const pairCounter = await this.getPairsCountFromMercury();
-    const query = buildGetPairAddressesQuery(pairCounter);
-    const variables = await this.createVariablesForPairsAddresses(pairCounter);
-    const mercuryResponse = await mercuryInstance
-      .getCustomQuery({ request: query, variables })
-      .catch((err: any) => {
-        console.log(err);
-      });
-    if (mercuryResponse && mercuryResponse.ok) {
-      const parsedEntries = pairAddressesParser(mercuryResponse.data);
-      return parsedEntries;
+    if (pairCounter > 0) {
+      const query = buildGetPairAddressesQuery(pairCounter);
+      const variables =
+        await this.createVariablesForPairsAddresses(pairCounter);
+      const mercuryResponse = await mercuryInstance
+        .getCustomQuery({ request: query, variables })
+        .catch((err: any) => {
+          console.log(err);
+        });
+      if (mercuryResponse && mercuryResponse.ok) {
+        const parsedEntries = pairAddressesParser(mercuryResponse.data);
+        return parsedEntries;
+      } else {
+        throw new Error('Error getting pair addresses');
+      }
     } else {
-      throw new Error('Error getting pair addresses');
+      return [];
     }
   }
 
@@ -255,21 +260,25 @@ export class PairsService {
    * @throws Error if Mercury request fails.
    */
   async getPairWithTokensAndReserves(addresses: string[]) {
-    const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
-    const variables =
-      await this.createVariablesForPairsTokensAndReserves(addresses);
+    if (addresses.length > 0) {
+      const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
+      const variables =
+        await this.createVariablesForPairsTokensAndReserves(addresses);
 
-    const mercuryResponse = await mercuryInstance
-      .getCustomQuery({ request: query, variables })
-      .catch((err: any) => {
-        console.log(err);
-      });
+      const mercuryResponse = await mercuryInstance
+        .getCustomQuery({ request: query, variables })
+        .catch((err: any) => {
+          console.log(err);
+        });
 
-    if (mercuryResponse && mercuryResponse.ok) {
-      const parsedEntries = pairInstanceParser(mercuryResponse.data);
-      return parsedEntries;
+      if (mercuryResponse && mercuryResponse.ok) {
+        const parsedEntries = pairInstanceParser(mercuryResponse.data);
+        return parsedEntries;
+      } else {
+        throw new Error('Error getting pair addresses');
+      }
     } else {
-      throw new Error('Error getting pair addresses');
+      return [];
     }
   }
 

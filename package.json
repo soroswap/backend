@@ -10,6 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
+    "start:migrate:dev": "prisma migrate deploy && yarn start:dev",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
     "start:migrate:prod": "prisma migrate deploy && yarn start:prod",
@@ -20,8 +21,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "create:pair": "ts-node scripts/createPair.ts",
-    "subscribe:factory": "ts-node scripts/subscribeToContract.ts",
-    "db:populate": "ts-node scripts/populateDatabase.ts"
+    "subscribe:factory": "ts-node scripts/subscribeToContract.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

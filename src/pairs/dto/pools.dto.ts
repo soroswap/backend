@@ -1,25 +1,20 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class AllPoolsRequestBodyDto {
-    @IsNotEmpty()
-    addresses: string[];
+  @IsNotEmpty()
+  addresses: string[];
 }
 export class AllPoolsResponseDto {
-    pools: liquidityPool[];
+  [key: string]: liquidityPool;
 }
 
 export class liquidityPool {
-    @IsString()
-    token0: string;
-    @IsString()
-    token1: string;
-    @IsString()
-    reserve0: string;
-    @IsString()
-    reserve1: string;
+  @IsString()
+  token0: string;
+  @IsString()
+  token1: string;
+  @IsString()
+  reserve0: string;
+  @IsString()
+  reserve1: string;
 }

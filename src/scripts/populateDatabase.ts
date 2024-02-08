@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { Mercury } from 'mercury-sdk';
-import { getFactoryAddress } from '../src/utils';
-import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../src/utils/queries';
+import { getFactoryAddress } from '../utils';
+import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../utils/queries';
 
-async function main() {
+export async function populateDatabase() {
   const mercuryInstance = new Mercury({
     backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
     graphqlEndpoint: process.env.MERCURY_GRAPHQL_ENDPOINT,
@@ -93,5 +93,3 @@ async function main() {
   console.log('\nAlso:');
   console.log(oldFactoryPairSubs, 'old Factory Pair Index Subscriptions found');
 }
-
-main();

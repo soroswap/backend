@@ -1,19 +1,19 @@
-import { ContractEntriesResponse } from "../../types";
-import { scValToJs } from "mercury-sdk";
-import * as StellarSdk from "@stellar/stellar-sdk";
+import { ContractEntriesResponse } from '../../types';
+import { scValToJs } from 'mercury-sdk';
+import * as StellarSdk from '@stellar/stellar-sdk';
 
 /**
  * Enum representing the key names for pair instance properties.
  */
 enum keyNames {
-    token0 = 0,         // address public token0;
-    token1 = 1,         // address public token1;
-    reserve0 = 2,       // uint112 private reserve0;
-    reserve1 = 3,       // uint112 private reserve1;
-    factoryAddress = 4, // address public factory; 
-    totalShares = 5,    // TotalShares;
-    pairToken = 6,      // liquidity pool token:
-    pairAddress = 7,    // PairAddress;
+  token0 = 0, // address public token0;
+  token1 = 1, // address public token1;
+  reserve0 = 2, // uint112 private reserve0;
+  reserve1 = 3, // uint112 private reserve1;
+  factoryAddress = 4, // address public factory;
+  totalShares = 5, // TotalShares;
+  pairToken = 6, // liquidity pool token:
+  pairAddress = 7, // PairAddress;
 }
 
 /**
@@ -23,25 +23,29 @@ enum keyNames {
  * @throws Error if no entries are provided or if no valueXdr is found in an entry.
  */
 export const pairInstanceParser = (data: ContractEntriesResponse) => {
-    const parsedEntries: any[] = []
+  const parsedEntries: any[] = [];
 
-    let key: keyof typeof data;
-    for (key in data) {
-        const base64Xdr = data[key].edges[0].node.valueXdr;
-        if (!base64Xdr) {
-            throw new Error("No valueXdr found in the entry")
-        }
-
-        const parsedData:any = StellarSdk.xdr.ScVal.fromXDR(base64Xdr, "base64");
-        const jsValues: any = scValToJs(parsedData)
-        const parsedValue = {};
-        if(typeof(jsValues.storage) !== "undefined"){
-            for (let i = 0; i < 4; i++) { // We only want the first 4 properties (token0, token1, reserve0, reserve1)
-                const element = jsValues.storage()[i].val()
-                Object.assign(parsedValue, {[keyNames[i]]: scValToJs(element)})
-            }
-            parsedEntries.push(parsedValue)
-        }
+  let key: keyof typeof data;
+  for (key in data) {
+    const base64Xdr = data[key].edges[0].node.valueXdr;
+    const contractId = data[key].edges[0].node.contractId;
+    if (!base64Xdr) {
+      throw new Error('No valueXdr found in the entry');
     }
-    return parsedEntries;
+
+    const parsedData: any = StellarSdk.xdr.ScVal.fromXDR(base64Xdr, 'base64');
+    const jsValues: any = scValToJs(parsedData);
+    const parsedValue = {};
+    if (typeof jsValues.storage !== 'undefined') {
+      Object.assign(parsedValue, { ['contractId']: contractId });
+      for (let i = 0; i < 4; i++) {
+        // We only want the first 4 properties (token0, token1, reserve0, reserve1)
+        const element = jsValues.storage()[i].val();
+        Object.assign(parsedValue, { [keyNames[i]]: scValToJs(element) });
+      }
+      parsedEntries.push(parsedValue);
+      // parsedEntries[contractId] = parsedValue;
+    }
+  }
+  return parsedEntries;
 };
