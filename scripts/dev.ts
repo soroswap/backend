@@ -70,7 +70,6 @@ const XLM = sdk.Asset.native();
    * @param asset - The asset to trust.
    */
   const trustAsset = async (
-    server: sdk.Horizon.Server,
     source: sdk.Account,
     sourceKeys: sdk.Keypair,
     asset: sdk.Asset | sdk.LiquidityPoolAsset,
@@ -100,9 +99,32 @@ const XLM = sdk.Asset.native();
 
   const liquidityPoolAsset = new sdk.LiquidityPoolAsset(XLM, USDC, 30)
   // Establish trustline with USDC token & LiquidityPoolAsset
-  const tokenTrustline = await trustAsset(server, account, kps[1], USDC)
-  const LPTrustline = await trustAsset(server, account, kps[1], liquidityPoolAsset)
-  tokenTrustline
-  LPTrustline
+  //const tokenTrustline = await trustAsset(account, kps[1], USDC)
+  //const LPTrustline = await trustAsset(account, kps[1], liquidityPoolAsset)
+  //console.log(accountData)
   
+  // Create function to deposit into LP
+  function addLiquidity(source, signer, poolId, maxReserveA, maxReserveB) {
+    const exactPrice = maxReserveA / maxReserveB;
+    const minPrice = exactPrice - exactPrice * 0.1;
+    const maxPrice = exactPrice + exactPrice * 0.1;
+  
+    return server.submitTransaction(
+      buildTx(
+        source,
+        signer,
+        sdk.Operation.liquidityPoolDeposit({
+          liquidityPoolId: poolId,
+          maxAmountA: maxReserveA,
+          maxAmountB: maxReserveB,
+          minPrice: minPrice.toFixed(7),
+          maxPrice: maxPrice.toFixed(7),
+        }),
+      ),
+    );
+  }
+
+  // Deposit XLM into liquidity pool
+  //console.log(liquidityPool)
+  addLiquidity(account, kps[1], liquidityPool.id, "53201", "0")
 })();
