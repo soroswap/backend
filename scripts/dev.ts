@@ -1,6 +1,7 @@
 import * as sdk from 'stellar-sdk';
 
 const server = new sdk.Horizon.Server('https://horizon-testnet.stellar.org');
+const friendbotURI = 'https://friendbot.stellar.org/?addr=';
 
 class LiquidityPool {
   _links: {};
@@ -12,6 +13,11 @@ class LiquidityPool {
   reserves: { asset: string; amount: string }[];
   last_modified_ledger: number;
   last_modified_time: string;
+}
+
+class TestAccount {
+  publicKey: string;
+  secretKey: string;
 }
 
 // accounts
@@ -33,37 +39,15 @@ const accounts = [
   },
 ];
 
-const kps = accounts.map((account) =>
-  sdk.Keypair.fromSecret(account.secretKey),
-);
-
-const XLM = sdk.Asset.native();
-
 (async function () {
-  // get liquidity pools and return XLM / USDC pool
-  const liquidityPool: LiquidityPool = await server
-    .liquidityPools()
-    .limit(200)
-    .call()
-    .then((response) => {
-      for (const key in response.records) {
-        const element = response.records[key];
-        if (
-          element.reserves[0].asset.includes('native') &&
-          element.reserves[1].asset.includes('USDC')
-        ) {
-          return element;
-        }
-      }
-    })
-    .catch((e) => {
-      console.log('Error: ', e);
-      return null;
-    });
-  console.log('🚀 « liquidityPool:', liquidityPool);
-
-  // Create a transaction builder
-  function buildTx(source, signer, ...ops) {
+  /**
+   * Builds a transaction with the given source account, signer, and operations.
+   * @param {string} source - The source account for the transaction.
+   * @param {string} signer - The signer for the transaction.
+   * @param {...sdk.Operation} ops - The operations to be added to the transaction.
+   * @returns {sdk.Transaction} - The built transaction.
+   */
+  const buildTx = (source, signer, ...ops) => {
     let tx = new sdk.TransactionBuilder(source, {
       fee: sdk.BASE_FEE,
       networkPassphrase: sdk.Networks.TESTNET,
@@ -72,7 +56,7 @@ const XLM = sdk.Asset.native();
     const transaction = tx.setTimeout(200).build();
     transaction.sign(signer);
     return transaction;
-  }
+  };
 
   /**
    * Trusts an asset by changing the trustline of the source account.
@@ -82,6 +66,8 @@ const XLM = sdk.Asset.native();
    * @param sourceKeys - The keypair of the source account.
    * @param asset - The asset to trust.
    */
+
+  // #TODO: Add support for multiple assets
   const trustAsset = async (
     source: sdk.Account,
     sourceKeys: sdk.Keypair,
@@ -106,66 +92,223 @@ const XLM = sdk.Asset.native();
     }
   };
 
-  // Define USDC token
-  const USDCIssuer = liquidityPool.reserves[1].asset.split(':')[1];
-  const USDC = new sdk.Asset('USDC', USDCIssuer);
+  /**
+   * Swaps tokens from one account to another.
+   *
+   * @param source The source account.
+   * @param signer The signer keypair.
+   * @param amount The amount to be swapped.
+   * @param sendAsset The asset to be sent.
+   * @param destAsset The asset to be received.
+   * @returns A promise that resolves to the transaction result.
+   */
+  const swapTokens = (
+    source: sdk.Account,
+    signer: sdk.Keypair,
+    ammount: string,
+    sendAsset: sdk.Asset,
+    destAsset: sdk.Asset,
+  ) => {
+    return server
+      .submitTransaction(
+        buildTx(
+          source,
+          signer,
+          sdk.Operation.pathPaymentStrictSend({
+            sendAsset: sendAsset,
+            sendAmount: ammount,
+            destination: signer.publicKey(),
+            destAsset: destAsset,
+            destMin: '1',
+            path: [sendAsset, destAsset],
+          }),
+        ),
+      )
+      .catch((e) => console.log('Error: ', e.response.data.extras));
+  };
 
+  /**
+   * Adds liquidity to a liquidity pool.
+   *
+   * @param source - The source of the transaction.
+   * @param signer - The signer of the transaction.
+   * @param poolId - The ID of the liquidity pool.
+   * @param maxReserveA - The maximum amount of reserve A to deposit.
+   * @param maxReserveB - The maximum amount of reserve B to deposit.
+   * @returns A promise that resolves to the result of the transaction submission.
+   */
+  const addLiquidity = (
+    source: sdk.Account,
+    signer: sdk.Keypair,
+    poolId: string,
+    maxReserveA: string,
+    maxReserveB: string,
+  ) => {
+    const exactPrice = Number(maxReserveA) / Number(maxReserveB);
+    const minPrice = exactPrice - exactPrice * 0.1;
+    const maxPrice = exactPrice + exactPrice * 0.1;
+
+    return server
+      .submitTransaction(
+        buildTx(
+          source,
+          signer,
+          sdk.Operation.liquidityPoolDeposit({
+            liquidityPoolId: poolId,
+            maxAmountA: maxReserveA,
+            maxAmountB: maxReserveB,
+            minPrice: minPrice.toFixed(7),
+            maxPrice: maxPrice.toFixed(7),
+          }),
+        ),
+      )
+      .catch((e) => console.log('Error: ', e.response.data.extras));
+  };
+
+  const removeLiquidity = (
+    source: sdk.Account,
+    signer: sdk.Keypair,
+    poolId: string,
+    sharesAmount: string,
+  ) => {
+    return server
+      .liquidityPools()
+      .liquidityPoolId(poolId)
+      .call()
+      .then((poolInfo) => {
+        console.log(poolInfo);
+        let totalShares = Number(poolInfo.total_shares);
+        let sharesAmountNum = Number(sharesAmount);
+        let minReserveA =
+          (sharesAmountNum / totalShares) *
+          Number(poolInfo.reserves[0].amount) *
+          0.95;
+        let minReserveB =
+          (sharesAmountNum / totalShares) *
+          Number(poolInfo.reserves[1].amount) *
+          0.95;
+
+        return server
+          .submitTransaction(
+            buildTx(
+              source,
+              signer,
+              sdk.Operation.liquidityPoolWithdraw({
+                liquidityPoolId: poolId,
+                amount: sharesAmount,
+                minAmountA: minReserveA.toFixed(7),
+                minAmountB: minReserveB.toFixed(7),
+              }),
+            ),
+          )
+          .catch((e) => console.log('Error: ', e.response.data.extras));
+      });
+  };
+
+  /**
+   * Represents a liquidity pool.
+   * @typedef {Object} LiquidityPool
+   * @property {string} id - The ID of the liquidity pool.
+   * @property {Array} reserves - The reserves of the liquidity pool.
+   * @property {string} reserves.asset - The asset of the reserve.
+   */
+  const liquidityPool: LiquidityPool = await server
+    .liquidityPools()
+    .limit(200)
+    .call()
+    .then((response) => {
+      for (const key in response.records) {
+        const element = response.records[key];
+        if (
+          element.reserves[0].asset.includes('native') &&
+          element.reserves[1].asset.includes('USDC')
+        ) {
+          return element;
+        }
+      }
+    })
+    .catch((e) => {
+      console.log('Error: ', e);
+      return null;
+    });
+
+  /**
+   * Generates a user with a random keypair.
+   * @returns {testAccount} The generated user with a private and public key.
+   */
+  const generateUser = (): TestAccount => {
+    const keypair = sdk.Keypair.random();
+    const publicKey = keypair.publicKey();
+    const secretKey = keypair.secret();
+    return {
+      secretKey,
+      publicKey,
+    };
+  };
+
+  /**
+   * Funds an account by requesting testnet lumens from the friendbot service.
+   * @param account The test account to fund.
+   * @returns A promise that resolves when the account is successfully funded.
+   */
+  const fundAccount = async (account: TestAccount) => {
+    try {
+      const response = await fetch(
+        `${friendbotURI}${encodeURIComponent(account.publicKey)}`,
+      );
+      const responseJSON = await response.json();
+      if (responseJSON.successful) {
+        console.log('SUCCESS! You have a new account :)\n');
+      } else {
+        if (
+          responseJSON.detail ===
+          'createAccountAlreadyExist (AAAAAAAAAGT/////AAAAAQAAAAAAAAAA/////AAAAAA=)'
+        ) {
+          console.log('Account already exists');
+        } else {
+          console.error('ERROR! :(\n', responseJSON);
+        }
+      }
+    } catch (error) {
+      console.error('ERROR!', error);
+      throw new Error('Error funding account');
+    }
+  };
+
+  /**
+   * Represents the account data retrieved from the server.
+   */
   const accountData = await server
     .accounts()
     .accountId(accounts[1].publicKey)
     .call();
-  console.log('🚀 « accountData:', accountData);
   const account = new sdk.Account(accountData.id, accountData.sequence);
 
-  // Swap XLM for USD
-  function swapXLM(source, signer) {
-    return server.submitTransaction(
-      buildTx(
-        source,
-        signer,
-        sdk.Operation.pathPaymentStrictSend({
-          sendAsset: XLM,
-          sendAmount: '100',
-          destination: signer.publicKey(),
-          destAsset: USDC,
-          destMin: '1',
-          path: [XLM, USDC],
-        }),
-      ),
-    );
-  }
+  /**
+   * Define assets to be used in the transactions.
+   * @type {sdk.Asset}
+   */
+  const XLM = sdk.Asset.native();
 
-  // swapXLM(account, kps[1]);
-  // console.log('🚀 « accountData:', accountData);
+  const USDCIssuer = liquidityPool.reserves[1].asset.split(':')[1];
+  const USDC = new sdk.Asset('USDC', USDCIssuer);
 
   const liquidityPoolAsset = new sdk.LiquidityPoolAsset(XLM, USDC, 30);
-  // Establish trustline with USDC token & LiquidityPoolAsset
-  //const tokenTrustline = await trustAsset(account, kps[1], USDC)
-  //const LPTrustline = await trustAsset(account, kps[1], liquidityPoolAsset)
-  //console.log(accountData)
 
-  // Create function to deposit into LP
-  function addLiquidity(source, signer, poolId, maxReserveA, maxReserveB) {
-    const exactPrice = maxReserveA / maxReserveB;
-    const minPrice = exactPrice - exactPrice * 0.1;
-    const maxPrice = exactPrice + exactPrice * 0.1;
+  /**
+   * Array of keypairs generated from the secret keys of the accounts.
+   * @type {sdk.Keypair[]}
+   */
+  const kps = accounts.map((account) =>
+    sdk.Keypair.fromSecret(account.secretKey),
+  );
 
-    return server.submitTransaction(
-      buildTx(
-        source,
-        signer,
-        sdk.Operation.liquidityPoolDeposit({
-          liquidityPoolId: poolId,
-          maxAmountA: maxReserveA,
-          maxAmountB: maxReserveB,
-          minPrice: minPrice.toFixed(7),
-          maxPrice: maxPrice.toFixed(7),
-        }),
-      ),
-    );
-  }
+  /// Set trustlines for USDC and Liquidity Pool
+  const tokenTrustline = await trustAsset(account, kps[1], USDC);
+  const LPTrustline = await trustAsset(account, kps[1], liquidityPoolAsset);
 
-  // Deposit XLM into liquidity pool
-  //console.log(liquidityPool)
-  // addLiquidity(account, kps[1], liquidityPool.id, '150', '10');
+  /// Swap XLM for USDC and add liquidity
+  await swapTokens(account, kps[1], '3000', XLM, USDC);
+  await addLiquidity(account, kps[1], liquidityPool.id, '150', '25');
+  await removeLiquidity(account, kps[1], liquidityPool.id, '0.000001');
 })();
