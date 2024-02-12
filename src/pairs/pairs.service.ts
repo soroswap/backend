@@ -49,6 +49,23 @@ export class PairsService {
   }
 
   /**
+   * Function to get the keyXdr of a Phoenix contract.
+   * @returns The keyXdr as a string.
+   */
+  getKeyXdrForPhoenixContract(address: string) {
+    const addrScVal = new sdk.Address(address).toScVal();
+    console.log('Address ScVal:', addrScVal);
+    const vecScVal = sdk.xdr.ScVal.scvVec([
+      sdk.xdr.ScVal.scvSymbol('LpVec'),
+      addrScVal,
+    ]);
+    console.log('Vec ScVal:', vecScVal);
+    const keyXdr = vecScVal.toXDR('base64');
+
+    return keyXdr;
+  }
+
+  /**
    * Subscribes to pairs in the ledger based on the provided data.
    * @param data - The data needed to subscribe to pairs.
    * @returns A promise that resolves to an array of subscribed pairs if multiple contract IDs are provided,

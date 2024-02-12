@@ -11,51 +11,54 @@ import { PrismaClient } from '@prisma/client';
 
   const prisma = new PrismaClient();
 
-  const keyXdr = 'AAAAFA==';
-
   const contractId = process.argv[2];
   console.log('Contract ID:', contractId);
 
-  const protocol = process.argv[3];
-  console.log('Protocol:', protocol);
+  const keyXdr = process.argv[3];
+  console.log('Key XDR:', keyXdr);
 
   if (!contractId) {
     console.error('Contract ID is required');
     process.exit(1);
   }
 
-  let subscriptionExists = await prisma.factorySubscription.findFirst({
-    where: {
-      contractId,
-    },
-  });
+  if (!keyXdr) {
+    console.error('Key XDR is required');
+    process.exit(1);
+  }
 
-  console.log('Subscription exists:', subscriptionExists);
+  // let subscriptionExists = await prisma.factorySubscription.findFirst({
+  //   where: {
+  //     contractId,
+  //   },
+  // });
 
-  if (!subscriptionExists) {
-    const args = {
-      contractId,
-      keyXdr,
-      durability: 'persistent',
-    };
+  // console.log('Subscription exists:', subscriptionExists);
 
-    const subscribeResponse = await mercuryInstance
-      .subscribeToLedgerEntries(args)
-      .catch((err) => {
-        console.error(err);
-      });
+  // if (!subscriptionExists) {
+  const args = {
+    contractId,
+    keyXdr,
+    durability: 'persistent',
+  };
 
-    console.log(subscribeResponse);
-
-    const subscribeStored = await prisma.factorySubscription.create({
-      data: {
-        contractId,
-        protocol: 'phoenix',
-      },
+  const subscribeResponse = await mercuryInstance
+    .subscribeToLedgerEntries(args)
+    .catch((err) => {
+      console.error(err);
     });
 
-    console.log('Subscription stored in db', subscribeStored);
-  } else {
-    console.log('Already subscribed to factory contract', contractId);
-  }
+  console.log(subscribeResponse);
+
+  // const subscribeStored = await prisma.factorySubscription.create({
+  //   data: {
+  //     contractId,
+  //     protocol: 'phoenix',
+  //   },
+  // });
+
+  // console.log('Subscription stored in db', subscribeStored);
+  // } else {
+  //   console.log('Already subscribed to factory contract', contractId);
+  // }
 })();

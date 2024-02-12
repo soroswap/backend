@@ -5,6 +5,7 @@ import {
   Get,
   Post,
   BadRequestException,
+  Param,
 } from '@nestjs/common';
 import { ApiHeader, ApiOkResponse } from '@nestjs/swagger';
 
@@ -37,6 +38,12 @@ export class PairsController {
   async getCount() {
     const counter = await this.pairsService.getPairsCountFromMercury();
     return { 'Pairs count on mercury': counter };
+  }
+
+  @Get('phoenixKeyXdr/:address')
+  getPhoenixKeyXdr(@Param('address') address: string) {
+    const keyXdr = this.pairsService.getKeyXdrForPhoenixContract(address);
+    return { 'Phoenix keyXdr': keyXdr };
   }
 
   @ApiOkResponse({
