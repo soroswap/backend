@@ -20,6 +20,7 @@ import {
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
+import { constants } from 'src/constants';
 
 const mercuryInstance = new Mercury({
   backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
@@ -46,18 +47,6 @@ export class PairsService {
     const key_xdr = vecScVal.toXDR('base64');
 
     return key_xdr;
-  }
-
-  /**
-   * Function to get the keyXdr of a Phoenix contract.
-   * @returns The keyXdr as a string.
-   */
-  getKeyXdrForPhoenixContract() {
-    const indexScVal = sdk.nativeToScVal(2, { type: 'u32' });
-
-    const keyXdr = indexScVal.toXDR('base64');
-
-    return keyXdr;
   }
 
   /**
@@ -175,7 +164,7 @@ export class PairsService {
     const mercuryResponse = await mercuryInstance
       .getCustomQuery({
         request: GET_LAST_CONTRACT_ENTRY,
-        variables: { contractId, ledgerKey: 'AAAAFA==' },
+        variables: { contractId, ledgerKey: constants.instanceStorageKeyXdr },
       })
       .catch((err: any) => {
         console.log(err);
@@ -306,7 +295,7 @@ export class PairsService {
       const newAddresses = addresses.slice(oldCounter, newCounter);
       await this.subscribeToPairs({
         contractId: newAddresses,
-        keyXdr: 'AAAAFA==',
+        keyXdr: constants.instanceStorageKeyXdr,
         durability: 'persistent',
         hydrate: true,
       });

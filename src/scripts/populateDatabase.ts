@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Mercury } from 'mercury-sdk';
 import { getFactoryAddress } from '../utils';
 import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../utils/queries';
+import { constants } from '../constants';
 
 export async function populateDatabase() {
   const mercuryInstance = new Mercury({
@@ -28,7 +29,10 @@ export async function populateDatabase() {
   for (const sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
     .edges) {
     const node = sub.node;
-    if (node.contractId === factoryAddress && node.keyXdr === 'AAAAFA==') {
+    if (
+      node.contractId === factoryAddress &&
+      node.keyXdr === constants.instanceStorageKeyXdr
+    ) {
       await prisma.factorySubscription.upsert({
         where: {
           contractId: node.contractId,
@@ -41,7 +45,7 @@ export async function populateDatabase() {
       factorySubs++;
     } else if (
       node.contractId === factoryAddress &&
-      node.keyXdr != 'AAAAFA=='
+      node.keyXdr != constants.instanceStorageKeyXdr
     ) {
       await prisma.factoryPairIndexSubscription.upsert({
         where: {
@@ -62,7 +66,7 @@ export async function populateDatabase() {
       // TODO: manage old Factory subscriptions to not get stored here
       // node.contractId !=
       //   'CBKUBVV5KBJP7Q6I5RRQAEWNQLMWRF6MMRQA7V2C3TPF2USGMSGI77NL' &&
-      node.keyXdr === 'AAAAFA=='
+      node.keyXdr === constants.instanceStorageKeyXdr
     ) {
       await prisma.pairSubscription.upsert({
         where: {

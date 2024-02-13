@@ -1,6 +1,7 @@
 import { Mercury } from 'mercury-sdk';
 import { PrismaClient } from '@prisma/client';
 import { getFactoryAddress } from '../src/utils/getFactoryAddress';
+import { constants } from '../src/constants';
 
 (async function () {
   const mercuryInstance = new Mercury({
@@ -12,7 +13,7 @@ import { getFactoryAddress } from '../src/utils/getFactoryAddress';
 
   const prisma = new PrismaClient();
 
-  const keyXdr = 'AAAAFA==';
+  const keyXdr = constants.instanceStorageKeyXdr;
 
   const contractId = await getFactoryAddress();
 

@@ -39,12 +39,6 @@ export class PairsController {
     return { 'Pairs count on mercury': counter };
   }
 
-  @Get('phoenixKeyXdr')
-  getPhoenixKeyXdr() {
-    const keyXdr = this.pairsService.getKeyXdrForPhoenixContract();
-    return { 'Phoenix keyXdr': keyXdr };
-  }
-
   @ApiOkResponse({
     description: 'return all pools',
     type: [AllPoolsResponseDto],
