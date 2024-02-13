@@ -54,12 +54,10 @@ export class PairsService {
    */
   getKeyXdrForPhoenixContract(address: string) {
     const addrScVal = new sdk.Address(address).toScVal();
-    console.log('Address ScVal:', addrScVal);
-    const vecScVal = sdk.xdr.ScVal.scvVec([
-      sdk.xdr.ScVal.scvSymbol('LpVec'),
-      addrScVal,
-    ]);
-    console.log('Vec ScVal:', vecScVal);
+    const indexScVal = sdk.nativeToScVal(Number(2), { type: 'u32' });
+
+    const vecScVal = sdk.xdr.ScVal.scvVec([indexScVal]);
+
     const keyXdr = vecScVal.toXDR('base64');
 
     return keyXdr;
