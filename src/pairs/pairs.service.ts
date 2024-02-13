@@ -52,13 +52,10 @@ export class PairsService {
    * Function to get the keyXdr of a Phoenix contract.
    * @returns The keyXdr as a string.
    */
-  getKeyXdrForPhoenixContract(address: string) {
-    const addrScVal = new sdk.Address(address).toScVal();
-    const indexScVal = sdk.nativeToScVal(Number(2), { type: 'u32' });
+  getKeyXdrForPhoenixContract() {
+    const indexScVal = sdk.nativeToScVal(2, { type: 'u32' });
 
-    const vecScVal = sdk.xdr.ScVal.scvVec([indexScVal]);
-
-    const keyXdr = vecScVal.toXDR('base64');
+    const keyXdr = indexScVal.toXDR('base64');
 
     return keyXdr;
   }
@@ -78,7 +75,7 @@ export class PairsService {
     const response = [];
     let subscribeResponse;
     for (let i = 0; i < data.contractId.length; i++) {
-      let subscriptionExists = await this.prisma.pairSubscription.findFirst({
+      const subscriptionExists = await this.prisma.pairSubscription.findFirst({
         where: {
           contractId: data.contractId[i],
           keyXdr: data.keyXdr,
@@ -99,7 +96,7 @@ export class PairsService {
             throw new Error(`Error subscribing to pair ${i}: ${err}`);
           });
 
-        let subscription = await this.prisma.pairSubscription.create({
+        const subscription = await this.prisma.pairSubscription.create({
           data: {
             contractId: data.contractId[i],
             keyXdr: data.keyXdr,
@@ -132,7 +129,7 @@ export class PairsService {
     for (let i = first; i < last; i++) {
       key_xdr = this.getKeyXdrForPair(i);
 
-      let subscriptionExists =
+      const subscriptionExists =
         await this.prisma.factoryPairIndexSubscription.findFirst({
           where: {
             contractId,
@@ -153,7 +150,7 @@ export class PairsService {
             throw new Error(`Error subscribing to pair ${i}: ${err}`);
           });
 
-        let subscription =
+        const subscription =
           await this.prisma.factoryPairIndexSubscription.create({
             data: {
               contractId,
@@ -217,7 +214,7 @@ export class PairsService {
   async createVariablesForPairsAddresses(pairCount: number) {
     const contractId = await getFactoryAddress();
 
-    let variables = { contractId };
+    const variables = { contractId };
 
     for (let i = 0; i < pairCount; i++) {
       const ledgerKey = this.getKeyXdrForPair(i);
@@ -260,7 +257,7 @@ export class PairsService {
    * @returns Object with the query variables.
    */
   async createVariablesForPairsTokensAndReserves(addresses: string[]) {
-    let variables = {};
+    const variables = {};
 
     for (let i = 0; i < addresses.length; i++) {
       variables[`contractId${i + 1}`] = addresses[i];

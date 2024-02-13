@@ -1,5 +1,5 @@
-import { Mercury } from 'mercury-sdk';
 import { PrismaClient } from '@prisma/client';
+import { Mercury } from 'mercury-sdk';
 
 (async function () {
   const mercuryInstance = new Mercury({
@@ -11,10 +11,10 @@ import { PrismaClient } from '@prisma/client';
 
   const prisma = new PrismaClient();
 
-  const contractId = process.argv[2];
+  const contractId = process.argv[2].trim();
   console.log('Contract ID:', contractId);
 
-  const keyXdr = process.argv[3];
+  const keyXdr = process.argv[3].trim();
   console.log('Key XDR:', keyXdr);
 
   if (!contractId) {

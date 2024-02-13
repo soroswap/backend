@@ -1,20 +1,19 @@
 import {
-  Query,
+  BadRequestException,
   Body,
   Controller,
   Get,
   Post,
-  BadRequestException,
-  Param,
+  Query,
 } from '@nestjs/common';
 import { ApiHeader, ApiOkResponse } from '@nestjs/swagger';
 
 import { NetworkApiQuery } from 'src/decorators';
 import { PairsService } from './pairs.service';
 
-import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
-import { AllPoolsRequestBodyDto, AllPoolsResponseDto } from './dto/pools.dto';
 import { QueryNetworkDto } from 'src/dto';
+import { AllPoolsResponseDto } from './dto/pools.dto';
+import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
 @ApiHeader({
   name: 'apiKey',
@@ -40,9 +39,9 @@ export class PairsController {
     return { 'Pairs count on mercury': counter };
   }
 
-  @Get('phoenixKeyXdr/:address')
-  getPhoenixKeyXdr(@Param('address') address: string) {
-    const keyXdr = this.pairsService.getKeyXdrForPhoenixContract(address);
+  @Get('phoenixKeyXdr')
+  getPhoenixKeyXdr() {
+    const keyXdr = this.pairsService.getKeyXdrForPhoenixContract();
     return { 'Phoenix keyXdr': keyXdr };
   }
 
