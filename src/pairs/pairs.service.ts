@@ -89,9 +89,9 @@ export class PairsService {
           data: {
             contractId: data.contractId[i],
             keyXdr: data.keyXdr,
-            protocol: 'soroswap',
-            contractType: 'pair',
-            storageType: 'instance',
+            protocol: 'SOROSWAP',
+            contractType: 'PAIR',
+            storageType: 'INSTANCE',
           },
         });
 
@@ -145,9 +145,9 @@ export class PairsService {
           data: {
             contractId,
             keyXdr: key_xdr,
-            protocol: 'soroswap',
-            contractType: 'factory',
-            storageType: 'persistent',
+            protocol: 'SOROSWAP',
+            contractType: 'FACTORY',
+            storageType: 'PERSISTENT',
           },
         });
 
@@ -193,9 +193,9 @@ export class PairsService {
     const count = await this.prisma.subscriptions.count({
       where: {
         contractId: await getFactoryAddress(),
-        protocol: 'soroswap',
-        contractType: 'factory',
-        storageType: 'persistent',
+        protocol: 'SOROSWAP',
+        contractType: 'FACTORY',
+        storageType: 'PERSISTENT',
       },
     });
 

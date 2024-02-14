@@ -5,6 +5,8 @@ export const constants = {
   phoenixInitializedKeyXdr: 'AAAAAwAAAAM=',
 };
 
+// TODO: Temporary, look for a different way to filter out factory addresses that might get confused with pair addresses since the keyXdr is the same
+// See if it can be done with Mercury
 export const factoryAddresses = {
   soroswap: [
     'CACNV57SEONNCSNTLVYTFVFQD7SJQVZZPXR2ZEPDEBA42MSWSYFNRSP7',

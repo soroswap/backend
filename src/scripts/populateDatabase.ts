@@ -45,9 +45,9 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
-          protocol: 'soroswap',
-          contractType: 'factory',
-          storageType: 'instance',
+          protocol: 'SOROSWAP',
+          contractType: 'FACTORY',
+          storageType: 'INSTANCE',
         },
       });
 
@@ -69,9 +69,9 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
-          protocol: 'phoenix',
-          contractType: 'factory',
-          storageType: 'instance',
+          protocol: 'PHOENIX',
+          contractType: 'FACTORY',
+          storageType: 'INSTANCE',
         },
       });
 
@@ -93,9 +93,9 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
-          protocol: 'soroswap',
-          contractType: 'factory',
-          storageType: 'persistent',
+          protocol: 'SOROSWAP',
+          contractType: 'FACTORY',
+          storageType: 'PERSISTENT',
         },
       });
 
@@ -117,9 +117,9 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
-          protocol: 'phoenix',
-          contractType: 'factory',
-          storageType: 'persistent config',
+          protocol: 'PHOENIX',
+          contractType: 'FACTORY',
+          storageType: 'PERSISTENT',
         },
       });
 
@@ -141,9 +141,9 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
-          protocol: 'phoenix',
-          contractType: 'factory',
-          storageType: 'persistent lpvec',
+          protocol: 'PHOENIX',
+          contractType: 'FACTORY',
+          storageType: 'PERSISTENT',
         },
       });
 
@@ -165,9 +165,9 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
-          protocol: 'phoenix',
-          contractType: 'factory',
-          storageType: 'persistent initialized',
+          protocol: 'PHOENIX',
+          contractType: 'FACTORY',
+          storageType: 'PERSISTENT',
         },
       });
 
@@ -190,8 +190,8 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
-          contractType: 'pair',
-          storageType: 'instance',
+          contractType: 'PAIR',
+          storageType: 'INSTANCE',
         },
       });
     } else {
@@ -199,14 +199,5 @@ export async function populateDatabase() {
     }
   }
 
-  // console.log('========== Total subscriptions ==========');
-  // console.log(
-  //   'DISCLAIMER: \nThere may be several subscriptions for the same factory/pair/index. Only one is stored in the database.\n',
-  // );
-  // console.log('   Factory Subscriptions: ', factorySubs);
-  // console.log('   Pair Subscriptions: ', pairSubs);
-  // console.log('   Pair Index Subscriptions: ', pairIndexSubs);
-  // console.log('\nAlso:');
-  // console.log(oldFactoryPairSubs, 'old Factory Pair Index Subscriptions found');
   console.log(others, 'other subscriptions found');
 }

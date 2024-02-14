@@ -11,9 +11,24 @@ model Subscriptions {
   id Int @id @default(autoincrement())
   contractId String
   keyXdr String
-  protocol String?
-  contractType String?
-  storageType String?
+  protocol Protocol?
+  contractType ContractType?
+  storageType StorageType?
 
   @@unique([contractId, keyXdr])
+}
+
+enum Protocol {
+  SOROSWAP
+  PHOENIX
+}
+
+enum ContractType {
+  FACTORY
+  PAIR
+}
+
+enum StorageType {
+  INSTANCE
+  PERSISTENT
 }

@@ -43,9 +43,9 @@ import { constants } from '../src/constants';
       data: {
         contractId,
         keyXdr,
-        protocol: 'soroswap',
-        contractType: 'factory',
-        storageType: 'instance',
+        protocol: 'SOROSWAP',
+        contractType: 'FACTORY',
+        storageType: 'INSTANCE',
       },
     });
 
