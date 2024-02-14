@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Mercury } from 'mercury-sdk';
 import { getFactoryAddress } from '../utils';
 import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../utils/queries';
-import { constants } from '../constants';
+import { constants, factoryAddresses } from '../constants';
 
 export async function populateDatabase() {
   const mercuryInstance = new Mercury({
@@ -13,7 +13,7 @@ export async function populateDatabase() {
   });
 
   const prisma = new PrismaClient();
-  const factoryAddress = await getFactoryAddress();
+  const soroswapFactoryAddress = await getFactoryAddress();
 
   const ledgerEntrySubscriptions = await mercuryInstance
     .getCustomQuery({ request: GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS })
@@ -22,32 +22,67 @@ export async function populateDatabase() {
       throw new Error('Error getting ledger entry subscriptions');
     });
 
-  let factorySubs = 0;
-  let pairSubs = 0;
-  let pairIndexSubs = 0;
-  let oldFactoryPairSubs = 0;
+  let others = 0;
   for (const sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
     .edges) {
     const node = sub.node;
+
+    // Case: Soroswap Factory instance
     if (
-      node.contractId === factoryAddress &&
+      factoryAddresses.soroswap.includes(node.contractId) &&
       node.keyXdr === constants.instanceStorageKeyXdr
     ) {
-      await prisma.factorySubscription.upsert({
+      console.log('\nSoroswap Factory contract:', node.contractId);
+      console.log('Key XDR instance:', node.keyXdr);
+      await prisma.subscriptions.upsert({
         where: {
-          contractId: node.contractId,
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
         },
         update: {},
         create: {
           contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'soroswap',
+          contractType: 'factory',
+          storageType: 'instance',
         },
       });
-      factorySubs++;
+
+      // Case: Phoenix Factory instance
     } else if (
-      node.contractId === factoryAddress &&
+      factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.instanceStorageKeyXdr
+    ) {
+      console.log('\nPhoenix Factory contract:', node.contractId);
+      console.log('Key XDR instance:', node.keyXdr);
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'phoenix',
+          contractType: 'factory',
+          storageType: 'instance',
+        },
+      });
+
+      // Case: Soroswap Factory Persistent
+    } else if (
+      factoryAddresses.soroswap.includes(node.contractId) &&
       node.keyXdr != constants.instanceStorageKeyXdr
     ) {
-      await prisma.factoryPairIndexSubscription.upsert({
+      console.log('\nSoroswap Factory contract:', node.contractId);
+      console.log('Key XDR persistent:', node.keyXdr);
+      await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
             contractId: node.contractId,
@@ -58,17 +93,93 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
+          protocol: 'soroswap',
+          contractType: 'factory',
+          storageType: 'persistent',
         },
       });
-      pairIndexSubs++;
+
+      // Case: Phoenix Factory Persistent (Config)
     } else if (
-      node.contractId != factoryAddress &&
-      // TODO: manage old Factory subscriptions to not get stored here
-      // node.contractId !=
-      //   'CBKUBVV5KBJP7Q6I5RRQAEWNQLMWRF6MMRQA7V2C3TPF2USGMSGI77NL' &&
+      factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.phoenixConfigKeyXdr
+    ) {
+      console.log('\nPhoenix Factory contract:', node.contractId);
+      console.log('Key XDR persistent (config):', node.keyXdr);
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'phoenix',
+          contractType: 'factory',
+          storageType: 'persistent config',
+        },
+      });
+
+      // Case: Phoenix Factory Persistent (LpVec)
+    } else if (
+      factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.phoenixLpVecKeyXdr
+    ) {
+      console.log('\nPhoenix Factory contract:', node.contractId);
+      console.log('Key XDR persistent (lpvec):', node.keyXdr);
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'phoenix',
+          contractType: 'factory',
+          storageType: 'persistent lpvec',
+        },
+      });
+
+      // Case: Phoenix Factory Persistent (Initialized)
+    } else if (
+      factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.phoenixInitializedKeyXdr
+    ) {
+      console.log('\nPhoenix Factory contract:', node.contractId);
+      console.log('Key XDR persistent (initialized):', node.keyXdr);
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'phoenix',
+          contractType: 'factory',
+          storageType: 'persistent initialized',
+        },
+      });
+
+      // Case: Pair Storage
+    } else if (
+      !factoryAddresses.soroswap.includes(node.contractId) &&
+      !factoryAddresses.phoenix.includes(node.contractId) &&
       node.keyXdr === constants.instanceStorageKeyXdr
     ) {
-      await prisma.pairSubscription.upsert({
+      console.log('\nPair contract:', node.contractId);
+      console.log('Key XDR:', node.keyXdr);
+      await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
             contractId: node.contractId,
@@ -79,21 +190,23 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
+          contractType: 'pair',
+          storageType: 'instance',
         },
       });
-      pairSubs++;
     } else {
-      oldFactoryPairSubs++;
+      others++;
     }
   }
 
-  console.log('========== Total subscriptions ==========');
-  console.log(
-    'DISCLAIMER: \nThere may be several subscriptions for the same factory/pair/index. Only one is stored in the database.\n',
-  );
-  console.log('   Factory Subscriptions: ', factorySubs);
-  console.log('   Pair Subscriptions: ', pairSubs);
-  console.log('   Pair Index Subscriptions: ', pairIndexSubs);
-  console.log('\nAlso:');
-  console.log(oldFactoryPairSubs, 'old Factory Pair Index Subscriptions found');
+  // console.log('========== Total subscriptions ==========');
+  // console.log(
+  //   'DISCLAIMER: \nThere may be several subscriptions for the same factory/pair/index. Only one is stored in the database.\n',
+  // );
+  // console.log('   Factory Subscriptions: ', factorySubs);
+  // console.log('   Pair Subscriptions: ', pairSubs);
+  // console.log('   Pair Index Subscriptions: ', pairIndexSubs);
+  // console.log('\nAlso:');
+  // console.log(oldFactoryPairSubs, 'old Factory Pair Index Subscriptions found');
+  console.log(others, 'other subscriptions found');
 }

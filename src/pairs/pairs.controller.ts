@@ -25,7 +25,7 @@ export class PairsController {
 
   @Post()
   async subscribeToPairs(@Body() body: subscribeToLedgerEntriesDto) {
-    return await this.pairsService.subscribeToPairs(body);
+    return await this.pairsService.subscribeToSoroswapPairs(body);
   }
 
   @Get('count')

@@ -7,24 +7,13 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
-model PairSubscription {
+model Subscriptions {
   id Int @id @default(autoincrement())
   contractId String
   keyXdr String
-
-  @@unique([contractId, keyXdr])
-}
-
-model FactorySubscription {
-  id Int @id @default(autoincrement())
-  contractId String @unique
-  protocol String @default("soroswap")
-}
-
-model FactoryPairIndexSubscription {
-  id Int @id @default(autoincrement())
-  contractId String
-  keyXdr String
+  protocol String?
+  contractType String?
+  storageType String?
 
   @@unique([contractId, keyXdr])
 }

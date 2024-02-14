@@ -56,7 +56,7 @@ export class PairsService {
    * or a single subscribed pair if only one contract ID is provided.
    * @throws BadRequestException if the contract ID array is empty, or if either the contract ID or keyXdr is missing.
    */
-  async subscribeToPairs(data: subscribeToLedgerEntriesDto) {
+  async subscribeToSoroswapPairs(data: subscribeToLedgerEntriesDto) {
     if (data.contractId.length === 0 || !data.contractId || !data.keyXdr) {
       throw new BadRequestException('Please double check your request body');
     }
@@ -64,7 +64,7 @@ export class PairsService {
     const response = [];
     let subscribeResponse;
     for (let i = 0; i < data.contractId.length; i++) {
-      const subscriptionExists = await this.prisma.pairSubscription.findFirst({
+      const subscriptionExists = await this.prisma.subscriptions.findFirst({
         where: {
           contractId: data.contractId[i],
           keyXdr: data.keyXdr,
@@ -85,10 +85,13 @@ export class PairsService {
             throw new Error(`Error subscribing to pair ${i}: ${err}`);
           });
 
-        const subscription = await this.prisma.pairSubscription.create({
+        const subscription = await this.prisma.subscriptions.create({
           data: {
             contractId: data.contractId[i],
             keyXdr: data.keyXdr,
+            protocol: 'soroswap',
+            contractType: 'pair',
+            storageType: 'instance',
           },
         });
 
@@ -109,7 +112,7 @@ export class PairsService {
    * @param last Index of the last pair of the group.
    * @returns Nothing.
    */
-  async subscribeToPairsOnFactory(first: number, last: number) {
+  async subscribeToPairsOnSoroswapFactory(first: number, last: number) {
     const contractId = await getFactoryAddress();
 
     let key_xdr;
@@ -118,13 +121,12 @@ export class PairsService {
     for (let i = first; i < last; i++) {
       key_xdr = this.getKeyXdrForPair(i);
 
-      const subscriptionExists =
-        await this.prisma.factoryPairIndexSubscription.findFirst({
-          where: {
-            contractId,
-            keyXdr: key_xdr,
-          },
-        });
+      const subscriptionExists = await this.prisma.subscriptions.findFirst({
+        where: {
+          contractId,
+          keyXdr: key_xdr,
+        },
+      });
 
       if (!subscriptionExists) {
         args = {
@@ -139,13 +141,15 @@ export class PairsService {
             throw new Error(`Error subscribing to pair ${i}: ${err}`);
           });
 
-        const subscription =
-          await this.prisma.factoryPairIndexSubscription.create({
-            data: {
-              contractId,
-              keyXdr: key_xdr,
-            },
-          });
+        await this.prisma.subscriptions.create({
+          data: {
+            contractId,
+            keyXdr: key_xdr,
+            protocol: 'soroswap',
+            contractType: 'factory',
+            storageType: 'persistent',
+          },
+        });
 
         console.log('Subscribed to pair index', i);
       } else {
@@ -186,9 +190,12 @@ export class PairsService {
    * @returns The count of Mercury pairs.
    */
   async getPairsCountFromDB() {
-    const count = await this.prisma.factoryPairIndexSubscription.count({
+    const count = await this.prisma.subscriptions.count({
       where: {
         contractId: await getFactoryAddress(),
+        protocol: 'soroswap',
+        contractType: 'factory',
+        storageType: 'persistent',
       },
     });
 
@@ -290,10 +297,10 @@ export class PairsService {
     console.log('Pairs count in db:', oldCounter);
     if (newCounter > oldCounter) {
       console.log('New pairs found');
-      await this.subscribeToPairsOnFactory(oldCounter, newCounter);
+      await this.subscribeToPairsOnSoroswapFactory(oldCounter, newCounter);
       const addresses = await this.getPairAddresses();
       const newAddresses = addresses.slice(oldCounter, newCounter);
-      await this.subscribeToPairs({
+      await this.subscribeToSoroswapPairs({
         contractId: newAddresses,
         keyXdr: constants.instanceStorageKeyXdr,
         durability: 'persistent',

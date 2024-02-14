@@ -17,9 +17,10 @@ import { constants } from '../src/constants';
 
   const contractId = await getFactoryAddress();
 
-  let subscriptionExists = await prisma.factorySubscription.findFirst({
+  let subscriptionExists = await prisma.subscriptions.findFirst({
     where: {
       contractId,
+      keyXdr,
     },
   });
 
@@ -38,9 +39,13 @@ import { constants } from '../src/constants';
 
     console.log(subscribeResponse);
 
-    const subscribeStored = await prisma.factorySubscription.create({
+    const subscribeStored = await prisma.subscriptions.create({
       data: {
         contractId,
+        keyXdr,
+        protocol: 'soroswap',
+        contractType: 'factory',
+        storageType: 'instance',
       },
     });
 
