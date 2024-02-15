@@ -23,6 +23,14 @@ export async function populateDatabase() {
     });
 
   let others = 0;
+  let soroswapFactoryInstance = 0;
+  let phoenixFactoryInstance = 0;
+  let soroswapFactoryPersistent = 0;
+  let phoenixFactoryConfig = 0;
+  let phoenixFactoryLpVec = 0;
+  let phoenixFactoryInitialized = 0;
+  let pairStorage = 0;
+
   for (const sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
     .edges) {
     const node = sub.node;
@@ -32,8 +40,7 @@ export async function populateDatabase() {
       factoryAddresses.soroswap.includes(node.contractId) &&
       node.keyXdr === constants.instanceStorageKeyXdr
     ) {
-      console.log('\nSoroswap Factory contract:', node.contractId);
-      console.log('Key XDR instance:', node.keyXdr);
+      soroswapFactoryInstance++;
       await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
@@ -56,8 +63,7 @@ export async function populateDatabase() {
       factoryAddresses.phoenix.includes(node.contractId) &&
       node.keyXdr === constants.instanceStorageKeyXdr
     ) {
-      console.log('\nPhoenix Factory contract:', node.contractId);
-      console.log('Key XDR instance:', node.keyXdr);
+      phoenixFactoryInstance++;
       await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
@@ -80,8 +86,7 @@ export async function populateDatabase() {
       factoryAddresses.soroswap.includes(node.contractId) &&
       node.keyXdr != constants.instanceStorageKeyXdr
     ) {
-      console.log('\nSoroswap Factory contract:', node.contractId);
-      console.log('Key XDR persistent:', node.keyXdr);
+      soroswapFactoryPersistent++;
       await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
@@ -104,8 +109,7 @@ export async function populateDatabase() {
       factoryAddresses.phoenix.includes(node.contractId) &&
       node.keyXdr === constants.phoenixConfigKeyXdr
     ) {
-      console.log('\nPhoenix Factory contract:', node.contractId);
-      console.log('Key XDR persistent (config):', node.keyXdr);
+      phoenixFactoryConfig++;
       await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
@@ -128,8 +132,7 @@ export async function populateDatabase() {
       factoryAddresses.phoenix.includes(node.contractId) &&
       node.keyXdr === constants.phoenixLpVecKeyXdr
     ) {
-      console.log('\nPhoenix Factory contract:', node.contractId);
-      console.log('Key XDR persistent (lpvec):', node.keyXdr);
+      phoenixFactoryLpVec++;
       await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
@@ -152,8 +155,7 @@ export async function populateDatabase() {
       factoryAddresses.phoenix.includes(node.contractId) &&
       node.keyXdr === constants.phoenixInitializedKeyXdr
     ) {
-      console.log('\nPhoenix Factory contract:', node.contractId);
-      console.log('Key XDR persistent (initialized):', node.keyXdr);
+      phoenixFactoryInitialized++;
       await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
@@ -177,8 +179,7 @@ export async function populateDatabase() {
       !factoryAddresses.phoenix.includes(node.contractId) &&
       node.keyXdr === constants.instanceStorageKeyXdr
     ) {
-      console.log('\nPair contract:', node.contractId);
-      console.log('Key XDR:', node.keyXdr);
+      pairStorage++;
       await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
@@ -199,5 +200,30 @@ export async function populateDatabase() {
     }
   }
 
-  console.log(others, 'other subscriptions found');
+  // console.log(
+  //   'Soroswap Factory Instance Subscriptions:',
+  //   soroswapFactoryInstance,
+  // );
+  // console.log(
+  //   'Phoenix Factory Instance Subscriptions:',
+  //   phoenixFactoryInstance,
+  // );
+  // console.log(
+  //   'Soroswap Factory Persistent Subscriptions:',
+  //   soroswapFactoryPersistent,
+  // );
+  // console.log(
+  //   'Phoenix Factory Persistent (Config) Subscriptions:',
+  //   phoenixFactoryConfig,
+  // );
+  // console.log(
+  //   'Phoenix Factory Persistent (LpVec) Subscriptions:',
+  //   phoenixFactoryLpVec,
+  // );
+  // console.log(
+  //   'Phoenix Factory Persistent (Initialized) Subscriptions:',
+  //   phoenixFactoryInitialized,
+  // );
+  // console.log('Pair Storage Subscriptions:', pairStorage);
+  // console.log('Other Subscriptions:', others);
 }

@@ -13,7 +13,9 @@ import { getFactoryAddress } from 'src/utils';
 import {
   factoryInstanceParser,
   pairAddressesParser,
-  pairInstanceParser,
+  soroswapPairInstanceParser,
+  phoenixPairInstanceParser,
+  phoenixFactoryLpVecParser,
 } from 'src/utils/parsers';
 import {
   GET_LAST_CONTRACT_ENTRY,
@@ -38,7 +40,7 @@ export class PairsService {
    * @param pairIndex Index of the pair in the PairAddressesNIndexed attribute of the Factory contract.
    * @returns The keyXdr of the pair as a string.
    */
-  getKeyXdrForPair(pairIndex: number) {
+  getKeyXdrForSoroswapPair(pairIndex: number) {
     const indexScVal = sdk.nativeToScVal(Number(pairIndex), { type: 'u32' });
     const vecScVal = sdk.xdr.ScVal.scvVec([
       sdk.xdr.ScVal.scvSymbol('PairAddressesNIndexed'),
@@ -116,10 +118,9 @@ export class PairsService {
     const contractId = await getFactoryAddress();
 
     let key_xdr;
-    let subscribeResponse;
     let args;
     for (let i = first; i < last; i++) {
-      key_xdr = this.getKeyXdrForPair(i);
+      key_xdr = this.getKeyXdrForSoroswapPair(i);
 
       const subscriptionExists = await this.prisma.subscriptions.findFirst({
         where: {
@@ -135,11 +136,9 @@ export class PairsService {
           durability: 'persistent',
         };
 
-        subscribeResponse = await mercuryInstance
-          .subscribeToLedgerEntries(args)
-          .catch((err) => {
-            throw new Error(`Error subscribing to pair ${i}: ${err}`);
-          });
+        await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
+          throw new Error(`Error subscribing to pair ${i}: ${err}`);
+        });
 
         await this.prisma.subscriptions.create({
           data: {
@@ -163,7 +162,7 @@ export class PairsService {
    * @param mercuryInstance The Mercury instance to be used to make the request.
    * @returns The total number of pairs created by the factory.
    */
-  async getPairsCountFromMercury() {
+  async getSoroswapPairsCountFromMercury() {
     const contractId = await getFactoryAddress();
     const mercuryResponse = await mercuryInstance
       .getCustomQuery({
@@ -189,7 +188,7 @@ export class PairsService {
    * Retrieves the count of Mercury pairs.
    * @returns The count of Mercury pairs.
    */
-  async getPairsCountFromDB() {
+  async getSoroswapPairsCountFromDB() {
     const count = await this.prisma.subscriptions.count({
       where: {
         contractId: await getFactoryAddress(),
@@ -213,7 +212,7 @@ export class PairsService {
     const variables = { contractId };
 
     for (let i = 0; i < pairCount; i++) {
-      const ledgerKey = this.getKeyXdrForPair(i);
+      const ledgerKey = this.getKeyXdrForSoroswapPair(i);
       variables[`ledgerKey${i + 1}`] = ledgerKey;
     }
 
@@ -225,8 +224,8 @@ export class PairsService {
    * @returns Array with pair addresses.
    * @throws Error if Mercury request fails.
    */
-  async getPairAddresses() {
-    const pairCounter = await this.getPairsCountFromMercury();
+  async getSoroswapPairAddresses() {
+    const pairCounter = await this.getSoroswapPairsCountFromMercury();
     if (pairCounter > 0) {
       const query = buildGetPairAddressesQuery(pairCounter);
       const variables =
@@ -244,6 +243,70 @@ export class PairsService {
       }
     } else {
       return [];
+    }
+  }
+
+  async getPhoenixPairAddresses(contractId: string) {
+    const mercuryResponse = await mercuryInstance
+      .getCustomQuery({
+        request: GET_LAST_CONTRACT_ENTRY,
+        variables: { contractId, ledgerKey: constants.phoenixLpVecKeyXdr },
+      })
+      .catch((err: any) => {
+        console.log(err);
+        throw new ServiceUnavailableException(
+          'Error getting Phoenix pairs addresses',
+        );
+      });
+    if (mercuryResponse && mercuryResponse.ok) {
+      const pasedLpVec = phoenixFactoryLpVecParser(mercuryResponse.data);
+      if (pasedLpVec.length === 0) {
+        return 0;
+      }
+      return pasedLpVec;
+    } else {
+      throw new ServiceUnavailableException(
+        'Error getting Phoenix pairs addresses',
+      );
+    }
+  }
+
+  async subscribeToPhoenixPair(contractId: string) {
+    const keyXdr = constants.instanceStorageKeyXdr;
+    const subscriptionExists = await this.prisma.subscriptions.findFirst({
+      where: {
+        contractId,
+        keyXdr,
+      },
+    });
+
+    if (!subscriptionExists) {
+      const args = {
+        contractId,
+        keyXdr,
+        durability: 'persistent',
+      };
+
+      await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
+        console.error(err);
+      });
+
+      console.log('Subscribed to Phoenix pair with contract ID', contractId);
+
+      const subscribeStored = await this.prisma.subscriptions.create({
+        data: {
+          contractId,
+          keyXdr,
+          protocol: 'PHOENIX',
+          contractType: 'PAIR',
+          storageType: 'INSTANCE',
+        },
+      });
+
+      console.log('Subscription stored in db', subscribeStored);
+      return subscribeStored;
+    } else {
+      console.log('Already subscribed to factory contract', contractId);
     }
   }
 
@@ -267,7 +330,7 @@ export class PairsService {
    * @returns Array with pair objects.
    * @throws Error if Mercury request fails.
    */
-  async getPairWithTokensAndReserves(addresses: string[]) {
+  async getSoroswapPairsWithTokensAndReserves(addresses: string[]) {
     if (addresses.length > 0) {
       const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
       const variables =
@@ -280,25 +343,90 @@ export class PairsService {
         });
 
       if (mercuryResponse && mercuryResponse.ok) {
-        const parsedEntries = pairInstanceParser(mercuryResponse.data);
+        const parsedEntries = soroswapPairInstanceParser(mercuryResponse.data);
         return parsedEntries;
       } else {
-        throw new Error('Error getting pair addresses');
+        throw new Error('Error getting pairs');
       }
     } else {
       return [];
     }
   }
 
-  async getAllPools() {
-    const newCounter = await this.getPairsCountFromMercury();
-    console.log('Pairs count in Mercury:', newCounter);
-    const oldCounter = await this.getPairsCountFromDB();
-    console.log('Pairs count in db:', oldCounter);
+  async getPhoenixPairsWithTokensAndReserves(addresses: string[]) {
+    if (addresses.length > 0) {
+      const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
+      const variables =
+        await this.createVariablesForPairsTokensAndReserves(addresses);
+
+      const mercuryResponse = await mercuryInstance
+        .getCustomQuery({ request: query, variables })
+        .catch((err: any) => {
+          console.log(err);
+        });
+
+      if (mercuryResponse && mercuryResponse.ok) {
+        const parsedEntries = phoenixPairInstanceParser(mercuryResponse.data);
+        return parsedEntries;
+      } else {
+        throw new Error('Error getting pairs');
+      }
+    } else {
+      return [];
+    }
+  }
+
+  async checkAndSubscribeToPhoenixPairs(pairAddresses: string[]) {
+    if (pairAddresses.length > 0) {
+      for (const pairAddress of pairAddresses) {
+        let subscriptionExists = await this.prisma.subscriptions.findFirst({
+          where: {
+            contractId: pairAddress,
+            keyXdr: constants.instanceStorageKeyXdr,
+          },
+        });
+
+        if (!subscriptionExists) {
+          console.log('New Phoenix pair found');
+          await this.subscribeToPhoenixPair(pairAddress);
+        }
+      }
+    }
+  }
+
+  async getAllPhoenixPools() {
+    const phoenixFactories = await this.prisma.subscriptions.findMany({
+      where: {
+        protocol: 'PHOENIX',
+        contractType: 'FACTORY',
+        storageType: 'INSTANCE',
+      },
+    });
+
+    let phoenixPairs = [];
+    console.log('Fetching Phoenix Liquidity Pools...');
+    for (const factory of phoenixFactories) {
+      const pairAddresses = await this.getPhoenixPairAddresses(
+        factory.contractId,
+      );
+      await this.checkAndSubscribeToPhoenixPairs(pairAddresses);
+      const pairs =
+        await this.getPhoenixPairsWithTokensAndReserves(pairAddresses);
+      phoenixPairs = phoenixPairs.concat(pairs);
+    }
+    console.log('done');
+    console.log(phoenixPairs.length, 'Phoenix pairs');
+    return phoenixPairs;
+  }
+
+  async getAllSoroswapPools() {
+    const newCounter = await this.getSoroswapPairsCountFromMercury();
+    const oldCounter = await this.getSoroswapPairsCountFromDB();
+    let addresses;
     if (newCounter > oldCounter) {
-      console.log('New pairs found');
+      console.log('New Soroswap pairs found');
       await this.subscribeToPairsOnSoroswapFactory(oldCounter, newCounter);
-      const addresses = await this.getPairAddresses();
+      addresses = await this.getSoroswapPairAddresses();
       const newAddresses = addresses.slice(oldCounter, newCounter);
       await this.subscribeToSoroswapPairs({
         contractId: newAddresses,
@@ -306,17 +434,19 @@ export class PairsService {
         durability: 'persistent',
         hydrate: true,
       });
-      console.log('Fetching Liquidity pools...');
-      const pools = await this.getPairWithTokensAndReserves(addresses);
-      console.log('done');
-      return pools;
     } else {
-      console.log('No new pairs found');
-      const addresses = await this.getPairAddresses();
-      console.log('Fetching Liquidity pools...');
-      const pools = await this.getPairWithTokensAndReserves(addresses);
-      console.log('done');
-      return pools;
+      addresses = await this.getSoroswapPairAddresses();
     }
+    console.log('Fetching Soroswap Liquidity Pools...');
+    const pools = await this.getSoroswapPairsWithTokensAndReserves(addresses);
+    console.log('done');
+    console.log(pools.length, 'Soroswap pairs');
+    return pools;
+  }
+
+  async getAllPools() {
+    const soroswapPools = await this.getAllSoroswapPools();
+    const phoenixPools = await this.getAllPhoenixPools();
+    return soroswapPools.concat(phoenixPools);
   }
 }

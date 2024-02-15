@@ -30,12 +30,12 @@ export class PairsController {
 
   @Get('count')
   async getPairsCount() {
-    return await this.pairsService.getPairsCountFromDB();
+    return await this.pairsService.getSoroswapPairsCountFromDB();
   }
 
   @Get('mercury-count')
   async getCount() {
-    const counter = await this.pairsService.getPairsCountFromMercury();
+    const counter = await this.pairsService.getSoroswapPairsCountFromMercury();
     return { 'Pairs count on mercury': counter };
   }
 
