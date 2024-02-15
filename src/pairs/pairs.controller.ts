@@ -47,7 +47,7 @@ export class PairsController {
   @Post('/all')
   getAllPools(@Query() query: QueryNetworkDto) {
     if (query.network === 'testnet') {
-      return this.pairsService.getAllPools();
+      return this.pairsService.getAllPools(query.protocols);
     } else {
       throw new BadRequestException('Network not supported');
     }

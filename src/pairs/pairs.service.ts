@@ -414,8 +414,7 @@ export class PairsService {
         await this.getPhoenixPairsWithTokensAndReserves(pairAddresses);
       phoenixPairs = phoenixPairs.concat(pairs);
     }
-    console.log('done');
-    console.log(phoenixPairs.length, 'Phoenix pairs');
+    console.log(phoenixPairs.length, 'Phoenix pairs\n');
     return phoenixPairs;
   }
 
@@ -439,14 +438,23 @@ export class PairsService {
     }
     console.log('Fetching Soroswap Liquidity Pools...');
     const pools = await this.getSoroswapPairsWithTokensAndReserves(addresses);
-    console.log('done');
-    console.log(pools.length, 'Soroswap pairs');
+    console.log(pools.length, 'Soroswap pairs\n');
     return pools;
   }
 
-  async getAllPools() {
-    const soroswapPools = await this.getAllSoroswapPools();
-    const phoenixPools = await this.getAllPhoenixPools();
-    return soroswapPools.concat(phoenixPools);
+  async getAllPools(protocols: string[]) {
+    let allPools = [];
+    console.log('Protocols:', protocols);
+    if (protocols.includes('soroswap') || protocols.length === 0) {
+      const soroswapPools = await this.getAllSoroswapPools();
+      allPools = allPools.concat(soroswapPools);
+    }
+    if (protocols.includes('phoenix') || protocols.length === 0) {
+      const phoenixPools = await this.getAllPhoenixPools();
+      allPools = allPools.concat(phoenixPools);
+    }
+
+    console.log('Done fetching pools');
+    return allPools;
   }
 }
