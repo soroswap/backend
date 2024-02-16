@@ -1,6 +1,7 @@
 import { Mercury } from 'mercury-sdk';
 import { PrismaClient } from '@prisma/client';
 import { getFactoryAddress } from '../src/utils/getFactoryAddress';
+import { constants } from '../src/constants';
 
 (async function () {
   const mercuryInstance = new Mercury({
@@ -12,13 +13,14 @@ import { getFactoryAddress } from '../src/utils/getFactoryAddress';
 
   const prisma = new PrismaClient();
 
-  const keyXdr = 'AAAAFA==';
+  const keyXdr = constants.instanceStorageKeyXdr;
 
   const contractId = await getFactoryAddress();
 
-  let subscriptionExists = await prisma.factorySubscription.findFirst({
+  let subscriptionExists = await prisma.subscriptions.findFirst({
     where: {
       contractId,
+      keyXdr,
     },
   });
 
@@ -37,9 +39,13 @@ import { getFactoryAddress } from '../src/utils/getFactoryAddress';
 
     console.log(subscribeResponse);
 
-    const subscribeStored = await prisma.factorySubscription.create({
+    const subscribeStored = await prisma.subscriptions.create({
       data: {
         contractId,
+        keyXdr,
+        protocol: 'SOROSWAP',
+        contractType: 'FACTORY',
+        storageType: 'INSTANCE',
       },
     });
 

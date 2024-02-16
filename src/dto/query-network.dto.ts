@@ -5,4 +5,7 @@ export class QueryNetworkDto {
   @IsOptional()
   @IsEnum(Network)
   network: Network = Network.Testnet;
+
+  @IsOptional()
+  protocols: string[] = [];
 }

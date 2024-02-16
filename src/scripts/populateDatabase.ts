@@ -1,9 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { Mercury } from 'mercury-sdk';
+import { constants, factoryAddresses } from '../constants';
 import { getFactoryAddress } from '../utils';
 import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../utils/queries';
 
 export async function populateDatabase() {
+  Logger.log('Updating database...', 'MERCURY');
   const mercuryInstance = new Mercury({
     backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
     graphqlEndpoint: process.env.MERCURY_GRAPHQL_ENDPOINT,
@@ -12,7 +16,7 @@ export async function populateDatabase() {
   });
 
   const prisma = new PrismaClient();
-  const factoryAddress = await getFactoryAddress();
+  const soroswapFactoryAddress = await getFactoryAddress();
 
   const ledgerEntrySubscriptions = await mercuryInstance
     .getCustomQuery({ request: GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS })
@@ -21,29 +25,26 @@ export async function populateDatabase() {
       throw new Error('Error getting ledger entry subscriptions');
     });
 
-  let factorySubs = 0;
-  let pairSubs = 0;
-  let pairIndexSubs = 0;
-  let oldFactoryPairSubs = 0;
+  let others = 0;
+  let soroswapFactoryInstance = 0;
+  let phoenixFactoryInstance = 0;
+  let soroswapFactoryPersistent = 0;
+  let phoenixFactoryConfig = 0;
+  let phoenixFactoryLpVec = 0;
+  let phoenixFactoryInitialized = 0;
+  let pairStorage = 0;
+
   for (const sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
     .edges) {
     const node = sub.node;
-    if (node.contractId === factoryAddress && node.keyXdr === 'AAAAFA==') {
-      await prisma.factorySubscription.upsert({
-        where: {
-          contractId: node.contractId,
-        },
-        update: {},
-        create: {
-          contractId: node.contractId,
-        },
-      });
-      factorySubs++;
-    } else if (
-      node.contractId === factoryAddress &&
-      node.keyXdr != 'AAAAFA=='
+
+    // Case: Soroswap Factory instance
+    if (
+      factoryAddresses.soroswap.includes(node.contractId) &&
+      node.keyXdr === constants.instanceStorageKeyXdr
     ) {
-      await prisma.factoryPairIndexSubscription.upsert({
+      soroswapFactoryInstance++;
+      await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
             contractId: node.contractId,
@@ -54,17 +55,19 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
+          protocol: 'SOROSWAP',
+          contractType: 'FACTORY',
+          storageType: 'INSTANCE',
         },
       });
-      pairIndexSubs++;
+
+      // Case: Phoenix Factory instance
     } else if (
-      node.contractId != factoryAddress &&
-      // TODO: manage old Factory subscriptions to not get stored here
-      // node.contractId !=
-      //   'CBKUBVV5KBJP7Q6I5RRQAEWNQLMWRF6MMRQA7V2C3TPF2USGMSGI77NL' &&
-      node.keyXdr === 'AAAAFA=='
+      factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.instanceStorageKeyXdr
     ) {
-      await prisma.pairSubscription.upsert({
+      phoenixFactoryInstance++;
+      await prisma.subscriptions.upsert({
         where: {
           contractId_keyXdr: {
             contractId: node.contractId,
@@ -75,21 +78,155 @@ export async function populateDatabase() {
         create: {
           contractId: node.contractId,
           keyXdr: node.keyXdr,
+          protocol: 'PHOENIX',
+          contractType: 'FACTORY',
+          storageType: 'INSTANCE',
         },
       });
-      pairSubs++;
+
+      // Case: Soroswap Factory Persistent
+    } else if (
+      factoryAddresses.soroswap.includes(node.contractId) &&
+      node.keyXdr != constants.instanceStorageKeyXdr
+    ) {
+      soroswapFactoryPersistent++;
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'SOROSWAP',
+          contractType: 'FACTORY',
+          storageType: 'PERSISTENT',
+        },
+      });
+
+      // Case: Phoenix Factory Persistent (Config)
+    } else if (
+      factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.phoenixConfigKeyXdr
+    ) {
+      phoenixFactoryConfig++;
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'PHOENIX',
+          contractType: 'FACTORY',
+          storageType: 'PERSISTENT',
+        },
+      });
+
+      // Case: Phoenix Factory Persistent (LpVec)
+    } else if (
+      factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.phoenixLpVecKeyXdr
+    ) {
+      phoenixFactoryLpVec++;
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'PHOENIX',
+          contractType: 'FACTORY',
+          storageType: 'PERSISTENT',
+        },
+      });
+
+      // Case: Phoenix Factory Persistent (Initialized)
+    } else if (
+      factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.phoenixInitializedKeyXdr
+    ) {
+      phoenixFactoryInitialized++;
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          protocol: 'PHOENIX',
+          contractType: 'FACTORY',
+          storageType: 'PERSISTENT',
+        },
+      });
+
+      // Case: Pair Storage
+    } else if (
+      !factoryAddresses.soroswap.includes(node.contractId) &&
+      !factoryAddresses.phoenix.includes(node.contractId) &&
+      node.keyXdr === constants.instanceStorageKeyXdr
+    ) {
+      pairStorage++;
+      await prisma.subscriptions.upsert({
+        where: {
+          contractId_keyXdr: {
+            contractId: node.contractId,
+            keyXdr: node.keyXdr,
+          },
+        },
+        update: {},
+        create: {
+          contractId: node.contractId,
+          keyXdr: node.keyXdr,
+          contractType: 'PAIR',
+          storageType: 'INSTANCE',
+        },
+      });
     } else {
-      oldFactoryPairSubs++;
+      others++;
     }
   }
-
-  console.log('========== Total subscriptions ==========');
-  console.log(
-    'DISCLAIMER: \nThere may be several subscriptions for the same factory/pair/index. Only one is stored in the database.\n',
-  );
-  console.log('   Factory Subscriptions: ', factorySubs);
-  console.log('   Pair Subscriptions: ', pairSubs);
-  console.log('   Pair Index Subscriptions: ', pairIndexSubs);
-  console.log('\nAlso:');
-  console.log(oldFactoryPairSubs, 'old Factory Pair Index Subscriptions found');
+  Logger.log('Database up to date!', 'MERCURY');
+  // console.log(
+  //   'Soroswap Factory Instance Subscriptions:',
+  //   soroswapFactoryInstance,
+  // );
+  // console.log(
+  //   'Phoenix Factory Instance Subscriptions:',
+  //   phoenixFactoryInstance,
+  // );
+  // console.log(
+  //   'Soroswap Factory Persistent Subscriptions:',
+  //   soroswapFactoryPersistent,
+  // );
+  // console.log(
+  //   'Phoenix Factory Persistent (Config) Subscriptions:',
+  //   phoenixFactoryConfig,
+  // );
+  // console.log(
+  //   'Phoenix Factory Persistent (LpVec) Subscriptions:',
+  //   phoenixFactoryLpVec,
+  // );
+  // console.log(
+  //   'Phoenix Factory Persistent (Initialized) Subscriptions:',
+  //   phoenixFactoryInitialized,
+  // );
+  // console.log('Pair Storage Subscriptions:', pairStorage);
+  // console.log('Other Subscriptions:', others);
 }

@@ -1,19 +1,19 @@
 import {
-  Query,
+  BadRequestException,
   Body,
   Controller,
   Get,
   Post,
-  BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { ApiHeader, ApiOkResponse } from '@nestjs/swagger';
 
 import { NetworkApiQuery } from 'src/decorators';
 import { PairsService } from './pairs.service';
 
-import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
-import { AllPoolsRequestBodyDto, AllPoolsResponseDto } from './dto/pools.dto';
 import { QueryNetworkDto } from 'src/dto';
+import { AllPoolsResponseDto } from './dto/pools.dto';
+import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
 @ApiHeader({
   name: 'apiKey',
@@ -25,17 +25,17 @@ export class PairsController {
 
   @Post()
   async subscribeToPairs(@Body() body: subscribeToLedgerEntriesDto) {
-    return await this.pairsService.subscribeToPairs(body);
+    return await this.pairsService.subscribeToSoroswapPairs(body);
   }
 
   @Get('count')
   async getPairsCount() {
-    return await this.pairsService.getPairsCountFromDB();
+    return await this.pairsService.getSoroswapPairsCountFromDB();
   }
 
   @Get('mercury-count')
   async getCount() {
-    const counter = await this.pairsService.getPairsCountFromMercury();
+    const counter = await this.pairsService.getSoroswapPairsCountFromMercury();
     return { 'Pairs count on mercury': counter };
   }
 
@@ -47,7 +47,7 @@ export class PairsController {
   @Post('/all')
   getAllPools(@Query() query: QueryNetworkDto) {
     if (query.network === 'testnet') {
-      return this.pairsService.getAllPools();
+      return this.pairsService.getAllPools(query.protocols);
     } else {
       throw new BadRequestException('Network not supported');
     }
