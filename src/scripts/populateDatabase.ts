@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { Mercury } from 'mercury-sdk';
+import { constants, factoryAddresses } from '../constants';
 import { getFactoryAddress } from '../utils';
 import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../utils/queries';
-import { constants, factoryAddresses } from '../constants';
 
 export async function populateDatabase() {
+  Logger.log('Updating database...', 'MERCURY');
   const mercuryInstance = new Mercury({
     backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
     graphqlEndpoint: process.env.MERCURY_GRAPHQL_ENDPOINT,
@@ -199,7 +202,7 @@ export async function populateDatabase() {
       others++;
     }
   }
-
+  Logger.log('Database up to date!', 'MERCURY');
   // console.log(
   //   'Soroswap Factory Instance Subscriptions:',
   //   soroswapFactoryInstance,
