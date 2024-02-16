@@ -37,6 +37,7 @@ export const soroswapPairInstanceParser = (data: ContractEntriesResponse) => {
     const jsValues: any = scValToJs(parsedData);
     const parsedValue = {};
     if (typeof jsValues.storage !== 'undefined') {
+      Object.assign(parsedValue, { ['protocol']: 'soroswap' });
       Object.assign(parsedValue, { ['contractId']: contractId });
       for (let i = 0; i < 4; i++) {
         // We only want the first 4 properties (token0, token1, reserve0, reserve1)
@@ -72,6 +73,7 @@ export const phoenixPairInstanceParser = (data: ContractEntriesResponse) => {
     const jsValues: any = scValToJs(parsedData);
     const parsedValue = {};
     if (typeof jsValues.storage !== 'undefined') {
+      Object.assign(parsedValue, { ['protocol']: 'phoenix' });
       Object.assign(parsedValue, { ['contractId']: contractId });
       Object.assign(parsedValue, {
         ['token0']: scValToJs(jsValues.storage()[4].val())['token_a'],
