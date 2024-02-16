@@ -46,12 +46,17 @@ export const soroswapPairInstanceParser = (data: ContractEntriesResponse) => {
         });
       }
       parsedEntries.push(parsedValue);
-      // parsedEntries[contractId] = parsedValue;
     }
   }
   return parsedEntries;
 };
 
+/**
+ * Parses the contract entries response and returns an array of parsed Phoenix pair entries.
+ * @param data The contract entries response object.
+ * @returns An array of parsed pair entries.
+ * @throws Error if no entries are provided or if no valueXdr is found in an entry.
+ */
 export const phoenixPairInstanceParser = (data: ContractEntriesResponse) => {
   const parsedEntries: any[] = [];
 

@@ -246,6 +246,12 @@ export class PairsService {
     }
   }
 
+  /**
+   * Function to get array with the addresses of al pairs created by the Phoenix Factory Contract.
+   * @param contractId The contract ID of the Phoenix Factory Contract.
+   * @returns Array with pair addresses.
+   * @throws Error if Mercury request fails.
+   */
   async getPhoenixPairAddresses(contractId: string) {
     const mercuryResponse = await mercuryInstance
       .getCustomQuery({
@@ -271,6 +277,12 @@ export class PairsService {
     }
   }
 
+  /**
+   * Function to get subscribe to a specific Phoenix pair contract.
+   * @param contractId The contract ID of the Phoenix pair contract.
+   * @returns Array with pair addresses.
+   * @throws Error if Mercury request fails.
+   */
   async subscribeToPhoenixPair(contractId: string) {
     const keyXdr = constants.instanceStorageKeyXdr;
     const subscriptionExists = await this.prisma.subscriptions.findFirst({
@@ -327,6 +339,7 @@ export class PairsService {
 
   /**
    * Function to get array with all subscribed pairs, along with their tokens and reserves.
+   * @param addresses Array with the addresses of the pairs to be retrieved.
    * @returns Array with pair objects.
    * @throws Error if Mercury request fails.
    */
@@ -353,6 +366,12 @@ export class PairsService {
     }
   }
 
+  /**
+   * Function to get array with all subscribed Phoenix pairs, along with their tokens and reserves.
+   * @param addresses Array with the addresses of the pairs to be retrieved.
+   * @returns Array with pair objects.
+   * @throws Error if Mercury request fails.
+   */
   async getPhoenixPairsWithTokensAndReserves(addresses: string[]) {
     if (addresses.length > 0) {
       const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
@@ -376,6 +395,11 @@ export class PairsService {
     }
   }
 
+  /**
+   * Function to check if a pair is already subscribed to and, if not, subscribe to it.
+   * @param pairAddresses Array with the addresses of the pairs to be checked.
+   * @returns Nothing.
+   */
   async checkAndSubscribeToPhoenixPairs(pairAddresses: string[]) {
     if (pairAddresses.length > 0) {
       for (const pairAddress of pairAddresses) {
@@ -394,6 +418,9 @@ export class PairsService {
     }
   }
 
+  /** Function to get all Phoenix liquidity pools with its details.
+   * @returns Array with all Phoenix liquidity pools.
+   */
   async getAllPhoenixPools() {
     const phoenixFactories = await this.prisma.subscriptions.findMany({
       where: {
@@ -418,6 +445,9 @@ export class PairsService {
     return phoenixPairs;
   }
 
+  /** Function to get all Soroswap liquidity pools with its details.
+   * @returns Array with all Soroswap liquidity pools.
+   */
   async getAllSoroswapPools() {
     const newCounter = await this.getSoroswapPairsCountFromMercury();
     const oldCounter = await this.getSoroswapPairsCountFromDB();
@@ -442,6 +472,10 @@ export class PairsService {
     return pools;
   }
 
+  /** Function to get all liquidity pools from the specified protocols.
+   * @param protocols Array with the protocols to be fetched. If none is provided, all protocols will be fetched.
+   * @returns Array with all liquidity pools.
+   */
   async getAllPools(protocols: string[]) {
     let allPools = [];
     console.log('Protocols:', protocols);
