@@ -22,9 +22,14 @@ import { QueryNetworkDto } from 'src/dto';
 export class InfoController {
   constructor(private readonly infoService: InfoService) {}
 
-  @Get('/tvl/:token')
-  async getHello(@Param('token') token: string) {
+  @Get('/tokenTvl/:token')
+  async getTokenTvl(@Param('token') token: string) {
     return await this.infoService.getTokenTvl(token);
+  }
+
+  @Get('/poolTvl/:pool')
+  async getPoolTvl(@Param('pool') pool: string) {
+    return await this.infoService.getPoolTvl(pool);
   }
 
   @Get('/price/xlm/:token')
@@ -39,6 +44,6 @@ export class InfoController {
 
   @Get('/price/:token')
   async getTokenPrice(@Param('token') token: string) {
-    return await this.infoService.getTokenPrice(token);
+    return await this.infoService.getTokenPriceInUSD(token);
   }
 }

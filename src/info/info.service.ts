@@ -50,8 +50,8 @@ export class InfoService {
       }
     }
 
-    const tokenPrice = await this.getTokenPrice(token);
-    const tvlInUsd = tvl * tokenPrice;
+    const tokenPrice = await this.getTokenPriceInUSD(token);
+    const tvlInUsd = tvl * tokenPrice.price;
     return { token, tvl, tvlInUsd };
   }
 
@@ -71,7 +71,7 @@ export class InfoService {
 
     if (filteredPools.length === 0) {
       if (token === xlm.address) {
-        return 1;
+        return { token, price: 1 };
       }
       throw new ServiceUnavailableException(
         'No liquidity pool for this token and XLM',
@@ -80,9 +80,11 @@ export class InfoService {
 
     const tokenXlmPool = filteredPools[0];
     if (tokenXlmPool.token0 === xlm.address) {
-      return tokenXlmPool.reserve0 / tokenXlmPool.reserve1;
+      const price = tokenXlmPool.reserve0 / tokenXlmPool.reserve1;
+      return { token, price };
     } else {
-      return tokenXlmPool.reserve1 / tokenXlmPool.reserve0;
+      const price = tokenXlmPool.reserve1 / tokenXlmPool.reserve0;
+      return { token, price };
     }
   }
 
@@ -108,18 +110,42 @@ export class InfoService {
 
     const tokenXlmPool = filteredPools[0];
     if (tokenXlmPool.token0 === usdc.address) {
-      return tokenXlmPool.reserve0 / tokenXlmPool.reserve1;
+      const price = tokenXlmPool.reserve0 / tokenXlmPool.reserve1;
+      return { token, price };
     } else {
-      return tokenXlmPool.reserve1 / tokenXlmPool.reserve0;
+      const price = tokenXlmPool.reserve1 / tokenXlmPool.reserve0;
+      return { token, price };
     }
   }
 
-  async getTokenPrice(token: string) {
+  async getTokenPriceInUSD(token: string) {
     const currentXlmValueInUsd = await axios.get(
       'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
     );
 
     const valueInXlm = await this.getTokenPriceInXLM(token);
-    return valueInXlm * currentXlmValueInUsd.data.stellar.usd;
+    const price = valueInXlm.price * currentXlmValueInUsd.data.stellar.usd;
+    return { token, price };
+  }
+
+  async getPoolTvl(poolAddress: string) {
+    const pools = await this.pairs.getAllPools(['soroswap']);
+
+    const filteredPools = pools.filter(
+      (pool) => pool.contractId == poolAddress,
+    );
+
+    if (filteredPools.length === 0) {
+      throw new ServiceUnavailableException('Liquidity pool not found');
+    }
+
+    const pool = filteredPools[0];
+
+    const token0Price = await this.getTokenPriceInUSD(pool.token0);
+    const token1Price = await this.getTokenPriceInUSD(pool.token1);
+    const tvl =
+      parseFloat(pool.reserve0) * token0Price.price +
+      parseFloat(pool.reserve1) * token1Price.price;
+    return { pool: poolAddress, tvl };
   }
 }
