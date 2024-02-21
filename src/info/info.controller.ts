@@ -5,6 +5,7 @@ import {
   Get,
   Post,
   Query,
+  Param,
 } from '@nestjs/common';
 import { ApiHeader, ApiOkResponse } from '@nestjs/swagger';
 
@@ -21,8 +22,8 @@ import { QueryNetworkDto } from 'src/dto';
 export class InfoController {
   constructor(private readonly infoService: InfoService) {}
 
-  @Get('hello')
-  getHello() {
-    return 'Hello world';
+  @Get('/tvl/:token')
+  async getHello(@Param('token') token: string) {
+    return await this.infoService.getTokenTvl(token);
   }
 }
