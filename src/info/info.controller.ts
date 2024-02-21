@@ -26,4 +26,19 @@ export class InfoController {
   async getHello(@Param('token') token: string) {
     return await this.infoService.getTokenTvl(token);
   }
+
+  @Get('/price/xlm/:token')
+  async getTokenPriceInXLM(@Param('token') token: string) {
+    return await this.infoService.getTokenPriceInXLM(token);
+  }
+
+  @Get('/price/usdc/:token')
+  async getTokenPriceInUSDC(@Param('token') token: string) {
+    return await this.infoService.getTokenPriceInUSDC(token);
+  }
+
+  @Get('/price/:token')
+  async getTokenPrice(@Param('token') token: string) {
+    return await this.infoService.getTokenPrice(token);
+  }
 }
