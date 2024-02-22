@@ -10,6 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
 import { constants } from 'src/constants';
+import { SubscribeToLedgerEntriesInterface } from 'src/types';
 import { getFactoryAddress } from 'src/utils';
 import {
   factoryInstanceParser,
@@ -136,25 +137,27 @@ export class PairsService {
           durability: 'persistent',
         };
 
-        try {
-          console.log(mercuryInstance, 'mercuryInstance');
+        const subscriptionResponse =
+          await mercuryInstance.subscribeToLedgerEntries(args);
 
-          const ledgerTest =
-            await mercuryInstance.subscribeToLedgerEntries(args);
-          console.log('🚀 « ledgerTest:', ledgerTest);
-
-          await this.prisma.subscriptions.create({
-            data: {
-              contractId,
-              keyXdr: key_xdr,
-              protocol: 'SOROSWAP',
-              contractType: 'FACTORY',
-              storageType: 'PERSISTENT',
-            },
-          });
-        } catch (error) {
-          console.error('Error subscribing to pair index', error);
+        if (
+          (subscriptionResponse as SubscribeToLedgerEntriesInterface).ok !==
+          true
+        ) {
+          throw new Error(
+            `Error subscribing to pair ${i}: ${(subscriptionResponse as SubscribeToLedgerEntriesInterface).error}`,
+          );
         }
+
+        await this.prisma.subscriptions.create({
+          data: {
+            contractId,
+            keyXdr: key_xdr,
+            protocol: 'SOROSWAP',
+            contractType: 'FACTORY',
+            storageType: 'PERSISTENT',
+          },
+        });
 
         console.log('Subscribed to pair index', i);
       } else {
