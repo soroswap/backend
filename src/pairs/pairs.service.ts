@@ -84,8 +84,12 @@ export class PairsService {
 
         subscribeResponse = await mercuryInstance
           .subscribeToLedgerEntries(args)
-          .catch((err) => {
-            throw new Error(`Error subscribing to pair ${i}: ${err}`);
+          .then((response) => {
+            if (!(response as SubscribeToLedgerEntriesInterface).ok) {
+              throw new Error(
+                `Error subscribing to pair ${i}: ${(response as SubscribeToLedgerEntriesInterface).error}`,
+              );
+            }
           });
 
         const subscription = await this.prisma.subscriptions.create({
@@ -137,17 +141,15 @@ export class PairsService {
           durability: 'persistent',
         };
 
-        const subscriptionResponse =
-          await mercuryInstance.subscribeToLedgerEntries(args);
-
-        if (
-          (subscriptionResponse as SubscribeToLedgerEntriesInterface).ok !==
-          true
-        ) {
-          throw new Error(
-            `Error subscribing to pair ${i}: ${(subscriptionResponse as SubscribeToLedgerEntriesInterface).error}`,
-          );
-        }
+        await mercuryInstance
+          .subscribeToLedgerEntries(args)
+          .then((response) => {
+            if (!(response as SubscribeToLedgerEntriesInterface).ok) {
+              throw new Error(
+                `Error subscribing to factory for pair index ${i}: ${(response as SubscribeToLedgerEntriesInterface).error}`,
+              );
+            }
+          });
 
         await this.prisma.subscriptions.create({
           data: {
@@ -308,8 +310,12 @@ export class PairsService {
         durability: 'persistent',
       };
 
-      await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
-        console.error(err);
+      await mercuryInstance.subscribeToLedgerEntries(args).then((response) => {
+        if (!(response as SubscribeToLedgerEntriesInterface).ok) {
+          throw new Error(
+            `Error subscribing to phoenix pair: ${(response as SubscribeToLedgerEntriesInterface).error}`,
+          );
+        }
       });
 
       console.log('Subscribed to Phoenix pair with contract ID', contractId);
