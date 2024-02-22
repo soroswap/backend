@@ -148,4 +148,19 @@ export class InfoService {
       parseFloat(pool.reserve1) * token1Price.price;
     return { pool: poolAddress, tvl };
   }
+
+  async getPoolShares(poolAddress: string) {
+    const pools = await this.pairs.getAllPools(['soroswap']);
+
+    const filteredPools = pools.filter(
+      (pool) => pool.contractId == poolAddress,
+    );
+
+    if (filteredPools.length === 0) {
+      throw new ServiceUnavailableException('Liquidity pool not found');
+    }
+
+    const pool = filteredPools[0];
+    return { pool: poolAddress, shares: pool.totalShares };
+  }
 }

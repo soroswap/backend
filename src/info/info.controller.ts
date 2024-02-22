@@ -46,4 +46,9 @@ export class InfoController {
   async getTokenPrice(@Param('token') token: string) {
     return await this.infoService.getTokenPriceInUSD(token);
   }
+
+  @Get('liquidity/:pool')
+  async getLiquidity(@Param('pool') pool: string) {
+    return await this.infoService.getPoolShares(pool);
+  }
 }
