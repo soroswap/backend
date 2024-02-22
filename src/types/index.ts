@@ -1,5 +1,7 @@
-export { Network } from './network';
 export {
   ContractEntriesResponse,
   ParsedFactoryInstanceEntry,
+  SubscribeToLedgerEntriesInterface
 } from './getContractEntries';
+export { Network } from './network';
+
