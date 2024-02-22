@@ -137,6 +137,8 @@ export class PairsService {
         };
 
         try {
+          console.log(mercuryInstance, 'mercuryInstance');
+
           const ledgerTest =
             await mercuryInstance.subscribeToLedgerEntries(args);
           console.log('🚀 « ledgerTest:', ledgerTest);
