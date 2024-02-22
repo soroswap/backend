@@ -9,20 +9,20 @@ import * as sdk from 'stellar-sdk';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
+import { constants } from 'src/constants';
 import { getFactoryAddress } from 'src/utils';
 import {
   factoryInstanceParser,
   pairAddressesParser,
-  soroswapPairInstanceParser,
-  phoenixPairInstanceParser,
   phoenixFactoryLpVecParser,
+  phoenixPairInstanceParser,
+  soroswapPairInstanceParser,
 } from 'src/utils/parsers';
 import {
   GET_LAST_CONTRACT_ENTRY,
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
-import { constants } from 'src/constants';
 
 const mercuryInstance = new Mercury({
   backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
@@ -136,19 +136,23 @@ export class PairsService {
           durability: 'persistent',
         };
 
-        await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
-          throw new Error(`Error subscribing to pair ${i}: ${err}`);
-        });
+        try {
+          const ledgerTest =
+            await mercuryInstance.subscribeToLedgerEntries(args);
+          console.log('🚀 « ledgerTest:', ledgerTest);
 
-        await this.prisma.subscriptions.create({
-          data: {
-            contractId,
-            keyXdr: key_xdr,
-            protocol: 'SOROSWAP',
-            contractType: 'FACTORY',
-            storageType: 'PERSISTENT',
-          },
-        });
+          await this.prisma.subscriptions.create({
+            data: {
+              contractId,
+              keyXdr: key_xdr,
+              protocol: 'SOROSWAP',
+              contractType: 'FACTORY',
+              storageType: 'PERSISTENT',
+            },
+          });
+        } catch (error) {
+          console.error('Error subscribing to pair index', error);
+        }
 
         console.log('Subscribed to pair index', i);
       } else {
@@ -403,7 +407,7 @@ export class PairsService {
   async checkAndSubscribeToPhoenixPairs(pairAddresses: string[]) {
     if (pairAddresses.length > 0) {
       for (const pairAddress of pairAddresses) {
-        let subscriptionExists = await this.prisma.subscriptions.findFirst({
+        const subscriptionExists = await this.prisma.subscriptions.findFirst({
           where: {
             contractId: pairAddress,
             keyXdr: constants.instanceStorageKeyXdr,
