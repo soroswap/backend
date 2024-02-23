@@ -32,6 +32,11 @@ export class InfoController {
     return await this.infoService.getPoolTvl(pool);
   }
 
+  @Get('/soroswapTvl')
+  async getSoroswapTvl() {
+    return await this.infoService.getSoroswapTvl();
+  }
+
   @Get('/price/xlm/:token')
   async getTokenPriceInXLM(@Param('token') token: string) {
     return await this.infoService.getTokenPriceInXLM(token);

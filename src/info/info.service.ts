@@ -24,8 +24,13 @@ export class InfoService {
     private pairs: PairsService,
   ) {}
 
-  async getTokenTvl(token: string) {
-    const pools = await this.pairs.getAllPools(['soroswap']);
+  async getTokenTvl(token: string, inheritedPools?: any[]) {
+    let pools;
+    if (!inheritedPools) {
+      pools = await this.pairs.getAllPools(['soroswap']);
+    } else {
+      pools = inheritedPools;
+    }
 
     const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
     const testnetTokens = data.find(
@@ -39,7 +44,7 @@ export class InfoService {
       (pool) => pool.token0 == token || pool.token1 == token,
     );
     let tvl = 0;
-    console.log('Looking for', tokenSymbol, 'in Soroswap pools');
+    console.log('\nLooking for', tokenSymbol, 'in Soroswap pools');
     for (const pool of filteredPools) {
       if (pool.token0 == token) {
         console.log('Pool', pool.contractId, 'has', pool.reserve0, tokenSymbol);
@@ -49,14 +54,18 @@ export class InfoService {
         tvl += parseFloat(pool.reserve1);
       }
     }
-
-    const tokenPrice = await this.getTokenPriceInUSD(token);
+    const tokenPrice = await this.getTokenPriceInUSD(token, undefined, pools);
     const tvlInUsd = tvl * tokenPrice.price;
     return { token, tvl, tvlInUsd };
   }
 
-  async getTokenPriceInXLM(token: string) {
-    const pools = await this.pairs.getAllPools(['soroswap']);
+  async getTokenPriceInXLM(token: string, inheritedPools?: any[]) {
+    let pools;
+    if (!inheritedPools) {
+      pools = await this.pairs.getAllPools(['soroswap']);
+    } else {
+      pools = inheritedPools;
+    }
     const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
     const testnetTokens = data.find(
       (item) => item.network === 'testnet',
@@ -73,8 +82,9 @@ export class InfoService {
       if (token === xlm.address) {
         return { token, price: 1 };
       }
+      console.log('Token:', token);
       throw new ServiceUnavailableException(
-        'No liquidity pool for this token and XLM',
+        `No liquidity pool for this token and XLM`,
       );
     }
 
@@ -88,8 +98,13 @@ export class InfoService {
     }
   }
 
-  async getTokenPriceInUSDC(token: string) {
-    const pools = await this.pairs.getAllPools(['soroswap']);
+  async getTokenPriceInUSDC(token: string, inheritedPools?: any[]) {
+    let pools;
+    if (!inheritedPools) {
+      pools = await this.pairs.getAllPools(['soroswap']);
+    } else {
+      pools = inheritedPools;
+    }
     const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
     const testnetTokens = data.find(
       (item) => item.network === 'testnet',
@@ -118,18 +133,35 @@ export class InfoService {
     }
   }
 
-  async getTokenPriceInUSD(token: string) {
-    const currentXlmValueInUsd = await axios.get(
-      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-    );
-
-    const valueInXlm = await this.getTokenPriceInXLM(token);
-    const price = valueInXlm.price * currentXlmValueInUsd.data.stellar.usd;
+  async getTokenPriceInUSD(
+    token: string,
+    xlmValue?: number,
+    inheritedPools?: any[],
+  ) {
+    const valueInXlm = await this.getTokenPriceInXLM(token, inheritedPools);
+    let price;
+    if (!xlmValue) {
+      const currentXlmValueInUsd = await axios.get(
+        'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
+      );
+      price = valueInXlm.price * currentXlmValueInUsd.data.stellar.usd;
+    } else {
+      price = valueInXlm.price * xlmValue;
+    }
     return { token, price };
   }
 
-  async getPoolTvl(poolAddress: string) {
-    const pools = await this.pairs.getAllPools(['soroswap']);
+  async getPoolTvl(
+    poolAddress: string,
+    xlmValue?: number,
+    inheritedPools?: any[],
+  ) {
+    let pools;
+    if (!inheritedPools) {
+      pools = await this.pairs.getAllPools(['soroswap']);
+    } else {
+      pools = inheritedPools;
+    }
 
     const filteredPools = pools.filter(
       (pool) => pool.contractId == poolAddress,
@@ -140,17 +172,29 @@ export class InfoService {
     }
 
     const pool = filteredPools[0];
-
-    const token0Price = await this.getTokenPriceInUSD(pool.token0);
-    const token1Price = await this.getTokenPriceInUSD(pool.token1);
+    const token0Price = await this.getTokenPriceInUSD(
+      pool.token0,
+      xlmValue,
+      pools,
+    );
+    const token1Price = await this.getTokenPriceInUSD(
+      pool.token1,
+      xlmValue,
+      pools,
+    );
     const tvl =
       parseFloat(pool.reserve0) * token0Price.price +
       parseFloat(pool.reserve1) * token1Price.price;
     return { pool: poolAddress, tvl };
   }
 
-  async getPoolShares(poolAddress: string) {
-    const pools = await this.pairs.getAllPools(['soroswap']);
+  async getPoolShares(poolAddress: string, inheritedPools?: any[]) {
+    let pools;
+    if (!inheritedPools) {
+      pools = await this.pairs.getAllPools(['soroswap']);
+    } else {
+      pools = inheritedPools;
+    }
 
     const filteredPools = pools.filter(
       (pool) => pool.contractId == poolAddress,
@@ -162,5 +206,30 @@ export class InfoService {
 
     const pool = filteredPools[0];
     return { pool: poolAddress, shares: pool.totalShares };
+  }
+
+  async getSoroswapTvl() {
+    const pools = await this.pairs.getAllPools(['soroswap']);
+    const xlmValue = await axios.get(
+      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
+    );
+
+    let tvl = 0;
+    for (const pool of pools) {
+      const token0Price = await this.getTokenPriceInUSD(
+        pool.token0,
+        xlmValue.data.stellar.usd,
+        pools,
+      );
+      const token1Price = await this.getTokenPriceInUSD(
+        pool.token1,
+        xlmValue.data.stellar.usd,
+        pools,
+      );
+      tvl +=
+        parseFloat(pool.reserve0) * token0Price.price +
+        parseFloat(pool.reserve1) * token1Price.price;
+    }
+    return tvl;
   }
 }
