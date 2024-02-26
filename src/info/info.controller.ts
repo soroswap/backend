@@ -59,6 +59,11 @@ export class InfoController {
 
   @Get('/volume24h')
   async getSoroswapVolume24h() {
-    return this.infoService.getSoroswapVolume24h();
+    return this.infoService.getSoroswapVolume(1);
+  }
+
+  @Get('/tokenVolume24h/:token')
+  async getTokenVolume24h(@Param('token') token: string) {
+    return this.infoService.getTokenVolume(token, 1);
   }
 }

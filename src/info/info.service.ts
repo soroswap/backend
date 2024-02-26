@@ -248,7 +248,7 @@ export class InfoService {
     return parsedContractEvents;
   }
 
-  async getSoroswapVolume24h() {
+  async getSoroswapVolume(lastNDays: number) {
     const contractEvents = await this.getContractEvents();
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
@@ -260,7 +260,7 @@ export class InfoService {
     let volume = 0;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
-      if (timeDiff < oneDay * 7) {
+      if (timeDiff < oneDay * lastNDays) {
         if (event.topic2 == 'add' || event.topic2 == 'remove') {
           const tokenPriceA = await this.getTokenPriceInUSD(
             event.token_a,
@@ -286,6 +286,53 @@ export class InfoService {
         }
       }
     }
+    return volume;
+  }
+
+  async getTokenVolume(token: string, lastNDays: number) {
+    const contractEvents = await this.getContractEvents();
+    const now = new Date();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const pools = await this.pairs.getAllPools(['soroswap']);
+    const xlmValue = await axios.get(
+      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
+    );
+
+    let volume = 0;
+    for (const event of contractEvents) {
+      const timeDiff = now.getTime() - event.closeTime.getTime();
+      if (timeDiff < oneDay * lastNDays) {
+        if (event.topic2 == 'add' || event.topic2 == 'remove') {
+          if (event.token_a == token) {
+            const tokenPrice = await this.getTokenPriceInUSD(
+              event.token_a,
+              xlmValue.data.stellar.usd,
+              pools,
+            );
+            volume += parseFloat(event.amount_a) * tokenPrice.price;
+          } else if (event.token_b == token) {
+            const tokenPrice = await this.getTokenPriceInUSD(
+              event.token_b,
+              xlmValue.data.stellar.usd,
+              pools,
+            );
+            volume += parseFloat(event.amount_b) * tokenPrice.price;
+          }
+        } else if (event.topic2 == 'swap') {
+          for (let i = 0; i < event.amounts.length; i++) {
+            if (event.path[i] == token) {
+              const tokenPrice = await this.getTokenPriceInUSD(
+                event.path[i],
+                xlmValue.data.stellar.usd,
+                pools,
+              );
+              volume += parseFloat(event.amounts[i]) * tokenPrice.price;
+            }
+          }
+        }
+      }
+    }
+
     return volume;
   }
 }
