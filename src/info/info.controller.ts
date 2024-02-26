@@ -56,4 +56,9 @@ export class InfoController {
   async getLiquidity(@Param('pool') pool: string) {
     return await this.infoService.getPoolShares(pool);
   }
+
+  @Get('/volume24h')
+  async getSoroswapVolume24h() {
+    return this.infoService.getSoroswapVolume24h();
+  }
 }

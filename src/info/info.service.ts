@@ -9,6 +9,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { PairsService } from 'src/pairs/pairs.service';
 import { constants } from 'src/constants';
 import axios from 'axios';
+import { getRouterAddress } from 'src/utils/getRouterAddress';
+import { getContractEventsParser } from 'src/utils/parsers/getContractEventsParser';
+import { GET_CONTRACT_EVENTS } from 'src/utils/queries';
 
 const mercuryInstance = new Mercury({
   backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
@@ -82,7 +85,6 @@ export class InfoService {
       if (token === xlm.address) {
         return { token, price: 1 };
       }
-      console.log('Token:', token);
       throw new ServiceUnavailableException(
         `No liquidity pool for this token and XLM`,
       );
@@ -231,5 +233,59 @@ export class InfoService {
         parseFloat(pool.reserve1) * token1Price.price;
     }
     return tvl;
+  }
+
+  async getContractEvents() {
+    const routerAddress = await getRouterAddress();
+
+    const mercuryResponse = await mercuryInstance.getCustomQuery({
+      request: GET_CONTRACT_EVENTS,
+      variables: { contractId: routerAddress },
+    });
+
+    const parsedContractEvents = getContractEventsParser(mercuryResponse.data!);
+
+    return parsedContractEvents;
+  }
+
+  async getSoroswapVolume24h() {
+    const contractEvents = await this.getContractEvents();
+    const now = new Date();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const pools = await this.pairs.getAllPools(['soroswap']);
+    const xlmValue = await axios.get(
+      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
+    );
+
+    let volume = 0;
+    for (const event of contractEvents) {
+      const timeDiff = now.getTime() - event.closeTime.getTime();
+      if (timeDiff < oneDay * 7) {
+        if (event.topic2 == 'add' || event.topic2 == 'remove') {
+          const tokenPriceA = await this.getTokenPriceInUSD(
+            event.token_a,
+            xlmValue.data.stellar.usd,
+            pools,
+          );
+          const tokenPriceB = await this.getTokenPriceInUSD(
+            event.token_b,
+            xlmValue.data.stellar.usd,
+            pools,
+          );
+          volume += parseFloat(event.amount_a) * tokenPriceA.price;
+          volume += parseFloat(event.amount_b) * tokenPriceB.price;
+        } else if (event.topic2 == 'swap') {
+          for (let i = 0; i < event.amounts.length; i++) {
+            const tokenPrice = await this.getTokenPriceInUSD(
+              event.path[i],
+              xlmValue.data.stellar.usd,
+              pools,
+            );
+            volume += parseFloat(event.amounts[i]) * tokenPrice.price;
+          }
+        }
+      }
+    }
+    return volume;
   }
 }

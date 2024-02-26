@@ -3,3 +3,4 @@ export {
   ContractEntriesResponse,
   ParsedFactoryInstanceEntry,
 } from './getContractEntries';
+export { GetContractEventsResponse } from './getContractEvents';
