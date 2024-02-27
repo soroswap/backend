@@ -335,4 +335,51 @@ export class InfoService {
 
     return volume;
   }
+
+  async getPoolVolume(pool: string, lastNDays: number) {
+    const contractEvents = await this.getContractEvents();
+    const now = new Date();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const pools = await this.pairs.getAllPools(['soroswap']);
+    const poolData = pools.find((item) => item.contractId == pool);
+    const xlmValue = await axios.get(
+      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
+    );
+
+    let volume = 0;
+    for (const event of contractEvents) {
+      const timeDiff = now.getTime() - event.closeTime.getTime();
+      if (timeDiff < oneDay * lastNDays && event.pair && event.pair == pool) {
+        if (event.topic2 == 'add' || event.topic2 == 'remove') {
+          const tokenPriceA = await this.getTokenPriceInUSD(
+            event.token_a,
+            xlmValue.data.stellar.usd,
+            pools,
+          );
+          const tokenPriceB = await this.getTokenPriceInUSD(
+            event.token_b,
+            xlmValue.data.stellar.usd,
+            pools,
+          );
+          volume += parseFloat(event.amount_a) * tokenPriceA.price;
+          volume += parseFloat(event.amount_b) * tokenPriceB.price;
+        } else if (event.topic2 == 'swap') {
+          for (let i = 0; i < event.amounts.length; i++) {
+            if (
+              event.path[i] == poolData.token0 ||
+              event.path[i] == poolData.token1
+            ) {
+              const tokenPrice = await this.getTokenPriceInUSD(
+                event.path[i],
+                xlmValue.data.stellar.usd,
+                pools,
+              );
+              volume += parseFloat(event.amounts[i]) * tokenPrice.price;
+            }
+          }
+        }
+      }
+    }
+    return volume;
+  }
 }

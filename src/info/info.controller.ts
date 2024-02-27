@@ -66,4 +66,24 @@ export class InfoController {
   async getTokenVolume24h(@Param('token') token: string) {
     return this.infoService.getTokenVolume(token, 1);
   }
+
+  @Get('/tokenVolume7d/:token')
+  async getTokenVolume7d(@Param('token') token: string) {
+    return this.infoService.getTokenVolume(token, 7);
+  }
+
+  @Get('/poolVolume24h/:pool')
+  async getPoolVolume24h(@Param('pool') pool: string) {
+    return this.infoService.getPoolVolume(pool, 1);
+  }
+
+  @Get('/poolVolume7d/:pool')
+  async getPoolVolume7d(@Param('pool') pool: string) {
+    return this.infoService.getPoolVolume(pool, 7);
+  }
+
+  @Get('/contractEvents')
+  async getContractEvents() {
+    return this.infoService.getContractEvents();
+  }
 }
