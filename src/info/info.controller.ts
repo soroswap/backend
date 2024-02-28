@@ -86,4 +86,19 @@ export class InfoController {
   async getContractEvents() {
     return this.infoService.getContractEvents();
   }
+
+  @Get('/soroswapFees24h')
+  async getSoroswapFees24h() {
+    return this.infoService.getSoroswapFees(1);
+  }
+
+  @Get('/poolFees24h/:pool')
+  async getPoolFees24h(@Param('pool') pool: string) {
+    return this.infoService.getPoolFees(pool, 1);
+  }
+
+  @Get('/poolFeesYearly/:pool')
+  async getPoolFeesYearly(@Param('pool') pool: string) {
+    return this.infoService.getPoolFees(pool, 365);
+  }
 }

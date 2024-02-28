@@ -51,10 +51,10 @@ export class InfoService {
     for (const pool of filteredPools) {
       if (pool.token0 == token) {
         console.log('Pool', pool.contractId, 'has', pool.reserve0, tokenSymbol);
-        tvl += parseFloat(pool.reserve0);
+        tvl += parseFloat(pool.reserve0) / 10 ** 7;
       } else if (pool.token1 == token) {
         console.log('Pool', pool.contractId, 'has', pool.reserve1, tokenSymbol);
-        tvl += parseFloat(pool.reserve1);
+        tvl += parseFloat(pool.reserve1) / 10 ** 7;
       }
     }
     const tokenPrice = await this.getTokenPriceInUSD(token, undefined, pools);
@@ -185,8 +185,8 @@ export class InfoService {
       pools,
     );
     const tvl =
-      parseFloat(pool.reserve0) * token0Price.price +
-      parseFloat(pool.reserve1) * token1Price.price;
+      parseFloat(pool.reserve0) * token0Price.price * 10 ** -7 +
+      parseFloat(pool.reserve1) * token1Price.price * 10 ** -7;
     return { pool: poolAddress, tvl };
   }
 
@@ -229,8 +229,8 @@ export class InfoService {
         pools,
       );
       tvl +=
-        parseFloat(pool.reserve0) * token0Price.price +
-        parseFloat(pool.reserve1) * token1Price.price;
+        parseFloat(pool.reserve0) * 10 ** -7 * token0Price.price +
+        parseFloat(pool.reserve1) * 10 ** -7 * token1Price.price;
     }
     return tvl;
   }
@@ -272,8 +272,8 @@ export class InfoService {
             xlmValue.data.stellar.usd,
             pools,
           );
-          volume += parseFloat(event.amount_a) * tokenPriceA.price;
-          volume += parseFloat(event.amount_b) * tokenPriceB.price;
+          volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
+          volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPriceB.price;
         } else if (event.topic2 == 'swap') {
           for (let i = 0; i < event.amounts.length; i++) {
             const tokenPrice = await this.getTokenPriceInUSD(
@@ -281,7 +281,8 @@ export class InfoService {
               xlmValue.data.stellar.usd,
               pools,
             );
-            volume += parseFloat(event.amounts[i]) * tokenPrice.price;
+            volume +=
+              parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
           }
         }
       }
@@ -309,14 +310,14 @@ export class InfoService {
               xlmValue.data.stellar.usd,
               pools,
             );
-            volume += parseFloat(event.amount_a) * tokenPrice.price;
+            volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPrice.price;
           } else if (event.token_b == token) {
             const tokenPrice = await this.getTokenPriceInUSD(
               event.token_b,
               xlmValue.data.stellar.usd,
               pools,
             );
-            volume += parseFloat(event.amount_b) * tokenPrice.price;
+            volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPrice.price;
           }
         } else if (event.topic2 == 'swap') {
           for (let i = 0; i < event.amounts.length; i++) {
@@ -326,7 +327,8 @@ export class InfoService {
                 xlmValue.data.stellar.usd,
                 pools,
               );
-              volume += parseFloat(event.amounts[i]) * tokenPrice.price;
+              volume +=
+                parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
             }
           }
         }
@@ -361,8 +363,8 @@ export class InfoService {
             xlmValue.data.stellar.usd,
             pools,
           );
-          volume += parseFloat(event.amount_a) * tokenPriceA.price;
-          volume += parseFloat(event.amount_b) * tokenPriceB.price;
+          volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
+          volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPriceB.price;
         } else if (event.topic2 == 'swap') {
           for (let i = 0; i < event.amounts.length; i++) {
             if (
@@ -374,12 +376,43 @@ export class InfoService {
                 xlmValue.data.stellar.usd,
                 pools,
               );
-              volume += parseFloat(event.amounts[i]) * tokenPrice.price;
+              volume +=
+                parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
             }
           }
         }
       }
     }
     return volume;
+  }
+
+  async getSoroswapFees(lastNDays: number) {
+    const contractEvents = await this.getContractEvents();
+    const now = new Date();
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    let fees = 0;
+    for (const event of contractEvents) {
+      const timeDiff = now.getTime() - event.closeTime.getTime();
+      if (timeDiff < oneDay * lastNDays) {
+        fees += parseFloat(event.fee) * 10 ** -7;
+      }
+    }
+    return fees;
+  }
+
+  async getPoolFees(pool: string, lastNDays: number) {
+    const contractEvents = await this.getContractEvents();
+    const now = new Date();
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    let fees = 0;
+    for (const event of contractEvents) {
+      const timeDiff = now.getTime() - event.closeTime.getTime();
+      if (timeDiff < oneDay * lastNDays && event.pair && event.pair == pool) {
+        fees += parseFloat(event.fee) * 10 ** -7;
+      }
+    }
+    return fees;
   }
 }

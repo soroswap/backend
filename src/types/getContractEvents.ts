@@ -22,6 +22,7 @@ export interface Node {
 
 export interface TxInfoByTx {
   ledgerByLedger: LedgerByLedger;
+  fee: number;
 }
 
 export interface LedgerByLedger {

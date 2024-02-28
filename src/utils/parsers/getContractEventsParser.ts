@@ -21,6 +21,8 @@ export const getContractEventsParser = (data: GetContractEventsResponse) => {
     );
     jsValues.closeTime = closeTime;
 
+    jsValues.fee = edge.node.txInfoByTx.fee;
+
     return jsValues;
   });
 
