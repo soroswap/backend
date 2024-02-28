@@ -59,7 +59,7 @@ export class InfoService {
     }
     const tokenPrice = await this.getTokenPriceInUSD(token, undefined, pools);
     const tvlInUsd = tvl * tokenPrice.price;
-    return { token, tvl, tvlInUsd };
+    return { token, tvl: tvlInUsd };
   }
 
   async getTokenPriceInXLM(token: string, inheritedPools?: any[]) {
@@ -390,6 +390,9 @@ export class InfoService {
     const contractEvents = await this.getContractEvents();
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
+    const xlmValue = await axios.get(
+      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
+    );
 
     let fees = 0;
     for (const event of contractEvents) {
@@ -398,13 +401,16 @@ export class InfoService {
         fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
-    return fees;
+    return fees * xlmValue.data.stellar.usd;
   }
 
   async getPoolFees(pool: string, lastNDays: number) {
     const contractEvents = await this.getContractEvents();
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
+    const xlmValue = await axios.get(
+      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
+    );
 
     let fees = 0;
     for (const event of contractEvents) {
@@ -413,6 +419,6 @@ export class InfoService {
         fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
-    return fees;
+    return fees * xlmValue.data.stellar.usd;
   }
 }
