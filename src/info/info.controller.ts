@@ -276,4 +276,31 @@ export class InfoController {
   async getPoolsInfo() {
     return this.infoService.getPoolsInfo();
   }
+
+  @Get('/token/:token')
+  @ApiOperation({
+    summary: 'Get token information',
+    description: 'Retrieve all relevant information of a specific token',
+  })
+  @ApiParam({ name: 'token', description: 'Token address', type: String })
+  @ApiOkResponse({
+    description:
+      'Object with token address, TVL, price, price change and volume 24h of the specified token',
+  })
+  async getTokenInfo(@Param('token') token: string) {
+    return this.infoService.getTokenInfo(token);
+  }
+
+  @Get('/tokens')
+  @ApiOperation({
+    summary: 'Get all tokens information',
+    description: 'Retrieve all relevant information of all tokens in Soroswap',
+  })
+  @ApiOkResponse({
+    description:
+      'Array of objects with token address, TVL, price, price change and volume 24h of each token',
+  })
+  async getTokensInfo() {
+    return this.infoService.getTokensInfo();
+  }
 }

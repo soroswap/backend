@@ -63,38 +63,51 @@ export class InfoService {
     return parsedContractEvents;
   }
 
-  async getTokenTvl(token: string, inheritedPools?: any[]) {
+  async getTokensList(inheritedTokens?: any[]) {
+    if (inheritedTokens) {
+      return inheritedTokens;
+    } else {
+      const { data } = await axios.get(
+        'https://api.soroswap.finance/api/tokens',
+      );
+      return data;
+    }
+  }
+
+  async getTokenTvl(
+    token: string,
+    inheritedXlmValue?: number,
+    inheritedPools?: any[],
+  ) {
     const pools = await this.getPools(inheritedPools);
-    const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
-    const testnetTokens = data.find(
-      (item) => item.network === 'testnet',
-    ).tokens;
-    const tokenSymbol = testnetTokens.find(
-      (item) => item.address === token,
-    ).symbol;
 
     const filteredPools = pools.filter(
       (pool) => pool.token0 == token || pool.token1 == token,
     );
     let tvl = 0;
-    console.log('\nLooking for', tokenSymbol, 'in Soroswap pools');
     for (const pool of filteredPools) {
       if (pool.token0 == token) {
-        console.log('Pool', pool.contractId, 'has', pool.reserve0, tokenSymbol);
         tvl += parseFloat(pool.reserve0) / 10 ** 7;
       } else if (pool.token1 == token) {
-        console.log('Pool', pool.contractId, 'has', pool.reserve1, tokenSymbol);
         tvl += parseFloat(pool.reserve1) / 10 ** 7;
       }
     }
-    const tokenPrice = await this.getTokenPriceInUSD(token, undefined, pools);
+    const tokenPrice = await this.getTokenPriceInUSD(
+      token,
+      inheritedXlmValue,
+      pools,
+    );
     const tvlInUsd = tvl * tokenPrice.price;
     return { token, tvl: tvlInUsd };
   }
 
-  async getTokenPriceInXLM(token: string, inheritedPools?: any[]) {
+  async getTokenPriceInXLM(
+    token: string,
+    inheritedPools?: any[],
+    inheritedTokens?: any[],
+  ) {
     const pools = await this.getPools(inheritedPools);
-    const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
+    const data = await this.getTokensList(inheritedTokens);
     const testnetTokens = data.find(
       (item) => item.network === 'testnet',
     ).tokens;
@@ -125,9 +138,13 @@ export class InfoService {
     }
   }
 
-  async getTokenPriceInUSDC(token: string, inheritedPools?: any[]) {
+  async getTokenPriceInUSDC(
+    token: string,
+    inheritedPools?: any[],
+    inheritedTokens?: any[],
+  ) {
     const pools = await this.getPools(inheritedPools);
-    const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
+    const data = await this.getTokensList(inheritedTokens);
     const testnetTokens = data.find(
       (item) => item.network === 'testnet',
     ).tokens;
@@ -492,15 +509,85 @@ export class InfoService {
   }
 
   async getPoolsInfo() {
+    const contractEvents = await this.getContractEvents();
     const pools = await this.getPools();
     const xlmValue = await this.getXlmValue();
 
     const poolsInfo = [];
     for (const pool of pools) {
-      const poolInfo = await this.getPoolInfo(pool.contractId, xlmValue, pools);
+      const poolInfo = await this.getPoolInfo(
+        pool.contractId,
+        xlmValue,
+        pools,
+        contractEvents,
+      );
       poolsInfo.push(poolInfo);
     }
 
     return poolsInfo;
+  }
+
+  async getTokenInfo(
+    token: string,
+    inheritedXlmValue?: number,
+    inheritedPools?: any[],
+    inheritedContractEvents?: any[],
+    inheritedTokens?: any[],
+  ) {
+    const contractEvents = await this.getContractEvents(
+      inheritedContractEvents,
+    );
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+    const pools = await this.getPools(inheritedPools);
+
+    const tvl = await this.getTokenTvl(token, xlmValue, pools);
+    const priceInUsd = await this.getTokenPriceInUSD(token, xlmValue, pools);
+    const volume24h = await this.getTokenVolume(
+      token,
+      1,
+      pools,
+      contractEvents,
+      xlmValue,
+    );
+
+    const obj = {
+      token: token,
+      tvl: tvl.tvl,
+      price: priceInUsd.price,
+      priceChange24h: 0,
+      volume24h: volume24h,
+    };
+
+    return obj;
+  }
+
+  async getTokensInfo() {
+    const contractEvents = await this.getContractEvents();
+    const xlmValue = await this.getXlmValue();
+    const pools = await this.getPools();
+
+    const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
+    const tokens = data.find((item) => item.network === 'testnet').tokens;
+
+    const tokensInfo = [];
+    for (const token of tokens) {
+      try {
+        const tokenInfo = await this.getTokenInfo(
+          token.address,
+          xlmValue,
+          pools,
+          contractEvents,
+          data,
+        );
+        tokensInfo.push(tokenInfo);
+      } catch (error) {
+        console.error(
+          `Error trying to get info for token ${token.address}: ${error}`,
+        );
+        continue;
+      }
+    }
+
+    return tokensInfo;
   }
 }
