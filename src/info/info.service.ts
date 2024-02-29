@@ -27,14 +27,44 @@ export class InfoService {
     private pairs: PairsService,
   ) {}
 
-  async getTokenTvl(token: string, inheritedPools?: any[]) {
-    let pools;
+  async getPools(inheritedPools?: any[]) {
     if (!inheritedPools) {
-      pools = await this.pairs.getAllPools(['soroswap']);
+      return await this.pairs.getAllPools(['soroswap']);
     } else {
-      pools = inheritedPools;
+      return inheritedPools;
+    }
+  }
+
+  async getXlmValue(inheritedXlmValue?: number) {
+    if (!inheritedXlmValue) {
+      const currentXlmValueInUsd = await axios.get(
+        'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
+      );
+      return currentXlmValueInUsd.data.stellar.usd;
+    } else {
+      return inheritedXlmValue;
+    }
+  }
+
+  async getContractEvents(inheritedContractEvents?: any[]) {
+    if (inheritedContractEvents) {
+      return inheritedContractEvents;
     }
 
+    const routerAddress = await getRouterAddress();
+
+    const mercuryResponse = await mercuryInstance.getCustomQuery({
+      request: GET_CONTRACT_EVENTS,
+      variables: { contractId: routerAddress },
+    });
+
+    const parsedContractEvents = getContractEventsParser(mercuryResponse.data!);
+
+    return parsedContractEvents;
+  }
+
+  async getTokenTvl(token: string, inheritedPools?: any[]) {
+    const pools = await this.getPools(inheritedPools);
     const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
     const testnetTokens = data.find(
       (item) => item.network === 'testnet',
@@ -63,12 +93,7 @@ export class InfoService {
   }
 
   async getTokenPriceInXLM(token: string, inheritedPools?: any[]) {
-    let pools;
-    if (!inheritedPools) {
-      pools = await this.pairs.getAllPools(['soroswap']);
-    } else {
-      pools = inheritedPools;
-    }
+    const pools = await this.getPools(inheritedPools);
     const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
     const testnetTokens = data.find(
       (item) => item.network === 'testnet',
@@ -101,12 +126,7 @@ export class InfoService {
   }
 
   async getTokenPriceInUSDC(token: string, inheritedPools?: any[]) {
-    let pools;
-    if (!inheritedPools) {
-      pools = await this.pairs.getAllPools(['soroswap']);
-    } else {
-      pools = inheritedPools;
-    }
+    const pools = await this.getPools(inheritedPools);
     const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
     const testnetTokens = data.find(
       (item) => item.network === 'testnet',
@@ -137,33 +157,22 @@ export class InfoService {
 
   async getTokenPriceInUSD(
     token: string,
-    xlmValue?: number,
+    inheritedXlmValue?: number,
     inheritedPools?: any[],
   ) {
     const valueInXlm = await this.getTokenPriceInXLM(token, inheritedPools);
-    let price;
-    if (!xlmValue) {
-      const currentXlmValueInUsd = await axios.get(
-        'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-      );
-      price = valueInXlm.price * currentXlmValueInUsd.data.stellar.usd;
-    } else {
-      price = valueInXlm.price * xlmValue;
-    }
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+    const price = valueInXlm.price * xlmValue;
     return { token, price };
   }
 
   async getPoolTvl(
     poolAddress: string,
-    xlmValue?: number,
+    inheritedXlmValue?: number,
     inheritedPools?: any[],
   ) {
-    let pools;
-    if (!inheritedPools) {
-      pools = await this.pairs.getAllPools(['soroswap']);
-    } else {
-      pools = inheritedPools;
-    }
+    const pools = await this.getPools(inheritedPools);
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const filteredPools = pools.filter(
       (pool) => pool.contractId == poolAddress,
@@ -191,12 +200,7 @@ export class InfoService {
   }
 
   async getPoolShares(poolAddress: string, inheritedPools?: any[]) {
-    let pools;
-    if (!inheritedPools) {
-      pools = await this.pairs.getAllPools(['soroswap']);
-    } else {
-      pools = inheritedPools;
-    }
+    const pools = await this.getPools(inheritedPools);
 
     const filteredPools = pools.filter(
       (pool) => pool.contractId == poolAddress,
@@ -206,26 +210,24 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const pool = filteredPools[0];
-    return { pool: poolAddress, shares: pool.totalShares };
+    const shares = filteredPools[0].totalShares * 10 ** -7;
+    return { pool: poolAddress, shares: shares };
   }
 
-  async getSoroswapTvl() {
-    const pools = await this.pairs.getAllPools(['soroswap']);
-    const xlmValue = await axios.get(
-      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-    );
+  async getSoroswapTvl(inheritedPools?: any[], inheritedXlmValue?: number) {
+    const pools = await this.getPools(inheritedPools);
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     let tvl = 0;
     for (const pool of pools) {
       const token0Price = await this.getTokenPriceInUSD(
         pool.token0,
-        xlmValue.data.stellar.usd,
+        xlmValue,
         pools,
       );
       const token1Price = await this.getTokenPriceInUSD(
         pool.token1,
-        xlmValue.data.stellar.usd,
+        xlmValue,
         pools,
       );
       tvl +=
@@ -235,27 +237,20 @@ export class InfoService {
     return tvl;
   }
 
-  async getContractEvents() {
-    const routerAddress = await getRouterAddress();
+  async getSoroswapVolume(
+    lastNDays: number,
+    inheritedPools?: any[],
+    inheritedContractEvents?: any[],
+    inheritedXlmValue?: number,
+  ) {
+    const contractEvents = await this.getContractEvents(
+      inheritedContractEvents,
+    );
+    const pools = await this.getPools(inheritedPools);
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
-    const mercuryResponse = await mercuryInstance.getCustomQuery({
-      request: GET_CONTRACT_EVENTS,
-      variables: { contractId: routerAddress },
-    });
-
-    const parsedContractEvents = getContractEventsParser(mercuryResponse.data!);
-
-    return parsedContractEvents;
-  }
-
-  async getSoroswapVolume(lastNDays: number) {
-    const contractEvents = await this.getContractEvents();
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
-    const pools = await this.pairs.getAllPools(['soroswap']);
-    const xlmValue = await axios.get(
-      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-    );
 
     let volume = 0;
     for (const event of contractEvents) {
@@ -264,12 +259,12 @@ export class InfoService {
         if (event.topic2 == 'add' || event.topic2 == 'remove') {
           const tokenPriceA = await this.getTokenPriceInUSD(
             event.token_a,
-            xlmValue.data.stellar.usd,
+            xlmValue,
             pools,
           );
           const tokenPriceB = await this.getTokenPriceInUSD(
             event.token_b,
-            xlmValue.data.stellar.usd,
+            xlmValue,
             pools,
           );
           volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
@@ -278,7 +273,7 @@ export class InfoService {
           for (let i = 0; i < event.amounts.length; i++) {
             const tokenPrice = await this.getTokenPriceInUSD(
               event.path[i],
-              xlmValue.data.stellar.usd,
+              xlmValue,
               pools,
             );
             volume +=
@@ -290,14 +285,21 @@ export class InfoService {
     return volume;
   }
 
-  async getTokenVolume(token: string, lastNDays: number) {
-    const contractEvents = await this.getContractEvents();
+  async getTokenVolume(
+    token: string,
+    lastNDays: number,
+    inheritedPools?: any[],
+    inheritedContractEvents?: any[],
+    inheritedXlmValue?: number,
+  ) {
+    const contractEvents = await this.getContractEvents(
+      inheritedContractEvents,
+    );
+    const pools = await this.getPools(inheritedPools);
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
-    const pools = await this.pairs.getAllPools(['soroswap']);
-    const xlmValue = await axios.get(
-      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-    );
 
     let volume = 0;
     for (const event of contractEvents) {
@@ -307,14 +309,14 @@ export class InfoService {
           if (event.token_a == token) {
             const tokenPrice = await this.getTokenPriceInUSD(
               event.token_a,
-              xlmValue.data.stellar.usd,
+              xlmValue,
               pools,
             );
             volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPrice.price;
           } else if (event.token_b == token) {
             const tokenPrice = await this.getTokenPriceInUSD(
               event.token_b,
-              xlmValue.data.stellar.usd,
+              xlmValue,
               pools,
             );
             volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPrice.price;
@@ -324,7 +326,7 @@ export class InfoService {
             if (event.path[i] == token) {
               const tokenPrice = await this.getTokenPriceInUSD(
                 event.path[i],
-                xlmValue.data.stellar.usd,
+                xlmValue,
                 pools,
               );
               volume +=
@@ -338,15 +340,22 @@ export class InfoService {
     return volume;
   }
 
-  async getPoolVolume(pool: string, lastNDays: number) {
-    const contractEvents = await this.getContractEvents();
+  async getPoolVolume(
+    pool: string,
+    lastNDays: number,
+    inheritedXlmValue?: number,
+    inheritedPools?: any[],
+    inheritedContractEvents?: any[],
+  ) {
+    const contractEvents = await this.getContractEvents(
+      inheritedContractEvents,
+    );
+    const pools = await this.getPools(inheritedPools);
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
-    const pools = await this.pairs.getAllPools(['soroswap']);
     const poolData = pools.find((item) => item.contractId == pool);
-    const xlmValue = await axios.get(
-      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-    );
 
     let volume = 0;
     for (const event of contractEvents) {
@@ -355,12 +364,12 @@ export class InfoService {
         if (event.topic2 == 'add' || event.topic2 == 'remove') {
           const tokenPriceA = await this.getTokenPriceInUSD(
             event.token_a,
-            xlmValue.data.stellar.usd,
+            xlmValue,
             pools,
           );
           const tokenPriceB = await this.getTokenPriceInUSD(
             event.token_b,
-            xlmValue.data.stellar.usd,
+            xlmValue,
             pools,
           );
           volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
@@ -373,7 +382,7 @@ export class InfoService {
             ) {
               const tokenPrice = await this.getTokenPriceInUSD(
                 event.path[i],
-                xlmValue.data.stellar.usd,
+                xlmValue,
                 pools,
               );
               volume +=
@@ -386,13 +395,18 @@ export class InfoService {
     return volume;
   }
 
-  async getSoroswapFees(lastNDays: number) {
-    const contractEvents = await this.getContractEvents();
+  async getSoroswapFees(
+    lastNDays: number,
+    inheritedXlmValue?: number,
+    inheritedContractEvents?: any[],
+  ) {
+    const contractEvents = await this.getContractEvents(
+      inheritedContractEvents,
+    );
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
-    const xlmValue = await axios.get(
-      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-    );
 
     let fees = 0;
     for (const event of contractEvents) {
@@ -401,16 +415,19 @@ export class InfoService {
         fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
-    return fees * xlmValue.data.stellar.usd;
+    return fees * xlmValue;
   }
 
-  async getPoolFees(pool: string, lastNDays: number) {
+  async getPoolFees(
+    pool: string,
+    lastNDays: number,
+    inheritedXlmValue?: number,
+  ) {
     const contractEvents = await this.getContractEvents();
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
-    const xlmValue = await axios.get(
-      'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-    );
 
     let fees = 0;
     for (const event of contractEvents) {
@@ -419,6 +436,71 @@ export class InfoService {
         fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
-    return fees * xlmValue.data.stellar.usd;
+    return fees * xlmValue;
+  }
+
+  async getPoolInfo(
+    poolAddress: string,
+    inheritedXlmValue?: number,
+    inheritedPools?: any[],
+    inheritedContractEvents?: any[],
+  ) {
+    const contractEvents = await this.getContractEvents(
+      inheritedContractEvents,
+    );
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+    const pools = await this.getPools(inheritedPools);
+
+    const filteredPools = pools.filter(
+      (pool) => pool.contractId === poolAddress,
+    );
+
+    const tvl = await this.getPoolTvl(poolAddress, xlmValue, pools);
+    const volume24h = await this.getPoolVolume(
+      poolAddress,
+      1,
+      xlmValue,
+      pools,
+      contractEvents,
+    );
+    const volume7d = await this.getPoolVolume(
+      poolAddress,
+      7,
+      xlmValue,
+      pools,
+      contractEvents,
+    );
+    const fees24h = await this.getPoolFees(poolAddress, 1, xlmValue);
+    const feesYearly = await this.getPoolFees(poolAddress, 365, xlmValue);
+    const liquidity = await this.getPoolShares(poolAddress, pools);
+
+    const obj = {
+      pool: poolAddress,
+      token0: filteredPools[0].token0,
+      token1: filteredPools[0].token1,
+      reserve0: filteredPools[0].reserve0 * 10 ** -7,
+      reserve1: filteredPools[0].reserve1 * 10 ** -7,
+      tvl: tvl.tvl,
+      volume24h: volume24h,
+      volume7d: volume7d,
+      fees24h: fees24h,
+      feesYearly: feesYearly,
+      liquidity: liquidity.shares,
+    };
+
+    return obj;
+  }
+
+  async getPoolsInfo() {
+    const pools = await this.getPools();
+    const xlmValue = await this.getXlmValue();
+
+    const poolsInfo = [];
+    for (const pool of pools) {
+      const poolInfo = await this.getPoolInfo(pool.contractId, xlmValue, pools);
+      poolsInfo.push(poolInfo);
+    }
+
+    return poolsInfo;
   }
 }

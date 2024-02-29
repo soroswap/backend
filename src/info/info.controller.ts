@@ -75,7 +75,8 @@ export class InfoController {
   @Get('/price/xlm/:token')
   @ApiOperation({
     summary: 'Get token price in XLM',
-    description: 'Retrieve the value in XLM of a specific token',
+    description:
+      'Retrieve the value in XLM of a specific token, based on the amounts of the XLM/token pool.',
   })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
@@ -89,7 +90,8 @@ export class InfoController {
   @Get('/price/usdc/:token')
   @ApiOperation({
     summary: 'Get token price in USDC',
-    description: 'Retrieve the value in USDC of a specific token',
+    description:
+      'Retrieve the value in USDC of a specific token, based on the amounts of the USDC/token pool.',
   })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
@@ -103,7 +105,8 @@ export class InfoController {
   @Get('/price/:token')
   @ApiOperation({
     summary: 'Get token price in USD',
-    description: 'Retrieve the value in USD of a specific token',
+    description:
+      'Retrieve the value in USD of a specific token, based on the amounts of the XLM/token pool and the XLM price in USD according to the CoinGecko API.',
   })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
@@ -245,5 +248,32 @@ export class InfoController {
   })
   async getPoolFeesYearly(@Param('pool') pool: string) {
     return this.infoService.getPoolFees(pool, 365);
+  }
+
+  @Get('/pool/:pool')
+  @ApiOperation({
+    summary: 'Get pool information',
+    description: 'Retrieve all relevant information of a specific pool',
+  })
+  @ApiParam({ name: 'pool', description: 'Pool address', type: String })
+  @ApiOkResponse({
+    description:
+      'Object with pool address, token addresses, token reserves, TVL, volume 24h, volume 7d, fees 24h and fees yearly of the specified pool',
+  })
+  async getPoolInfo(@Param('pool') pool: string) {
+    return this.infoService.getPoolInfo(pool);
+  }
+
+  @Get('/pools')
+  @ApiOperation({
+    summary: 'Get all pools information',
+    description: 'Retrieve all relevant information of every pool in Soroswap',
+  })
+  @ApiOkResponse({
+    description:
+      'Array of objects with pool address, token addresses, token reserves, TVL, volume 24h, volume 7d, fees 24h and fees yearly of each pool',
+  })
+  async getPoolsInfo() {
+    return this.infoService.getPoolsInfo();
   }
 }
