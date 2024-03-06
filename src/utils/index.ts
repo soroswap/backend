@@ -1,1 +1,1 @@
-export { getFactoryAddress } from './getFactoryAddress'
+export { getFactoryAddress } from './getFactoryAddress';
