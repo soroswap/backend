@@ -71,7 +71,7 @@ export class AppController {
 
   @NetworkApiQuery()
   @Post('/update_database')
-  updateDatabase() {
-    return this.appService.updateDatabase();
+  updateDatabase(@Query() query: QueryNetworkDto) {
+    return this.appService.updateDatabase(query.network);
   }
 }

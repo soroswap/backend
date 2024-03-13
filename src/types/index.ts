@@ -3,5 +3,4 @@ export {
   ParsedFactoryInstanceEntry,
   SubscribeToLedgerEntriesInterface
 } from './getContractEntries';
-export { Network } from './network';
 

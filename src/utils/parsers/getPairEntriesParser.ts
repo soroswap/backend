@@ -1,6 +1,6 @@
-import { ContractEntriesResponse } from '../../types';
-import { scValToJs } from 'mercury-sdk';
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { scValToJs } from 'mercury-sdk';
+import { ContractEntriesResponse } from '../../types';
 
 /**
  * Parses the data from a ContractEntriesResponse object and returns an array of pair addresses.

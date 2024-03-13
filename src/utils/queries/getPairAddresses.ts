@@ -1,5 +1,4 @@
-import { gql } from "graphql-request";
-
+import { gql } from 'graphql-request';
 
 /**
  * Function to build a graphql query to retrieve a specific number of pair addresses.

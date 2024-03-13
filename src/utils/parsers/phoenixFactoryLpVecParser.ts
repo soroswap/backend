@@ -1,5 +1,5 @@
-import { scValToJs } from 'mercury-sdk';
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { scValToJs } from 'mercury-sdk';
 
 /**
  * Parses the data from a ContractEntriesResponse object and returns an array with the addresses the pairs created by the Phoenix factory contract.

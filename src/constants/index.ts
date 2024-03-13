@@ -15,3 +15,18 @@ export const factoryAddresses = {
   ],
   phoenix: ['CBUC5YJ2QTJEQ3HBA2SJEUUATB2YYOYEVXZKMKR7RE2GTGSXUI467Q7S'],
 };
+
+export const mainnetSoroswapContracts = {
+  router: 'CAG5LRYQ5JVEUI5TEID72EYOVX44TTUJT5BQR2J6J77FH65PCCFAJDDH',
+  factory: 'CA4HEQTL2WPEUYKYKCDOHCDNIV4QHNJ7EL4J4NQ6VADP7SYHVRYZ7AW2',
+};
+
+export const mainnetPhoenixContracts = {
+  factory: '',
+  multihop: '',
+};
+
+export const testnetPhoenixContracts = {
+  factory: '',
+  multihop: '',
+};

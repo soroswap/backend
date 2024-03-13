@@ -1,5 +1,5 @@
 import { ApiQuery } from '@nestjs/swagger';
-import { Network } from '../types';
+import { Network } from '@prisma/client';
 
 export function NetworkApiQuery() {
   return ApiQuery({
