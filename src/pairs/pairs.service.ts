@@ -9,20 +9,21 @@ import * as sdk from 'stellar-sdk';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
+import { constants } from 'src/constants';
+import { SubscribeToLedgerEntriesInterface } from 'src/types';
 import { getFactoryAddress } from 'src/utils';
 import {
   factoryInstanceParser,
   pairAddressesParser,
-  soroswapPairInstanceParser,
-  phoenixPairInstanceParser,
   phoenixFactoryLpVecParser,
+  phoenixPairInstanceParser,
+  soroswapPairInstanceParser,
 } from 'src/utils/parsers';
 import {
   GET_LAST_CONTRACT_ENTRY,
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
-import { constants } from 'src/constants';
 
 const mercuryInstance = new Mercury({
   backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
@@ -83,8 +84,12 @@ export class PairsService {
 
         subscribeResponse = await mercuryInstance
           .subscribeToLedgerEntries(args)
-          .catch((err) => {
-            throw new Error(`Error subscribing to pair ${i}: ${err}`);
+          .then((response) => {
+            if (!(response as SubscribeToLedgerEntriesInterface).ok) {
+              throw new Error(
+                `Error subscribing to pair ${i}: ${(response as SubscribeToLedgerEntriesInterface).error}`,
+              );
+            }
           });
 
         const subscription = await this.prisma.subscriptions.create({
@@ -136,9 +141,15 @@ export class PairsService {
           durability: 'persistent',
         };
 
-        await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
-          throw new Error(`Error subscribing to pair ${i}: ${err}`);
-        });
+        await mercuryInstance
+          .subscribeToLedgerEntries(args)
+          .then((response) => {
+            if (!(response as SubscribeToLedgerEntriesInterface).ok) {
+              throw new Error(
+                `Error subscribing to factory for pair index ${i}: ${(response as SubscribeToLedgerEntriesInterface).error}`,
+              );
+            }
+          });
 
         await this.prisma.subscriptions.create({
           data: {
@@ -299,8 +310,12 @@ export class PairsService {
         durability: 'persistent',
       };
 
-      await mercuryInstance.subscribeToLedgerEntries(args).catch((err) => {
-        console.error(err);
+      await mercuryInstance.subscribeToLedgerEntries(args).then((response) => {
+        if (!(response as SubscribeToLedgerEntriesInterface).ok) {
+          throw new Error(
+            `Error subscribing to phoenix pair: ${(response as SubscribeToLedgerEntriesInterface).error}`,
+          );
+        }
       });
 
       console.log('Subscribed to Phoenix pair with contract ID', contractId);
@@ -403,7 +418,7 @@ export class PairsService {
   async checkAndSubscribeToPhoenixPairs(pairAddresses: string[]) {
     if (pairAddresses.length > 0) {
       for (const pairAddress of pairAddresses) {
-        let subscriptionExists = await this.prisma.subscriptions.findFirst({
+        const subscriptionExists = await this.prisma.subscriptions.findFirst({
           where: {
             contractId: pairAddress,
             keyXdr: constants.instanceStorageKeyXdr,

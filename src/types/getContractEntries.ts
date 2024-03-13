@@ -23,3 +23,9 @@ export interface ParsedFactoryInstanceEntry {
   totalPairs: number;
   FeesEnabled?: boolean;
 }
+
+export interface SubscribeToLedgerEntriesInterface {
+  ok: boolean;
+  data: any;
+  error: any;
+}

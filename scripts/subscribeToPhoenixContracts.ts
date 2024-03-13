@@ -12,21 +12,22 @@ import { constants } from '../src/constants';
 
   const prisma = new PrismaClient();
 
+  if (!process.argv[2]) {
+    console.error('Contract ID is required');
+    process.exit(1);
+  }
+
+  if (!process.argv[3]) {
+    console.error('Key XDR is required');
+    process.exit(1);
+  }
+  
   const contractId = process.argv[2].trim();
   console.log('Contract ID:', contractId);
 
   const keyXdr = process.argv[3].trim();
   console.log('Key XDR:', keyXdr);
 
-  if (!contractId) {
-    console.error('Contract ID is required');
-    process.exit(1);
-  }
-
-  if (!keyXdr) {
-    console.error('Key XDR is required');
-    process.exit(1);
-  }
 
   let subscriptionExists = await prisma.subscriptions.findFirst({
     where: {
