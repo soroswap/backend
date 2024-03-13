@@ -7,7 +7,6 @@ import { envSchema } from './config/env-schema';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PairsModule } from './pairs/pairs.module';
-import { InfoModule } from './info/info.module';
 
 @Module({
   imports: [
@@ -18,7 +17,6 @@ import { InfoModule } from './info/info.module';
     AuthModule,
     PrismaModule,
     PairsModule,
-    InfoModule,
   ],
   controllers: [AppController],
   providers: [AppService],

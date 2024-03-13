@@ -11,8 +11,8 @@ enum soroswapKeyNames {
   reserve0 = 2, // uint112 private reserve0;
   reserve1 = 3, // uint112 private reserve1;
   factoryAddress = 4, // address public factory;
-  pairToken = 5, // liquidity pool token;
-  totalShares = 6, // TotalShares;
+  totalShares = 5, // TotalShares;
+  pairToken = 6, // liquidity pool token:
   pairAddress = 7, // PairAddress;
 }
 
@@ -46,9 +46,6 @@ export const soroswapPairInstanceParser = (data: ContractEntriesResponse) => {
           [soroswapKeyNames[i]]: scValToJs(element),
         });
       }
-      Object.assign(parsedValue, {
-        ['totalShares']: scValToJs(jsValues.storage()[6].val()),
-      });
       parsedEntries.push(parsedValue);
     }
   }
@@ -91,10 +88,6 @@ export const phoenixPairInstanceParser = (data: ContractEntriesResponse) => {
 
       Object.assign(parsedValue, {
         ['reserve1']: scValToJs(jsValues.storage()[2].val()),
-      });
-
-      Object.assign(parsedValue, {
-        ['totalShares']: scValToJs(jsValues.storage()[0].val()),
       });
 
       parsedEntries.push(parsedValue);
