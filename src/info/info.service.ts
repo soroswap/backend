@@ -109,27 +109,26 @@ export class InfoService {
     const pools = await this.getPools(inheritedPools);
     const data = await this.getTokensList(inheritedTokens);
     const testnetTokens = data.find(
-      (item) => item.network === 'testnet',
+      (item) => item.network === process.env.NETWORK,
     ).tokens;
-    const xlm = testnetTokens.find((item) => item.symbol === 'XLM');
+    const xlm = testnetTokens.find((item) => item.code === 'XLM');
 
     const filteredPools = pools.filter(
       (pool) =>
-        (pool.token0 == token && pool.token1 == xlm.address) ||
-        (pool.token0 == xlm.address && pool.token1 == token),
+        (pool.token0 == token && pool.token1 == xlm.contract) ||
+        (pool.token0 == xlm.contract && pool.token1 == token),
     );
 
     if (filteredPools.length === 0) {
-      if (token === xlm.address) {
+      if (token === xlm.contract) {
         return { token, price: 1 };
       }
-      throw new ServiceUnavailableException(
-        `No liquidity pool for this token and XLM`,
-      );
+      console.error(`No liquidity pool for XLM and this token (${token})`);
+      return { token, price: 0 };
     }
 
     const tokenXlmPool = filteredPools[0];
-    if (tokenXlmPool.token0 === xlm.address) {
+    if (tokenXlmPool.token0 === xlm.contract) {
       const price = tokenXlmPool.reserve0 / tokenXlmPool.reserve1;
       return { token, price };
     } else {
@@ -146,14 +145,14 @@ export class InfoService {
     const pools = await this.getPools(inheritedPools);
     const data = await this.getTokensList(inheritedTokens);
     const testnetTokens = data.find(
-      (item) => item.network === 'testnet',
+      (item) => item.network === process.env.NETWORK,
     ).tokens;
-    const usdc = testnetTokens.find((item) => item.symbol === 'USDC');
+    const usdc = testnetTokens.find((item) => item.code === 'USDC');
 
     const filteredPools = pools.filter(
       (pool) =>
-        (pool.token0 == token && pool.token1 == usdc.address) ||
-        (pool.token0 == usdc.address && pool.token1 == token),
+        (pool.token0 == token && pool.token1 == usdc.contract) ||
+        (pool.token0 == usdc.contract && pool.token1 == token),
     );
 
     if (filteredPools.length === 0) {
@@ -163,7 +162,7 @@ export class InfoService {
     }
 
     const tokenXlmPool = filteredPools[0];
-    if (tokenXlmPool.token0 === usdc.address) {
+    if (tokenXlmPool.token0 === usdc.contract) {
       const price = tokenXlmPool.reserve0 / tokenXlmPool.reserve1;
       return { token, price };
     } else {
@@ -567,13 +566,15 @@ export class InfoService {
     const pools = await this.getPools();
 
     const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
-    const tokens = data.find((item) => item.network === 'testnet').tokens;
+    const tokens = data.find(
+      (item) => item.network === process.env.NETWORK,
+    ).tokens;
 
     const tokensInfo = [];
     for (const token of tokens) {
       try {
         const tokenInfo = await this.getTokenInfo(
-          token.address,
+          token.contract,
           xlmValue,
           pools,
           contractEvents,
@@ -582,7 +583,7 @@ export class InfoService {
         tokensInfo.push(tokenInfo);
       } catch (error) {
         console.error(
-          `Error trying to get info for token ${token.address}: ${error}`,
+          `Error trying to get info for token ${token.code}: ${error}`,
         );
         continue;
       }
