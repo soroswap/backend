@@ -87,7 +87,10 @@ yarn prisma studio
 ```bash 
 yarn prisma db push --force-reset
 ```
-## 5. Available Requests
+
+## 5. Available Requests examples
+
+All requests can be accessed through the following URL: `http://localhost:4000/docs`
 
 **1. Subscribe to pairs:**
 
@@ -131,43 +134,21 @@ curl -X POST \
   -H 'apiKey: <your_api_key>'
 
 ```
+## 6. Subscribing to Contracts manually
+### Factory
+You should subscribe to the factory contract before subscribing to any pair. The factory contract is the main contract that manages all the pairs in the network.
+This should be done manually when a new Factory contract is deployed.
 
-curl -X POST \
- http://0.0.0.0:4000/pairs \
- -H 'apiKey: cualquiercosa' \
- -H 'Content-Type: application/json' \
- -d '{
-"contractId": [
-"CBV3WDVJ7NC3RKVPBKLWXD46I6HL6GBZHSRBMJ6SLUAUISGITAB3DQO7"
-],
-"keyXdr": "AAAAFA==",
-"durability": "persistent"
-}'
+To subscribe to the factory contract, you can use the following script:
 
-curl -X POST \
- http://0.0.0.0:4000/pairs/count \
- -H 'apiKey: <your_api_key>' \
- -H 'Content-Type: application/json' \
- -d '{
-"number": 8
-}'
+```bash
+yarn subscribe:factory
+```
 
-curl -X POST \
- http://0.0.0.0:4000/pairs/count \
- -H 'apiKey: cualquiercosa' \
- -H 'Content-Type: application/json' \
- -d '{
-"number": 8
-}'
-
-curl -X GET \
- http://0.0.0.0:4000/pairs/mercury-count \
- -H 'apiKey: cualquiercosa'
-
-curl -X GET \
- http://0.0.0.0:4000/pairs/count \
- -H 'apiKey: cualquiercosa'
-
-curl -X POST \
- http://0.0.0.0:4000/pairs/all?network=testnet \
- -H 'apiKey: cualquiercosa'
+You may need to reexecute `docker-compose up` after running the script.
+### Phoenix
+You should subscribe to the phoenix contract before subscribing to any pair. The phoenix contract is the main contract that manages all the pairs in the network for the phoenix protocol.
+This should be done manually when a new Phoenix contract is deployed.
+```bash
+yarn subscribe:phoenix <contractId> <keyXdr>
+```
