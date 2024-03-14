@@ -539,7 +539,9 @@ export class PairsService {
    */
   async getAllSoroswapPools(network: Network) {
     const newCounter = await this.getSoroswapPairsCountFromMercury(network);
+    console.log('🚀 « newCounter:', newCounter);
     const oldCounter = await this.getSoroswapPairsCountFromDB(network);
+    console.log('🚀 « oldCounter:', oldCounter);
     let addresses;
     if (newCounter > oldCounter) {
       console.log('New Soroswap pairs found');

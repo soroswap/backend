@@ -30,20 +30,25 @@ export const factoryInstanceParser = (data: ContractEntriesResponse) => {
     if (!base64Xdr) {
       throw new Error('No valueXdr found in the entry');
     }
-    const parsedData: any = StellarSdk.xdr.ScVal.fromXDR(base64Xdr, 'base64');
-    const jsValues: any = scValToJs(parsedData);
-    const parsedValue = {} as ParsedFactoryInstanceEntry;
-    if (typeof jsValues.storage !== 'undefined') {
-      for (const key in jsValues.storage()) {
-        const i: number = parseInt(key);
-        const element = jsValues.storage()[key].val();
-        if (i === jsValues.storage().length - 1) {
-          Object.assign(parsedValue, { totalPairs: scValToJs(element) });
-        } else {
-          Object.assign(parsedValue, { [DataKey[i]]: scValToJs(element) });
+
+    try {
+      const parsedData: any = StellarSdk.xdr.ScVal.fromXDR(base64Xdr, 'base64');
+      const jsValues: any = scValToJs(parsedData);
+      const parsedValue = {} as ParsedFactoryInstanceEntry;
+      if (typeof jsValues.storage !== 'undefined') {
+        for (const key in jsValues.storage()) {
+          const i: number = parseInt(key);
+          const element = jsValues.storage()[key].val();
+          if (i === jsValues.storage().length - 1) {
+            Object.assign(parsedValue, { totalPairs: scValToJs(element) });
+          } else {
+            Object.assign(parsedValue, { [DataKey[i]]: scValToJs(element) });
+          }
         }
+        parsedEntries.push(parsedValue);
       }
-      parsedEntries.push(parsedValue);
+    } catch (error) {
+      console.log('Error at FactoryInstanceParser:', error);
     }
   }
   return parsedEntries;
