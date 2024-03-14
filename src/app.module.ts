@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { configLoader } from './config/config-loader';
 import { envSchema } from './config/env-schema';
+import { InfoModule } from './info/info.module';
 import { PairsModule } from './pairs/pairs.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -17,6 +18,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuthModule,
     PrismaModule,
     PairsModule,
+    InfoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
