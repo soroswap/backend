@@ -1,22 +1,24 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { Mercury } from 'mercury-sdk';
+import { Network, PrismaClient } from '@prisma/client';
+import {
+  mercuryInstanceMainnet,
+  mercuryInstanceTestnet,
+} from 'src/services/mercury';
 import { constants, factoryAddresses } from '../constants';
 import { getFactoryAddress } from '../utils';
 import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../utils/queries';
 
-export async function populateDatabase() {
-  Logger.log('Updating database...', 'MERCURY');
-  const mercuryInstance = new Mercury({
-    backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
-    graphqlEndpoint: process.env.MERCURY_GRAPHQL_ENDPOINT,
-    email: process.env.MERCURY_TESTER_EMAIL,
-    password: process.env.MERCURY_TESTER_PASSWORD,
-  });
+export async function populateDatabase(network: Network) {
+  Logger.log('Updating database...', `MERCURY ${network}`);
+
+  const mercuryInstance =
+    network == Network.TESTNET
+      ? mercuryInstanceTestnet
+      : mercuryInstanceMainnet;
 
   const prisma = new PrismaClient();
-  const soroswapFactoryAddress = await getFactoryAddress();
+  const soroswapFactoryAddress = await getFactoryAddress(network);
 
   const ledgerEntrySubscriptions = await mercuryInstance
     .getCustomQuery({ request: GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS })
@@ -24,6 +26,11 @@ export async function populateDatabase() {
       console.log(err);
       throw new Error('Error getting ledger entry subscriptions');
     });
+
+  if (ledgerEntrySubscriptions.data == null) {
+    Logger.log('Database up to date!', `MERCURY ${network}`);
+    return;
+  }
 
   let others = 0;
   let soroswapFactoryInstance = 0;
@@ -50,6 +57,7 @@ export async function populateDatabase() {
             contractId: node.contractId,
             keyXdr: node.keyXdr,
           },
+          network,
         },
         update: {},
         create: {
@@ -58,6 +66,7 @@ export async function populateDatabase() {
           protocol: 'SOROSWAP',
           contractType: 'FACTORY',
           storageType: 'INSTANCE',
+          network,
         },
       });
 
@@ -73,6 +82,7 @@ export async function populateDatabase() {
             contractId: node.contractId,
             keyXdr: node.keyXdr,
           },
+          network,
         },
         update: {},
         create: {
@@ -81,6 +91,7 @@ export async function populateDatabase() {
           protocol: 'PHOENIX',
           contractType: 'FACTORY',
           storageType: 'INSTANCE',
+          network,
         },
       });
 
@@ -96,6 +107,7 @@ export async function populateDatabase() {
             contractId: node.contractId,
             keyXdr: node.keyXdr,
           },
+          network,
         },
         update: {},
         create: {
@@ -104,6 +116,7 @@ export async function populateDatabase() {
           protocol: 'SOROSWAP',
           contractType: 'FACTORY',
           storageType: 'PERSISTENT',
+          network,
         },
       });
 
@@ -119,6 +132,7 @@ export async function populateDatabase() {
             contractId: node.contractId,
             keyXdr: node.keyXdr,
           },
+          network,
         },
         update: {},
         create: {
@@ -127,6 +141,7 @@ export async function populateDatabase() {
           protocol: 'PHOENIX',
           contractType: 'FACTORY',
           storageType: 'PERSISTENT',
+          network,
         },
       });
 
@@ -142,6 +157,7 @@ export async function populateDatabase() {
             contractId: node.contractId,
             keyXdr: node.keyXdr,
           },
+          network,
         },
         update: {},
         create: {
@@ -150,6 +166,7 @@ export async function populateDatabase() {
           protocol: 'PHOENIX',
           contractType: 'FACTORY',
           storageType: 'PERSISTENT',
+          network,
         },
       });
 
@@ -165,6 +182,7 @@ export async function populateDatabase() {
             contractId: node.contractId,
             keyXdr: node.keyXdr,
           },
+          network,
         },
         update: {},
         create: {
@@ -173,6 +191,7 @@ export async function populateDatabase() {
           protocol: 'PHOENIX',
           contractType: 'FACTORY',
           storageType: 'PERSISTENT',
+          network,
         },
       });
 
@@ -189,6 +208,7 @@ export async function populateDatabase() {
             contractId: node.contractId,
             keyXdr: node.keyXdr,
           },
+          network,
         },
         update: {},
         create: {
@@ -196,13 +216,14 @@ export async function populateDatabase() {
           keyXdr: node.keyXdr,
           contractType: 'PAIR',
           storageType: 'INSTANCE',
+          network,
         },
       });
     } else {
       others++;
     }
   }
-  Logger.log('Database up to date!', 'MERCURY');
+  Logger.log('Database up to date!', `MERCURY ${network}`);
   // console.log(
   //   'Soroswap Factory Instance Subscriptions:',
   //   soroswapFactoryInstance,

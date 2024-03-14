@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { Network } from '@prisma/client';
 import { OptimalRouteRequestBodyDto, OptimalRouteResponseDto } from './dto';
 import { PrismaService } from './prisma/prisma.service';
 import { populateDatabase } from './scripts/populateDatabase';
-import { Network } from './types';
 
 @Injectable()
 export class AppService {
@@ -54,7 +54,7 @@ export class AppService {
     return { message: 'Hello World!' };
   }
 
-  async updateDatabase() {
-    await populateDatabase();
+  async updateDatabase(network: Network) {
+    await populateDatabase(network);
   }
 }

@@ -3,13 +3,17 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Mercury } from 'mercury-sdk';
 import * as sdk from 'stellar-sdk';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
+import { Network } from '@prisma/client';
 import { constants } from 'src/constants';
+import {
+  mercuryInstanceMainnet,
+  mercuryInstanceTestnet,
+} from 'src/services/mercury';
 import { SubscribeToLedgerEntriesInterface } from 'src/types';
 import { getFactoryAddress } from 'src/utils';
 import {
@@ -24,13 +28,6 @@ import {
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
-
-const mercuryInstance = new Mercury({
-  backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
-  graphqlEndpoint: process.env.MERCURY_GRAPHQL_ENDPOINT,
-  email: process.env.MERCURY_TESTER_EMAIL,
-  password: process.env.MERCURY_TESTER_PASSWORD,
-});
 
 @Injectable()
 export class PairsService {
@@ -59,16 +56,25 @@ export class PairsService {
    * or a single subscribed pair if only one contract ID is provided.
    * @throws BadRequestException if the contract ID array is empty, or if either the contract ID or keyXdr is missing.
    */
-  async subscribeToSoroswapPairs(data: subscribeToLedgerEntriesDto) {
+  async subscribeToSoroswapPairs(
+    network: Network,
+    data: subscribeToLedgerEntriesDto,
+  ) {
     if (data.contractId.length === 0 || !data.contractId || !data.keyXdr) {
       throw new BadRequestException('Please double check your request body');
     }
+
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
 
     const response = [];
     let subscribeResponse;
     for (let i = 0; i < data.contractId.length; i++) {
       const subscriptionExists = await this.prisma.subscriptions.findFirst({
         where: {
+          network,
           contractId: data.contractId[i],
           keyXdr: data.keyXdr,
         },
@@ -99,6 +105,7 @@ export class PairsService {
             protocol: 'SOROSWAP',
             contractType: 'PAIR',
             storageType: 'INSTANCE',
+            network,
           },
         });
 
@@ -119,8 +126,17 @@ export class PairsService {
    * @param last Index of the last pair of the group.
    * @returns Nothing.
    */
-  async subscribeToPairsOnSoroswapFactory(first: number, last: number) {
-    const contractId = await getFactoryAddress();
+  async subscribeToPairsOnSoroswapFactory(
+    network: Network,
+    first: number,
+    last: number,
+  ) {
+    const contractId = await getFactoryAddress(network);
+
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
 
     let key_xdr;
     let args;
@@ -129,6 +145,7 @@ export class PairsService {
 
       const subscriptionExists = await this.prisma.subscriptions.findFirst({
         where: {
+          network,
           contractId,
           keyXdr: key_xdr,
         },
@@ -158,6 +175,7 @@ export class PairsService {
             protocol: 'SOROSWAP',
             contractType: 'FACTORY',
             storageType: 'PERSISTENT',
+            network,
           },
         });
 
@@ -173,17 +191,27 @@ export class PairsService {
    * @param mercuryInstance The Mercury instance to be used to make the request.
    * @returns The total number of pairs created by the factory.
    */
-  async getSoroswapPairsCountFromMercury() {
-    const contractId = await getFactoryAddress();
+  async getSoroswapPairsCountFromMercury(network: Network) {
+    const contractId = await getFactoryAddress(network);
+
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
+
     const mercuryResponse = await mercuryInstance
       .getCustomQuery({
         request: GET_LAST_CONTRACT_ENTRY,
-        variables: { contractId, ledgerKey: constants.instanceStorageKeyXdr },
+        variables: {
+          contractId,
+          ledgerKey: constants.instanceStorageKeyXdr,
+        },
       })
       .catch((err: any) => {
         console.log(err);
         throw new ServiceUnavailableException('Error getting pair counter');
       });
+
     if (mercuryResponse && mercuryResponse.ok) {
       const parsedEntry = factoryInstanceParser(mercuryResponse.data);
       if (parsedEntry.length === 0) {
@@ -199,10 +227,11 @@ export class PairsService {
    * Retrieves the count of Mercury pairs.
    * @returns The count of Mercury pairs.
    */
-  async getSoroswapPairsCountFromDB() {
+  async getSoroswapPairsCountFromDB(network: Network) {
     const count = await this.prisma.subscriptions.count({
       where: {
-        contractId: await getFactoryAddress(),
+        network,
+        contractId: await getFactoryAddress(network),
         protocol: 'SOROSWAP',
         contractType: 'FACTORY',
         storageType: 'PERSISTENT',
@@ -217,8 +246,8 @@ export class PairsService {
    * @param pairCount Number of pairs to be retrieved.
    * @returns Object with the query variables.
    */
-  async createVariablesForPairsAddresses(pairCount: number) {
-    const contractId = await getFactoryAddress();
+  async createVariablesForPairsAddresses(network: Network, pairCount: number) {
+    const contractId = await getFactoryAddress(network);
 
     const variables = { contractId };
 
@@ -235,12 +264,20 @@ export class PairsService {
    * @returns Array with pair addresses.
    * @throws Error if Mercury request fails.
    */
-  async getSoroswapPairAddresses() {
-    const pairCounter = await this.getSoroswapPairsCountFromMercury();
+  async getSoroswapPairAddresses(network: Network) {
+    const pairCounter = await this.getSoroswapPairsCountFromMercury(network);
+
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
+
     if (pairCounter > 0) {
       const query = buildGetPairAddressesQuery(pairCounter);
-      const variables =
-        await this.createVariablesForPairsAddresses(pairCounter);
+      const variables = await this.createVariablesForPairsAddresses(
+        network,
+        pairCounter,
+      );
       const mercuryResponse = await mercuryInstance
         .getCustomQuery({ request: query, variables })
         .catch((err: any) => {
@@ -263,7 +300,12 @@ export class PairsService {
    * @returns Array with pair addresses.
    * @throws Error if Mercury request fails.
    */
-  async getPhoenixPairAddresses(contractId: string) {
+  async getPhoenixPairAddresses(network: Network, contractId: string) {
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
+
     const mercuryResponse = await mercuryInstance
       .getCustomQuery({
         request: GET_LAST_CONTRACT_ENTRY,
@@ -290,14 +332,21 @@ export class PairsService {
 
   /**
    * Function to get subscribe to a specific Phoenix pair contract.
+   * @param network The network of the blockchain.
    * @param contractId The contract ID of the Phoenix pair contract.
    * @returns Array with pair addresses.
    * @throws Error if Mercury request fails.
    */
-  async subscribeToPhoenixPair(contractId: string) {
+  async subscribeToPhoenixPair(network: Network, contractId: string) {
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
+
     const keyXdr = constants.instanceStorageKeyXdr;
     const subscriptionExists = await this.prisma.subscriptions.findFirst({
       where: {
+        network,
         contractId,
         keyXdr,
       },
@@ -327,6 +376,7 @@ export class PairsService {
           protocol: 'PHOENIX',
           contractType: 'PAIR',
           storageType: 'INSTANCE',
+          network,
         },
       });
 
@@ -358,7 +408,15 @@ export class PairsService {
    * @returns Array with pair objects.
    * @throws Error if Mercury request fails.
    */
-  async getSoroswapPairsWithTokensAndReserves(addresses: string[]) {
+  async getSoroswapPairsWithTokensAndReserves(
+    network: Network,
+    addresses: string[],
+  ) {
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
+
     if (addresses.length > 0) {
       const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
       const variables =
@@ -387,7 +445,15 @@ export class PairsService {
    * @returns Array with pair objects.
    * @throws Error if Mercury request fails.
    */
-  async getPhoenixPairsWithTokensAndReserves(addresses: string[]) {
+  async getPhoenixPairsWithTokensAndReserves(
+    network: Network,
+    addresses: string[],
+  ) {
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
+
     if (addresses.length > 0) {
       const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
       const variables =
@@ -415,11 +481,15 @@ export class PairsService {
    * @param pairAddresses Array with the addresses of the pairs to be checked.
    * @returns Nothing.
    */
-  async checkAndSubscribeToPhoenixPairs(pairAddresses: string[]) {
+  async checkAndSubscribeToPhoenixPairs(
+    network: Network,
+    pairAddresses: string[],
+  ) {
     if (pairAddresses.length > 0) {
       for (const pairAddress of pairAddresses) {
         const subscriptionExists = await this.prisma.subscriptions.findFirst({
           where: {
+            network,
             contractId: pairAddress,
             keyXdr: constants.instanceStorageKeyXdr,
           },
@@ -427,7 +497,7 @@ export class PairsService {
 
         if (!subscriptionExists) {
           console.log('New Phoenix pair found');
-          await this.subscribeToPhoenixPair(pairAddress);
+          await this.subscribeToPhoenixPair(network, pairAddress);
         }
       }
     }
@@ -436,9 +506,10 @@ export class PairsService {
   /** Function to get all Phoenix liquidity pools with its details.
    * @returns Array with all Phoenix liquidity pools.
    */
-  async getAllPhoenixPools() {
+  async getAllPhoenixPools(network: Network) {
     const phoenixFactories = await this.prisma.subscriptions.findMany({
       where: {
+        network,
         protocol: 'PHOENIX',
         contractType: 'FACTORY',
         storageType: 'INSTANCE',
@@ -449,11 +520,14 @@ export class PairsService {
     console.log('Fetching Phoenix Liquidity Pools...');
     for (const factory of phoenixFactories) {
       const pairAddresses = await this.getPhoenixPairAddresses(
+        network,
         factory.contractId,
       );
-      await this.checkAndSubscribeToPhoenixPairs(pairAddresses);
-      const pairs =
-        await this.getPhoenixPairsWithTokensAndReserves(pairAddresses);
+      await this.checkAndSubscribeToPhoenixPairs(network, pairAddresses);
+      const pairs = await this.getPhoenixPairsWithTokensAndReserves(
+        network,
+        pairAddresses,
+      );
       phoenixPairs = phoenixPairs.concat(pairs);
     }
     console.log(phoenixPairs.length, 'Phoenix pairs\n');
@@ -463,26 +537,35 @@ export class PairsService {
   /** Function to get all Soroswap liquidity pools with its details.
    * @returns Array with all Soroswap liquidity pools.
    */
-  async getAllSoroswapPools() {
-    const newCounter = await this.getSoroswapPairsCountFromMercury();
-    const oldCounter = await this.getSoroswapPairsCountFromDB();
+  async getAllSoroswapPools(network: Network) {
+    const newCounter = await this.getSoroswapPairsCountFromMercury(network);
+    console.log('🚀 « newCounter:', newCounter);
+    const oldCounter = await this.getSoroswapPairsCountFromDB(network);
+    console.log('🚀 « oldCounter:', oldCounter);
     let addresses;
     if (newCounter > oldCounter) {
       console.log('New Soroswap pairs found');
-      await this.subscribeToPairsOnSoroswapFactory(oldCounter, newCounter);
-      addresses = await this.getSoroswapPairAddresses();
+      await this.subscribeToPairsOnSoroswapFactory(
+        network,
+        oldCounter,
+        newCounter,
+      );
+      addresses = await this.getSoroswapPairAddresses(network);
       const newAddresses = addresses.slice(oldCounter, newCounter);
-      await this.subscribeToSoroswapPairs({
+      await this.subscribeToSoroswapPairs(network, {
         contractId: newAddresses,
         keyXdr: constants.instanceStorageKeyXdr,
         durability: 'persistent',
         hydrate: true,
       });
     } else {
-      addresses = await this.getSoroswapPairAddresses();
+      addresses = await this.getSoroswapPairAddresses(network);
     }
     console.log('Fetching Soroswap Liquidity Pools...');
-    const pools = await this.getSoroswapPairsWithTokensAndReserves(addresses);
+    const pools = await this.getSoroswapPairsWithTokensAndReserves(
+      network,
+      addresses,
+    );
     console.log(pools.length, 'Soroswap pairs\n');
     return pools;
   }
@@ -491,15 +574,15 @@ export class PairsService {
    * @param protocols Array with the protocols to be fetched. If none is provided, all protocols will be fetched.
    * @returns Array with all liquidity pools.
    */
-  async getAllPools(protocols: string[]) {
+  async getAllPools(network: Network, protocols: string[]) {
     let allPools = [];
     console.log('Protocols:', protocols);
     if (protocols.includes('soroswap') || protocols.length === 0) {
-      const soroswapPools = await this.getAllSoroswapPools();
+      const soroswapPools = await this.getAllSoroswapPools(network);
       allPools = allPools.concat(soroswapPools);
     }
     if (protocols.includes('phoenix') || protocols.length === 0) {
-      const phoenixPools = await this.getAllPhoenixPools();
+      const phoenixPools = await this.getAllPhoenixPools(network);
       allPools = allPools.concat(phoenixPools);
     }
 

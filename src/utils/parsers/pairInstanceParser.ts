@@ -1,6 +1,6 @@
-import { ContractEntriesResponse } from '../../types';
-import { scValToJs } from 'mercury-sdk';
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { scValToJs } from 'mercury-sdk';
+import { ContractEntriesResponse } from '../../types';
 
 /**
  * Enum representing the key names for pair instance properties.

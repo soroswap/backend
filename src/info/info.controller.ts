@@ -1,23 +1,13 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Post,
-  Query,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
   ApiHeader,
   ApiOkResponse,
-  ApiParam,
   ApiOperation,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
-
-import { NetworkApiQuery } from 'src/decorators';
-import { InfoService } from './info.service';
-
 import { QueryNetworkDto } from 'src/dto';
+import { InfoService } from './info.service';
 
 @ApiHeader({
   name: 'apiKey',
@@ -32,13 +22,17 @@ export class InfoController {
     summary: 'Get token TVL',
     description: 'Retrieve Total Value Locked for a specific token',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
     description:
       'Object with the address and Total Value Locked (in USD) for the given token',
   })
-  async getTokenTvl(@Param('token') token: string) {
-    return await this.infoService.getTokenTvl(token);
+  async getTokenTvl(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return await this.infoService.getTokenTvl(query.network, token);
   }
 
   @Get('/poolTvl/:pool')
@@ -46,6 +40,7 @@ export class InfoController {
     summary: 'Get pool TVL',
     description: 'Retrieve Total Value Locked for a specific Liquidity Pool',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({
     name: 'pool',
     description: 'Liquidity Pool address',
@@ -55,8 +50,11 @@ export class InfoController {
     description:
       'Object with the address and Total Value Locked (in USD) for the given pool',
   })
-  async getPoolTvl(@Param('pool') pool: string) {
-    return await this.infoService.getPoolTvl(pool);
+  async getPoolTvl(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return await this.infoService.getPoolTvl(query.network, pool);
   }
 
   @Get('/soroswapTvl')
@@ -64,12 +62,13 @@ export class InfoController {
     summary: 'Get Soroswap TVL',
     description: 'Retrieve Total Value Locked in the Soroswap DEX',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiOkResponse({
     description:
       'Total Value Locked in USD for all pools in the Soroswap protocol',
   })
-  async getSoroswapTvl() {
-    return await this.infoService.getSoroswapTvl();
+  async getSoroswapTvl(@Query() query: QueryNetworkDto) {
+    return await this.infoService.getSoroswapTvl(query.network);
   }
 
   @Get('/price/xlm/:token')
@@ -78,13 +77,17 @@ export class InfoController {
     description:
       'Retrieve the value in XLM of a specific token, based on the amounts of the XLM/token pool.',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
     description:
       'Object with the address and equivalent value in XLM for the given token',
   })
-  async getTokenPriceInXLM(@Param('token') token: string) {
-    return await this.infoService.getTokenPriceInXLM(token);
+  async getTokenPriceInXLM(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return await this.infoService.getTokenPriceInXLM(query.network, token);
   }
 
   @Get('/price/usdc/:token')
@@ -93,13 +96,17 @@ export class InfoController {
     description:
       'Retrieve the value in USDC of a specific token, based on the amounts of the USDC/token pool.',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
     description:
       'Object with the address and equivalent value in USDC for the given token',
   })
-  async getTokenPriceInUSDC(@Param('token') token: string) {
-    return await this.infoService.getTokenPriceInUSDC(token);
+  async getTokenPriceInUSDC(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return await this.infoService.getTokenPriceInUSDC(query.network, token);
   }
 
   @Get('/price/:token')
@@ -108,13 +115,17 @@ export class InfoController {
     description:
       'Retrieve the value in USD of a specific token, based on the amounts of the XLM/token pool and the XLM price in USD according to the CoinGecko API.',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
     description:
       'Object with the address and equivalent value in USD for the given token',
   })
-  async getTokenPrice(@Param('token') token: string) {
-    return await this.infoService.getTokenPriceInUSD(token);
+  async getTokenPrice(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return await this.infoService.getTokenPriceInUSD(query.network, token);
   }
 
   @Get('liquidity/:pool')
@@ -123,13 +134,17 @@ export class InfoController {
     description:
       'Retrieve the total amount of liquidity shares of a specific pool',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'pool', description: 'Pool address', type: String })
   @ApiOkResponse({
     description:
       'Object with the address and amount of liquidity shares of the given pool',
   })
-  async getLiquidity(@Param('pool') pool: string) {
-    return await this.infoService.getPoolShares(pool);
+  async getLiquidity(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return await this.infoService.getPoolShares(query.network, pool);
   }
 
   @Get('/volume24h')
@@ -138,12 +153,13 @@ export class InfoController {
     description:
       'Retrieve trading volume (in USD) in Soroswap for the last 24 hours',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiOkResponse({
     description:
       'Amount in USD of volume traded in Soroswap for the last 24 hours',
   })
-  async getSoroswapVolume24h() {
-    return this.infoService.getSoroswapVolume(1);
+  async getSoroswapVolume24h(@Query() query: QueryNetworkDto) {
+    return this.infoService.getSoroswapVolume(query.network, 1);
   }
 
   @Get('/tokenVolume24h/:token')
@@ -152,13 +168,17 @@ export class InfoController {
     description:
       'Retrieve trading volume (in USD) in Soroswap of a specific token for the last 24 hours',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
     description:
       'Amount in USD of volume traded of the specified token in Soroswap for the last 24 hours',
   })
-  async getTokenVolume24h(@Param('token') token: string) {
-    return this.infoService.getTokenVolume(token, 1);
+  async getTokenVolume24h(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenVolume(query.network, token, 1);
   }
 
   @Get('/tokenVolume7d/:token')
@@ -167,13 +187,17 @@ export class InfoController {
     description:
       'Retrieve trading volume (in USD) in Soroswap of a specific token for the last 7 days',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
     description:
       'Amount in USD of volume traded of the specified token in Soroswap for the last 7 days',
   })
-  async getTokenVolume7d(@Param('token') token: string) {
-    return this.infoService.getTokenVolume(token, 7);
+  async getTokenVolume7d(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenVolume(query.network, token, 7);
   }
 
   @Get('/poolVolume24h/:pool')
@@ -182,13 +206,17 @@ export class InfoController {
     description:
       'Retrieve trading volume (in USD) in Soroswap on a specific pool for the last 24 hours',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'pool', description: 'Pool address', type: String })
   @ApiOkResponse({
     description:
       'Amount in USD of volume traded on the specified pool in Soroswap for the last 24 hours',
   })
-  async getPoolVolume24h(@Param('pool') pool: string) {
-    return this.infoService.getPoolVolume(pool, 1);
+  async getPoolVolume24h(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolVolume(query.network, pool, 1);
   }
 
   @Get('/poolVolume7d/:pool')
@@ -197,13 +225,17 @@ export class InfoController {
     description:
       'Retrieve trading volume (in USD) in Soroswap on a specific pool for the last 7 days',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'pool', description: 'Pool address', type: String })
   @ApiOkResponse({
     description:
       'Amount in USD of volume traded on the specified pool in Soroswap for the last 7 days',
   })
-  async getPoolVolume7d(@Param('pool') pool: string) {
-    return this.infoService.getPoolVolume(pool, 7);
+  async getPoolVolume7d(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolVolume(query.network, pool, 7);
   }
 
   @Get('/soroswapFees24h')
@@ -212,12 +244,13 @@ export class InfoController {
     description:
       'Retrieve trading fees (in USD) in Soroswap for the last 24 hours',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiOkResponse({
     description:
       'Amount in USD of fees collected in Soroswap for the last 24 hours',
   })
-  async getSoroswapFees24h() {
-    return this.infoService.getSoroswapFees(1);
+  async getSoroswapFees24h(@Query() query: QueryNetworkDto) {
+    return this.infoService.getSoroswapFees(query.network, 1);
   }
 
   @Get('/poolFees24h/:pool')
@@ -226,13 +259,17 @@ export class InfoController {
     description:
       'Retrieve trading fees (in USD) in Soroswap on a specific pool for the last 24 hours',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'pool', description: 'Pool address', type: String })
   @ApiOkResponse({
     description:
       'Amount in USD of fees collected on the specified pool in Soroswap for the last 24 hours',
   })
-  async getPoolFees24h(@Param('pool') pool: string) {
-    return this.infoService.getPoolFees(pool, 1);
+  async getPoolFees24h(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolFees(query.network, pool, 1);
   }
 
   @Get('/poolFeesYearly/:pool')
@@ -241,13 +278,17 @@ export class InfoController {
     description:
       'Retrieve trading fees (in USD) in Soroswap on a specific pool for the last year',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'pool', description: 'Pool address', type: String })
   @ApiOkResponse({
     description:
       'Amount in USD of fees collected on the specified pool in Soroswap for the last year (365 days)',
   })
-  async getPoolFeesYearly(@Param('pool') pool: string) {
-    return this.infoService.getPoolFees(pool, 365);
+  async getPoolFeesYearly(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolFees(query.network, pool, 365);
   }
 
   @Get('/pool/:pool')
@@ -255,13 +296,17 @@ export class InfoController {
     summary: 'Get pool information',
     description: 'Retrieve all relevant information of a specific pool',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'pool', description: 'Pool address', type: String })
   @ApiOkResponse({
     description:
       'Object with pool address, token addresses, token reserves, TVL, volume 24h, volume 7d, fees 24h and fees yearly of the specified pool',
   })
-  async getPoolInfo(@Param('pool') pool: string) {
-    return this.infoService.getPoolInfo(pool);
+  async getPoolInfo(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolInfo(query.network, pool);
   }
 
   @Get('/pools')
@@ -269,12 +314,13 @@ export class InfoController {
     summary: 'Get all pools information',
     description: 'Retrieve all relevant information of every pool in Soroswap',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiOkResponse({
     description:
       'Array of objects with pool address, token addresses, token reserves, TVL, volume 24h, volume 7d, fees 24h and fees yearly of each pool',
   })
-  async getPoolsInfo() {
-    return this.infoService.getPoolsInfo();
+  async getPoolsInfo(@Query() query: QueryNetworkDto) {
+    return this.infoService.getPoolsInfo(query.network);
   }
 
   @Get('/token/:token')
@@ -282,13 +328,17 @@ export class InfoController {
     summary: 'Get token information',
     description: 'Retrieve all relevant information of a specific token',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'token', description: 'Token address', type: String })
   @ApiOkResponse({
     description:
       'Object with token address, TVL, price, price change and volume 24h of the specified token',
   })
-  async getTokenInfo(@Param('token') token: string) {
-    return this.infoService.getTokenInfo(token);
+  async getTokenInfo(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenInfo(query.network, token);
   }
 
   @Get('/tokens')
@@ -296,11 +346,12 @@ export class InfoController {
     summary: 'Get all tokens information',
     description: 'Retrieve all relevant information of all tokens in Soroswap',
   })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiOkResponse({
     description:
       'Array of objects with token address, TVL, price, price change and volume 24h of each token',
   })
-  async getTokensInfo() {
-    return this.infoService.getTokensInfo();
+  async getTokensInfo(@Query() query: QueryNetworkDto) {
+    return this.infoService.getTokensInfo(query.network);
   }
 }

@@ -1,24 +1,17 @@
-import {
-  BadRequestException,
-  Injectable,
-  ServiceUnavailableException,
-} from '@nestjs/common';
-import { Mercury } from 'mercury-sdk';
-import * as sdk from 'stellar-sdk';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { PairsService } from 'src/pairs/pairs.service';
-import { constants } from 'src/constants';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Network } from '@prisma/client';
 import axios from 'axios';
+import { xlmToken } from 'src/constants';
+import { PairsService } from 'src/pairs/pairs.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  mercuryInstanceMainnet,
+  mercuryInstanceTestnet,
+} from 'src/services/mercury';
 import { getRouterAddress } from 'src/utils/getRouterAddress';
+import { getTokensList } from 'src/utils/getTokensList';
 import { getContractEventsParser } from 'src/utils/parsers/getContractEventsParser';
 import { GET_CONTRACT_EVENTS } from 'src/utils/queries';
-
-const mercuryInstance = new Mercury({
-  backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
-  graphqlEndpoint: process.env.MERCURY_GRAPHQL_ENDPOINT,
-  email: process.env.MERCURY_TESTER_EMAIL,
-  password: process.env.MERCURY_TESTER_PASSWORD,
-});
 
 @Injectable()
 export class InfoService {
@@ -27,9 +20,9 @@ export class InfoService {
     private pairs: PairsService,
   ) {}
 
-  async getPools(inheritedPools?: any[]) {
+  async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
-      return await this.pairs.getAllPools(['soroswap']);
+      return await this.pairs.getAllPools(network, ['soroswap']);
     } else {
       return inheritedPools;
     }
@@ -46,40 +39,37 @@ export class InfoService {
     }
   }
 
-  async getContractEvents(inheritedContractEvents?: any[]) {
+  async getContractEvents(network: Network, inheritedContractEvents?: any[]) {
     if (inheritedContractEvents) {
       return inheritedContractEvents;
     }
 
-    const routerAddress = await getRouterAddress();
+    const mercuryInstance =
+      network == Network.TESTNET
+        ? mercuryInstanceTestnet
+        : mercuryInstanceMainnet;
+
+    const routerAddress = await getRouterAddress(network);
 
     const mercuryResponse = await mercuryInstance.getCustomQuery({
       request: GET_CONTRACT_EVENTS,
       variables: { contractId: routerAddress },
     });
+    console.log('🚀 « mercuryResponse:', mercuryResponse);
 
     const parsedContractEvents = getContractEventsParser(mercuryResponse.data!);
+    console.log('🚀 « parsedContractEvents:', parsedContractEvents);
 
     return parsedContractEvents;
   }
 
-  async getTokensList(inheritedTokens?: any[]) {
-    if (inheritedTokens) {
-      return inheritedTokens;
-    } else {
-      const { data } = await axios.get(
-        'https://api.soroswap.finance/api/tokens',
-      );
-      return data;
-    }
-  }
-
   async getTokenTvl(
+    network: Network,
     token: string,
     inheritedXlmValue?: number,
     inheritedPools?: any[],
   ) {
-    const pools = await this.getPools(inheritedPools);
+    const pools = await this.getPools(network, inheritedPools);
 
     const filteredPools = pools.filter(
       (pool) => pool.token0 == token || pool.token1 == token,
@@ -93,6 +83,7 @@ export class InfoService {
       }
     }
     const tokenPrice = await this.getTokenPriceInUSD(
+      network,
       token,
       inheritedXlmValue,
       pools,
@@ -102,16 +93,12 @@ export class InfoService {
   }
 
   async getTokenPriceInXLM(
+    network: Network,
     token: string,
     inheritedPools?: any[],
-    inheritedTokens?: any[],
   ) {
-    const pools = await this.getPools(inheritedPools);
-    const data = await this.getTokensList(inheritedTokens);
-    const testnetTokens = data.find(
-      (item) => item.network === process.env.NETWORK,
-    ).tokens;
-    const xlm = testnetTokens.find((item) => item.code === 'XLM');
+    const pools = await this.getPools(network, inheritedPools);
+    const xlm = xlmToken[network];
 
     const filteredPools = pools.filter(
       (pool) =>
@@ -138,16 +125,15 @@ export class InfoService {
   }
 
   async getTokenPriceInUSDC(
+    network: Network,
     token: string,
     inheritedPools?: any[],
     inheritedTokens?: any[],
   ) {
-    const pools = await this.getPools(inheritedPools);
-    const data = await this.getTokensList(inheritedTokens);
-    const testnetTokens = data.find(
-      (item) => item.network === process.env.NETWORK,
-    ).tokens;
-    const usdc = testnetTokens.find((item) => item.code === 'USDC');
+    const pools = await this.getPools(network, inheritedPools);
+    const tokens = await getTokensList(network, inheritedTokens);
+
+    const usdc = tokens.find((item) => item.code === 'USDC');
 
     const filteredPools = pools.filter(
       (pool) =>
@@ -172,22 +158,28 @@ export class InfoService {
   }
 
   async getTokenPriceInUSD(
+    network: Network,
     token: string,
     inheritedXlmValue?: number,
     inheritedPools?: any[],
   ) {
-    const valueInXlm = await this.getTokenPriceInXLM(token, inheritedPools);
+    const valueInXlm = await this.getTokenPriceInXLM(
+      network,
+      token,
+      inheritedPools,
+    );
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const price = valueInXlm.price * xlmValue;
     return { token, price };
   }
 
   async getPoolTvl(
+    network: Network,
     poolAddress: string,
     inheritedXlmValue?: number,
     inheritedPools?: any[],
   ) {
-    const pools = await this.getPools(inheritedPools);
+    const pools = await this.getPools(network, inheritedPools);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const filteredPools = pools.filter(
@@ -200,11 +192,13 @@ export class InfoService {
 
     const pool = filteredPools[0];
     const token0Price = await this.getTokenPriceInUSD(
+      network,
       pool.token0,
       xlmValue,
       pools,
     );
     const token1Price = await this.getTokenPriceInUSD(
+      network,
       pool.token1,
       xlmValue,
       pools,
@@ -215,8 +209,12 @@ export class InfoService {
     return { pool: poolAddress, tvl };
   }
 
-  async getPoolShares(poolAddress: string, inheritedPools?: any[]) {
-    const pools = await this.getPools(inheritedPools);
+  async getPoolShares(
+    network: Network,
+    poolAddress: string,
+    inheritedPools?: any[],
+  ) {
+    const pools = await this.getPools(network, inheritedPools);
 
     const filteredPools = pools.filter(
       (pool) => pool.contractId == poolAddress,
@@ -230,18 +228,24 @@ export class InfoService {
     return { pool: poolAddress, shares: shares };
   }
 
-  async getSoroswapTvl(inheritedPools?: any[], inheritedXlmValue?: number) {
-    const pools = await this.getPools(inheritedPools);
+  async getSoroswapTvl(
+    network: Network,
+    inheritedPools?: any[],
+    inheritedXlmValue?: number,
+  ) {
+    const pools = await this.getPools(network, inheritedPools);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     let tvl = 0;
     for (const pool of pools) {
       const token0Price = await this.getTokenPriceInUSD(
+        network,
         pool.token0,
         xlmValue,
         pools,
       );
       const token1Price = await this.getTokenPriceInUSD(
+        network,
         pool.token1,
         xlmValue,
         pools,
@@ -254,15 +258,17 @@ export class InfoService {
   }
 
   async getSoroswapVolume(
+    network: Network,
     lastNDays: number,
     inheritedPools?: any[],
     inheritedContractEvents?: any[],
     inheritedXlmValue?: number,
   ) {
     const contractEvents = await this.getContractEvents(
+      network,
       inheritedContractEvents,
     );
-    const pools = await this.getPools(inheritedPools);
+    const pools = await this.getPools(network, inheritedPools);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const now = new Date();
@@ -274,11 +280,13 @@ export class InfoService {
       if (timeDiff < oneDay * lastNDays) {
         if (event.topic2 == 'add' || event.topic2 == 'remove') {
           const tokenPriceA = await this.getTokenPriceInUSD(
+            network,
             event.token_a,
             xlmValue,
             pools,
           );
           const tokenPriceB = await this.getTokenPriceInUSD(
+            network,
             event.token_b,
             xlmValue,
             pools,
@@ -288,6 +296,7 @@ export class InfoService {
         } else if (event.topic2 == 'swap') {
           for (let i = 0; i < event.amounts.length; i++) {
             const tokenPrice = await this.getTokenPriceInUSD(
+              network,
               event.path[i],
               xlmValue,
               pools,
@@ -302,6 +311,7 @@ export class InfoService {
   }
 
   async getTokenVolume(
+    network: Network,
     token: string,
     lastNDays: number,
     inheritedPools?: any[],
@@ -309,9 +319,10 @@ export class InfoService {
     inheritedXlmValue?: number,
   ) {
     const contractEvents = await this.getContractEvents(
+      network,
       inheritedContractEvents,
     );
-    const pools = await this.getPools(inheritedPools);
+    const pools = await this.getPools(network, inheritedPools);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const now = new Date();
@@ -324,6 +335,7 @@ export class InfoService {
         if (event.topic2 == 'add' || event.topic2 == 'remove') {
           if (event.token_a == token) {
             const tokenPrice = await this.getTokenPriceInUSD(
+              network,
               event.token_a,
               xlmValue,
               pools,
@@ -331,6 +343,7 @@ export class InfoService {
             volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPrice.price;
           } else if (event.token_b == token) {
             const tokenPrice = await this.getTokenPriceInUSD(
+              network,
               event.token_b,
               xlmValue,
               pools,
@@ -341,6 +354,7 @@ export class InfoService {
           for (let i = 0; i < event.amounts.length; i++) {
             if (event.path[i] == token) {
               const tokenPrice = await this.getTokenPriceInUSD(
+                network,
                 event.path[i],
                 xlmValue,
                 pools,
@@ -357,6 +371,7 @@ export class InfoService {
   }
 
   async getPoolVolume(
+    network: Network,
     pool: string,
     lastNDays: number,
     inheritedXlmValue?: number,
@@ -364,9 +379,10 @@ export class InfoService {
     inheritedContractEvents?: any[],
   ) {
     const contractEvents = await this.getContractEvents(
+      network,
       inheritedContractEvents,
     );
-    const pools = await this.getPools(inheritedPools);
+    const pools = await this.getPools(network, inheritedPools);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const now = new Date();
@@ -379,11 +395,13 @@ export class InfoService {
       if (timeDiff < oneDay * lastNDays && event.pair && event.pair == pool) {
         if (event.topic2 == 'add' || event.topic2 == 'remove') {
           const tokenPriceA = await this.getTokenPriceInUSD(
+            network,
             event.token_a,
             xlmValue,
             pools,
           );
           const tokenPriceB = await this.getTokenPriceInUSD(
+            network,
             event.token_b,
             xlmValue,
             pools,
@@ -397,6 +415,7 @@ export class InfoService {
               event.path[i] == poolData.token1
             ) {
               const tokenPrice = await this.getTokenPriceInUSD(
+                network,
                 event.path[i],
                 xlmValue,
                 pools,
@@ -412,13 +431,16 @@ export class InfoService {
   }
 
   async getSoroswapFees(
+    network: Network,
     lastNDays: number,
     inheritedXlmValue?: number,
     inheritedContractEvents?: any[],
   ) {
     const contractEvents = await this.getContractEvents(
+      network,
       inheritedContractEvents,
     );
+    console.log('🚀 « contractEvents:', contractEvents);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const now = new Date();
@@ -435,11 +457,13 @@ export class InfoService {
   }
 
   async getPoolFees(
+    network: Network,
     pool: string,
     lastNDays: number,
     inheritedXlmValue?: number,
   ) {
-    const contractEvents = await this.getContractEvents();
+    const contractEvents = await this.getContractEvents(network);
+    console.log('🚀 « contractEvents:', contractEvents);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const now = new Date();
@@ -456,23 +480,26 @@ export class InfoService {
   }
 
   async getPoolInfo(
+    network: Network,
     poolAddress: string,
     inheritedXlmValue?: number,
     inheritedPools?: any[],
     inheritedContractEvents?: any[],
   ) {
     const contractEvents = await this.getContractEvents(
+      network,
       inheritedContractEvents,
     );
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
-    const pools = await this.getPools(inheritedPools);
+    const pools = await this.getPools(network, inheritedPools);
 
     const filteredPools = pools.filter(
       (pool) => pool.contractId === poolAddress,
     );
 
-    const tvl = await this.getPoolTvl(poolAddress, xlmValue, pools);
+    const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
     const volume24h = await this.getPoolVolume(
+      network,
       poolAddress,
       1,
       xlmValue,
@@ -480,15 +507,21 @@ export class InfoService {
       contractEvents,
     );
     const volume7d = await this.getPoolVolume(
+      network,
       poolAddress,
       7,
       xlmValue,
       pools,
       contractEvents,
     );
-    const fees24h = await this.getPoolFees(poolAddress, 1, xlmValue);
-    const feesYearly = await this.getPoolFees(poolAddress, 365, xlmValue);
-    const liquidity = await this.getPoolShares(poolAddress, pools);
+    const fees24h = await this.getPoolFees(network, poolAddress, 1, xlmValue);
+    const feesYearly = await this.getPoolFees(
+      network,
+      poolAddress,
+      365,
+      xlmValue,
+    );
+    const liquidity = await this.getPoolShares(network, poolAddress, pools);
 
     const obj = {
       pool: poolAddress,
@@ -507,14 +540,15 @@ export class InfoService {
     return obj;
   }
 
-  async getPoolsInfo() {
-    const contractEvents = await this.getContractEvents();
-    const pools = await this.getPools();
+  async getPoolsInfo(network: Network) {
+    const contractEvents = await this.getContractEvents(network);
+    const pools = await this.getPools(network);
     const xlmValue = await this.getXlmValue();
 
     const poolsInfo = [];
     for (const pool of pools) {
       const poolInfo = await this.getPoolInfo(
+        network,
         pool.contractId,
         xlmValue,
         pools,
@@ -527,21 +561,28 @@ export class InfoService {
   }
 
   async getTokenInfo(
+    network: Network,
     token: string,
     inheritedXlmValue?: number,
     inheritedPools?: any[],
     inheritedContractEvents?: any[],
-    inheritedTokens?: any[],
   ) {
     const contractEvents = await this.getContractEvents(
+      network,
       inheritedContractEvents,
     );
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
-    const pools = await this.getPools(inheritedPools);
+    const pools = await this.getPools(network, inheritedPools);
 
-    const tvl = await this.getTokenTvl(token, xlmValue, pools);
-    const priceInUsd = await this.getTokenPriceInUSD(token, xlmValue, pools);
+    const tvl = await this.getTokenTvl(network, token, xlmValue, pools);
+    const priceInUsd = await this.getTokenPriceInUSD(
+      network,
+      token,
+      xlmValue,
+      pools,
+    );
     const volume24h = await this.getTokenVolume(
+      network,
       token,
       1,
       pools,
@@ -560,25 +601,22 @@ export class InfoService {
     return obj;
   }
 
-  async getTokensInfo() {
-    const contractEvents = await this.getContractEvents();
+  async getTokensInfo(network: Network) {
+    const contractEvents = await this.getContractEvents(network);
     const xlmValue = await this.getXlmValue();
-    const pools = await this.getPools();
+    const pools = await this.getPools(network);
 
-    const { data } = await axios.get('https://api.soroswap.finance/api/tokens');
-    const tokens = data.find(
-      (item) => item.network === process.env.NETWORK,
-    ).tokens;
+    const tokens = await getTokensList(network);
 
     const tokensInfo = [];
     for (const token of tokens) {
       try {
         const tokenInfo = await this.getTokenInfo(
+          network,
           token.contract,
           xlmValue,
           pools,
           contractEvents,
-          data,
         );
         tokensInfo.push(tokenInfo);
       } catch (error) {

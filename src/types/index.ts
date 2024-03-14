@@ -4,5 +4,4 @@ export {
   SubscribeToLedgerEntriesInterface
 } from './getContractEntries';
 export { GetContractEventsResponse } from './getContractEvents';
-export { Network } from './network';
 

@@ -1,6 +1,6 @@
-import { GetContractEventsResponse } from '../../types';
-import { scValToJs } from 'mercury-sdk';
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { scValToJs } from 'mercury-sdk';
+import { GetContractEventsResponse } from 'src/types';
 
 export const getContractEventsParser = (data: GetContractEventsResponse) => {
   const parsedData = data.eventByContractId.edges.map((edge) => {

@@ -1,23 +1,36 @@
-import { Mercury } from 'mercury-sdk';
-import { PrismaClient } from '@prisma/client';
-import { getFactoryAddress } from '../src/utils/getFactoryAddress';
+import { Network, PrismaClient } from '@prisma/client';
 import { constants } from '../src/constants';
+import {
+  mercuryInstanceMainnet,
+  mercuryInstanceTestnet,
+} from '../src/services/mercury';
+import { getFactoryAddress } from '../src/utils';
+
+const networkInput = process.argv[2]; // 'mainnet' or 'testnet'
+
+// Mapping string input to the Network enum
+const networkMap = {
+  mainnet: 'MAINNET',
+  testnet: 'TESTNET',
+};
+
+// Default to TESTNET if the input is not recognized
+const network = networkMap[networkInput.toLowerCase()] || 'TESTNET';
 
 (async function () {
-  const mercuryInstance = new Mercury({
-    backendEndpoint: process.env.MERCURY_BACKEND_ENDPOINT,
-    graphqlEndpoint: process.env.MERCURY_GRAPHQL_ENDPOINT,
-    email: process.env.MERCURY_TESTER_EMAIL,
-    password: process.env.MERCURY_TESTER_PASSWORD,
-  });
+  if (!network) throw Error('No network given <testnet | mainnet>');
+  const mercuryInstance =
+    network == Network.TESTNET
+      ? mercuryInstanceTestnet
+      : mercuryInstanceMainnet;
 
   const prisma = new PrismaClient();
 
   const keyXdr = constants.instanceStorageKeyXdr;
 
-  const contractId = await getFactoryAddress();
+  const contractId = await getFactoryAddress(network);
 
-  let subscriptionExists = await prisma.subscriptions.findFirst({
+  const subscriptionExists = await prisma.subscriptions.findFirst({
     where: {
       contractId,
       keyXdr,
@@ -46,6 +59,7 @@ import { constants } from '../src/constants';
         protocol: 'SOROSWAP',
         contractType: 'FACTORY',
         storageType: 'INSTANCE',
+        network,
       },
     });
 

@@ -1,3 +1,4 @@
+import { Network } from '@prisma/client';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { getRouterAddress } from '../src/utils/getRouterAddress';
@@ -94,7 +95,7 @@ async function main() {
   console.log(symbolA, 'Contract ID:', token_a.contractId(passphrase));
 
   console.log('\n========== Liquidity Pool Operations ==========');
-  const routerAddress = await getRouterAddress();
+  const routerAddress = await getRouterAddress(Network.TESTNET);
 
   console.log(
     'Creating liquidity pair and adding liquidity between XLM and',

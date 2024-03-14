@@ -8,14 +8,21 @@ datasource db {
 }
 
 model Subscriptions {
-  id Int @id @default(autoincrement())
-  contractId String
-  keyXdr String
-  protocol Protocol?
+  id           Int           @id @default(autoincrement())
+  contractId   String
+  keyXdr       String
+  protocol     Protocol?
   contractType ContractType?
-  storageType StorageType?
+  storageType  StorageType?
+  network      Network @default(TESTNET)
 
   @@unique([contractId, keyXdr])
+  @@index([network, protocol, contractType])
+}
+
+enum Network {
+  TESTNET
+  MAINNET
 }
 
 enum Protocol {

@@ -1,10 +1,11 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { Network } from '@prisma/client';
 import { IsEnum, IsOptional } from 'class-validator';
-import { Network } from '../types';
 
 export class QueryNetworkDto {
-  @IsOptional()
   @IsEnum(Network)
-  network: Network = Network.Testnet;
+  @ApiProperty({ enum: Network, default: Network.MAINNET })
+  network: Network;
 
   @IsOptional()
   protocols: string[] = [];

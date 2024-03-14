@@ -1,7 +1,8 @@
 export { factoryInstanceParser } from './factoryInstanceParser';
 export { pairAddressesParser } from './getPairEntriesParser';
 export {
-  soroswapPairInstanceParser,
   phoenixPairInstanceParser,
+  soroswapPairInstanceParser
 } from './pairInstanceParser';
 export { phoenixFactoryLpVecParser } from './phoenixFactoryLpVecParser';
+
