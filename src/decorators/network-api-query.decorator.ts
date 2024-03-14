@@ -5,7 +5,7 @@ export function NetworkApiQuery() {
   return ApiQuery({
     name: 'network',
     required: true,
-    description: 'Network to use <TESTNET | MAINNET>',
+    description: 'Network to use.',
     enum: Network,
   });
 }
