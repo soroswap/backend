@@ -20,6 +20,20 @@ export class InfoService {
     private pairs: PairsService,
   ) {}
 
+  async getTokenData(network: Network, token: string) {
+    const tokens = await getTokensList(network);
+    const currentToken = tokens.find((item) => item.contract === token);
+    if (!currentToken) {
+      throw new ServiceUnavailableException('Token not found');
+    }
+    const tokenData = {
+      name: currentToken.name,
+      symbol: currentToken.code,
+      logo: currentToken.icon,
+    };
+    return tokenData;
+  }
+
   async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
       return await this.pairs.getAllPools(network, ['soroswap']);
@@ -235,7 +249,7 @@ export class InfoService {
   ) {
     const pools = await this.getPools(network, inheritedPools);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
-
+    const variationLast24h = 0.03;
     let tvl = 0;
     for (const pool of pools) {
       const token0Price = await this.getTokenPriceInUSD(
@@ -254,7 +268,7 @@ export class InfoService {
         parseFloat(pool.reserve0) * 10 ** -7 * token0Price.price +
         parseFloat(pool.reserve1) * 10 ** -7 * token1Price.price;
     }
-    return tvl;
+    return { tvl: tvl, variation: variationLast24h };
   }
 
   async getSoroswapVolume(
@@ -275,6 +289,8 @@ export class InfoService {
     const oneDay = 24 * 60 * 60 * 1000;
 
     let volume = 0;
+
+    const variationLast24h = 0.03;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
       if (timeDiff < oneDay * lastNDays) {
@@ -307,7 +323,7 @@ export class InfoService {
         }
       }
     }
-    return volume;
+    return { volume: volume, variation: variationLast24h };
   }
 
   async getTokenVolume(
@@ -445,7 +461,6 @@ export class InfoService {
 
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
-
     let fees = 0;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
@@ -453,7 +468,8 @@ export class InfoService {
         fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
-    return fees * xlmValue;
+    const variationLast24h = 0.03;
+    return { fees: fees * xlmValue, variationLast24h };
   }
 
   async getPoolFees(
@@ -493,9 +509,15 @@ export class InfoService {
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const pools = await this.getPools(network, inheritedPools);
 
-    const filteredPools = pools.filter(
+    const filteredPools: any = pools.filter(
       (pool) => pool.contractId === poolAddress,
     );
+    if (filteredPools.length === 0) {
+      throw new ServiceUnavailableException('Liquidity pool not found');
+    }
+
+    const tokenA = await this.getTokenData(network, filteredPools[0].token0);
+    const tokenB = await this.getTokenData(network, filteredPools[0].token1);
 
     const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
     const volume24h = await this.getPoolVolume(
@@ -535,6 +557,8 @@ export class InfoService {
       fees24h: fees24h,
       feesYearly: feesYearly,
       liquidity: liquidity.shares,
+      tokenA: tokenA,
+      tokenB: tokenB,
     };
 
     return obj;
@@ -589,13 +613,33 @@ export class InfoService {
       contractEvents,
       xlmValue,
     );
+    const volume7d = this.getTokenVolume(
+      network,
+      token,
+      7,
+      pools,
+      contractEvents,
+      xlmValue,
+    );
+    const priceChange24h = 0;
+    const fees24h = 0; // await this.getPoolFees(network)
+    const tokenData = await this.getTokenData(network, token);
+    const tvlSlippage24h = 0;
+    const tvlSlippage7d = 0;
 
     const obj = {
+      fees24h: fees24h,
       token: token,
+      name: tokenData.name,
+      symbol: tokenData.symbol,
+      logo: tokenData.logo,
       tvl: tvl.tvl,
       price: priceInUsd.price,
-      priceChange24h: 0,
+      priceChange24h: priceChange24h,
+      volume7d: volume7d,
       volume24h: volume24h,
+      tvlSlippage24h: tvlSlippage24h,
+      tvlSlippage7d: tvlSlippage7d,
     };
 
     return obj;

@@ -32,4 +32,5 @@ export interface TokenType {
   code: string;
   decimals?: number;
   logoURI?: string;
+  icon?: string;
 }
