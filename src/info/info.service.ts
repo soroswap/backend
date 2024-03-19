@@ -20,6 +20,21 @@ export class InfoService {
     private pairs: PairsService,
   ) {}
 
+  async getTokenData (network: Network, token: string) {
+    const tokens = await getTokensList(network)
+    const currentToken = tokens.find((item) => item.contract === token);
+    if (!currentToken) {
+      throw new ServiceUnavailableException('Token not found');
+    }
+    const tokenData = {
+      name: currentToken.name,
+      symbol: currentToken.code,
+      logo: currentToken.icon,
+    };
+    return tokenData
+  }
+
+
   async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
       return await this.pairs.getAllPools(network, ['soroswap']);
@@ -495,20 +510,15 @@ export class InfoService {
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const pools = await this.getPools(network, inheritedPools);
 
-    const filteredPools = pools.filter(
+    const filteredPools: any = pools.filter(
       (pool) => pool.contractId === poolAddress,
     );
-
-    const tokenA = {
-      tokenName: 'token a Name',
-      tokenSymbol: 'token a Symbol',
-      tokenLogo: 'token a Logo',
-    };
-    const tokenB = {
-      tokenName: 'token b Name',
-      tokenSymbol: 'token b Symbol',
-      tokenLogo: 'token b Logo',
-    };
+    if (filteredPools.length === 0) {
+      throw new ServiceUnavailableException('Liquidity pool not found');
+    }
+ 
+    const tokenA = await this.getTokenData(network, filteredPools[0].token0)
+    const tokenB = await this.getTokenData(network, filteredPools[0].token1)
 
     const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
     const volume24h = await this.getPoolVolume(
@@ -614,21 +624,16 @@ export class InfoService {
     );
     const priceChange24h = 0;
     const fees24h = 0; // await this.getPoolFees(network)
-    const tokenName = {
-      name: 'tokenName',
-      symbol: 'tokenSymbol',
-      logo: 'tokenLogo',
-    };
-
+    const tokenData = await this.getTokenData(network, token)
     const tvlSlippage24h = 0;
     const tvlSlippage7d = 0;
 
     const obj = {
       fees24h: fees24h,
       token: token,
-      token_name: tokenName.name,
-      token_symbol: tokenName.symbol,
-      token_logo: tokenName.logo,
+      token_name: tokenData.name,
+      token_symbol: tokenData.symbol,
+      token_logo: tokenData.logo,
       tvl: tvl.tvl,
       price: priceInUsd.price,
       priceChange24h: priceChange24h,
