@@ -235,7 +235,7 @@ export class InfoService {
   ) {
     const pools = await this.getPools(network, inheritedPools);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
-    const variationLast24h = 0.03
+    const variationLast24h = 0.03;
     let tvl = 0;
     for (const pool of pools) {
       const token0Price = await this.getTokenPriceInUSD(
@@ -254,7 +254,7 @@ export class InfoService {
         parseFloat(pool.reserve0) * 10 ** -7 * token0Price.price +
         parseFloat(pool.reserve1) * 10 ** -7 * token1Price.price;
     }
-    return {tvl: tvl, variation: variationLast24h};
+    return { tvl: tvl, variation: variationLast24h };
   }
 
   async getSoroswapVolume(
@@ -276,7 +276,7 @@ export class InfoService {
 
     let volume = 0;
 
-    const variationLast24h = 0.03
+    const variationLast24h = 0.03;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
       if (timeDiff < oneDay * lastNDays) {
@@ -309,7 +309,7 @@ export class InfoService {
         }
       }
     }
-    return {volume: volume, variation: variationLast24h};
+    return { volume: volume, variation: variationLast24h };
   }
 
   async getTokenVolume(
@@ -454,8 +454,8 @@ export class InfoService {
         fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
-    const variationLast24h = 0.03 
-    return {fees: fees * xlmValue, variationLast24h};
+    const variationLast24h = 0.03;
+    return { fees: fees * xlmValue, variationLast24h };
   }
 
   async getPoolFees(
@@ -503,12 +503,12 @@ export class InfoService {
       tokenName: 'token a Name',
       tokenSymbol: 'token a Symbol',
       tokenLogo: 'token a Logo',
-    }
+    };
     const tokenB = {
       tokenName: 'token b Name',
       tokenSymbol: 'token b Symbol',
       tokenLogo: 'token b Logo',
-    }
+    };
 
     const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
     const volume24h = await this.getPoolVolume(
@@ -604,18 +604,25 @@ export class InfoService {
       contractEvents,
       xlmValue,
     );
-    const volume7d = this.getTokenVolume(network, token, 7, pools, contractEvents, xlmValue);
-    const priceChange24h = 0
-    const fees24h = 0 // await this.getPoolFees(network)
+    const volume7d = this.getTokenVolume(
+      network,
+      token,
+      7,
+      pools,
+      contractEvents,
+      xlmValue,
+    );
+    const priceChange24h = 0;
+    const fees24h = 0; // await this.getPoolFees(network)
     const tokenName = {
       name: 'tokenName',
       symbol: 'tokenSymbol',
       logo: 'tokenLogo',
-    }
+    };
 
-    const tvlSlippage24h = 0
-    const tvlSlippage7d = 0
-    
+    const tvlSlippage24h = 0;
+    const tvlSlippage7d = 0;
+
     const obj = {
       fees24h: fees24h,
       token: token,
@@ -627,8 +634,8 @@ export class InfoService {
       priceChange24h: priceChange24h,
       volume7d: volume7d,
       volume24h: volume24h,
-      tvlSlippage24h: 0,
-      tvlSlippage7d: 0,
+      tvlSlippage24h: tvlSlippage24h,
+      tvlSlippage7d: tvlSlippage7d,
     };
 
     return obj;
