@@ -354,4 +354,9 @@ export class InfoController {
   async getTokensInfo(@Query() query: QueryNetworkDto) {
     return this.infoService.getTokensInfo(query.network);
   }
+
+  @Get('/xlmPrice')
+  async getxlm() {
+    return this.infoService.getXlmValue();
+  }
 }

@@ -1,17 +1,18 @@
+import { GET_CONTRACT_EVENTS } from 'src/utils/queries';
+import { getContractEventsParser } from 'src/utils/parsers/getContractEventsParser';
+import { getRouterAddress } from 'src/utils/getRouterAddress';
+import { getTokensList } from 'src/utils/getTokensList';
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { Network } from '@prisma/client';
-import axios from 'axios';
-import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { xlmToken } from 'src/constants';
+import getXLMPriceFromCoingecko from 'src/utils/getXLMPriceFromCoingecko';
 import {
   mercuryInstanceMainnet,
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
-import { getRouterAddress } from 'src/utils/getRouterAddress';
-import { getTokensList } from 'src/utils/getTokensList';
-import { getContractEventsParser } from 'src/utils/parsers/getContractEventsParser';
-import { GET_CONTRACT_EVENTS } from 'src/utils/queries';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class InfoService {
@@ -44,10 +45,60 @@ export class InfoService {
 
   async getXlmValue(inheritedXlmValue?: number) {
     if (!inheritedXlmValue) {
-      const currentXlmValueInUsd = await axios.get(
-        'https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd',
-      );
-      return currentXlmValueInUsd.data.stellar.usd;
+      const dbXlm = await this.prisma.xlmUsdPrice.findFirst();
+
+      if (!dbXlm) {
+        Logger.log('XLM Created in the db');
+        //If we don't have it in the database, we get it from coingecko and save it
+        const coingeckoPrice = await getXLMPriceFromCoingecko();
+
+        await this.prisma.xlmUsdPrice.create({
+          data: {
+            price: coingeckoPrice,
+            updatedAt: new Date(),
+          },
+        });
+
+        return coingeckoPrice;
+      }
+
+      //Otherwise we check if the last update was more than 1 minutes ago
+
+      const now = new Date();
+
+      const diff = now.getTime() - dbXlm.updatedAt.getTime();
+
+      if (diff > 1000 * 60) {
+        //If it was, we get it from coingecko and update the database
+        try {
+          Logger.log(
+            `Updating XLM price from coingecko since update diff is ${diff} ms`,
+          );
+          const coingeckoPrice = await getXLMPriceFromCoingecko();
+          await this.prisma.xlmUsdPrice.update({
+            where: {
+              id: dbXlm.id,
+            },
+            data: {
+              price: coingeckoPrice,
+              updatedAt: now,
+            },
+          });
+          return coingeckoPrice;
+        } catch (error) {
+          //If we couldn't get it from coingecko for some reason (maybe api is down ?), we return the last value from the database
+          Logger.log(
+            'Error getting XLM price from coingecko, returning last value from the database',
+          );
+          return dbXlm.price;
+        }
+      } else {
+        Logger.log(
+          `Obtained XLM price from the database since update diff is ${diff} ms`,
+        );
+        //If it wasn't, we return the value from the database
+        return dbXlm.price;
+      }
     } else {
       return inheritedXlmValue;
     }

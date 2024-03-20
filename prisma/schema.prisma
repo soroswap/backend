@@ -39,3 +39,9 @@ enum StorageType {
   INSTANCE
   PERSISTENT
 }
+
+model XlmUsdPrice {
+  id        Int           @id @default(autoincrement())
+  price     Float
+  updatedAt DateTime
+}
