@@ -309,6 +309,23 @@ export class InfoController {
     return this.infoService.getPoolInfo(query.network, pool);
   }
 
+  @Get('/pool/tvl-chart/:pool')
+  @ApiOperation({
+    summary: 'Get pool information',
+    description: 'Retrieve all relevant information of a specific pool',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'pool', description: 'Pool address', type: String })
+  @ApiOkResponse({
+    description: 'Array of TVL by day for the specified pool',
+  })
+  async getPoolChartTVL(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolTVLChart(query.network, pool);
+  }
+
   @Get('/pools')
   @ApiOperation({
     summary: 'Get all pools information',

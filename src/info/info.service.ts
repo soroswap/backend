@@ -13,6 +13,11 @@ import {
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
 import { Logger } from '@nestjs/common';
+import {
+  PairInstanceEntryParserResult,
+  PairInstanceWithEntriesParserResult,
+} from 'src/utils/parsers/soroswapPairInstanceWithEntriesParser';
+import { getEntriesByDayParser } from 'src/utils/parsers/getEntriesByDayParser';
 
 @Injectable()
 export class InfoService {
@@ -24,13 +29,11 @@ export class InfoService {
   async getTokenData(network: Network, token: string) {
     const tokens = await getTokensList(network);
     const currentToken = tokens.find((item) => item.contract === token);
-    if (!currentToken) {
-      throw new ServiceUnavailableException('Token not found');
-    }
+
     const tokenData = {
-      name: currentToken.name,
-      symbol: currentToken.code,
-      logo: currentToken.icon,
+      name: currentToken?.name,
+      symbol: currentToken?.code,
+      logo: currentToken?.icon,
     };
     return tokenData;
   }
@@ -41,6 +44,41 @@ export class InfoService {
     } else {
       return inheritedPools;
     }
+  }
+
+  async getPoolTVLChart(network: Network, poolAddress: string) {
+    const pools: PairInstanceWithEntriesParserResult[] =
+      await this.pairs.getAllSoroswapPools(network, true);
+
+    const pool = pools.find((pool) => pool.contractId == poolAddress);
+
+    if (!pool) {
+      throw new ServiceUnavailableException('Liquidity pool not found');
+    }
+
+    const entriesByDay = getEntriesByDayParser<PairInstanceEntryParserResult>(
+      pool.entries,
+    );
+
+    const xlmValue = await this.getXlmValue();
+
+    const tvlByDay = Promise.all(
+      entriesByDay.map(async (day) => {
+        const dayTVL = await this.calculateTVL(
+          network,
+          day.lastEntry.token0,
+          day.lastEntry.token1,
+          day.lastEntry.reserve0,
+          day.lastEntry.reserve1,
+          pools,
+          xlmValue,
+        );
+
+        return { date: day.date, tvl: dayTVL };
+      }),
+    );
+
+    return tvlByDay;
   }
 
   async getXlmValue(inheritedXlmValue?: number) {
@@ -245,7 +283,6 @@ export class InfoService {
     inheritedPools?: any[],
   ) {
     const pools = await this.getPools(network, inheritedPools);
-    const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const filteredPools = pools.filter(
       (pool) => pool.contractId == poolAddress,
@@ -256,22 +293,48 @@ export class InfoService {
     }
 
     const pool = filteredPools[0];
-    const token0Price = await this.getTokenPriceInUSD(
+
+    const tvl = await this.calculateTVL(
       network,
       pool.token0,
+      pool.token1,
+      pool.reserve0,
+      pool.reserve1,
+      pools,
+      inheritedXlmValue,
+    );
+
+    return { pool: poolAddress, tvl };
+  }
+
+  async calculateTVL(
+    network: Network,
+    token0: string,
+    token1: string,
+    reserve0: string,
+    reserve1: string,
+    pools: any[],
+    inheritedXlmValue?: number,
+  ) {
+    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+
+    const token0Price = await this.getTokenPriceInUSD(
+      network,
+      token0,
       xlmValue,
       pools,
     );
     const token1Price = await this.getTokenPriceInUSD(
       network,
-      pool.token1,
+      token1,
       xlmValue,
       pools,
     );
     const tvl =
-      parseFloat(pool.reserve0) * token0Price.price * 10 ** -7 +
-      parseFloat(pool.reserve1) * token1Price.price * 10 ** -7;
-    return { pool: poolAddress, tvl };
+      parseFloat(reserve0) * token0Price.price * 10 ** -7 +
+      parseFloat(reserve1) * token1Price.price * 10 ** -7;
+
+    return tvl;
   }
 
   async getPoolShares(

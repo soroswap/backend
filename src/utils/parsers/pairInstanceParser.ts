@@ -5,7 +5,7 @@ import { ContractEntriesResponse } from '../../types';
 /**
  * Enum representing the key names for pair instance properties.
  */
-enum soroswapKeyNames {
+export enum soroswapKeyNames {
   token0 = 0, // address public token0;
   token1 = 1, // address public token1;
   reserve0 = 2, // uint112 private reserve0;
