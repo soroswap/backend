@@ -10,7 +10,7 @@ datasource db {
 model Subscriptions {
   id           Int           @id @default(autoincrement())
   contractId   String
-  keyXdr       String
+  keyXdr       String?
   protocol     Protocol?
   contractType ContractType?
   storageType  StorageType?
@@ -33,6 +33,8 @@ enum Protocol {
 enum ContractType {
   FACTORY
   PAIR
+  ROUTER
+  MULTIHOP
 }
 
 enum StorageType {
