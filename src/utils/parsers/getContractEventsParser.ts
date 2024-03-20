@@ -1,4 +1,5 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { scValToNative } from '@stellar/stellar-sdk';
 import { scValToJs } from 'mercury-sdk';
 import { GetContractEventsResponse } from 'src/types';
 
@@ -27,4 +28,34 @@ export const getContractEventsParser = (data: GetContractEventsResponse) => {
   });
 
   return parsedData;
+};
+
+export const eventsByContractIdAndTopicParser = (
+  data: GetContractEventsResponse,
+) => {
+  const returnObject: any = data;
+  const parsedEdges = data.eventByContractIdAndTopic.edges.map((edge) => {
+    const data = scValToNative(
+      StellarSdk.xdr.ScVal.fromXDR(edge.node.data, 'base64'),
+    );
+    const amounts = data.amounts.map((amount) => Number(BigInt(amount)));
+    data.amounts = amounts;
+    edge.node.data = data;
+
+    const topic1 = scValToNative(
+      StellarSdk.xdr.ScVal.fromXDR(edge.node.topic1, 'base64'),
+    );
+    edge.node.topic1 = topic1;
+
+    const topic2 = scValToNative(
+      StellarSdk.xdr.ScVal.fromXDR(edge.node.topic2, 'base64'),
+    );
+    edge.node.topic2 = topic2;
+
+    return edge;
+  });
+
+  returnObject.eventByContractIdAndTopic.edges = parsedEdges;
+
+  return returnObject.eventByContractIdAndTopic;
 };

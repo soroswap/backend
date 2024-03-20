@@ -69,10 +69,8 @@ export class InfoService {
       request: GET_CONTRACT_EVENTS,
       variables: { contractId: routerAddress },
     });
-    console.log('🚀 « mercuryResponse:', mercuryResponse);
 
     const parsedContractEvents = getContractEventsParser(mercuryResponse.data!);
-    console.log('🚀 « parsedContractEvents:', parsedContractEvents);
 
     return parsedContractEvents;
   }

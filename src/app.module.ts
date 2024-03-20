@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { configLoader } from './config/config-loader';
 import { envSchema } from './config/env-schema';
+import { EventsModule } from './events/events.module';
 import { InfoModule } from './info/info.module';
 import { PairsModule } from './pairs/pairs.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -19,6 +20,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     PairsModule,
     InfoModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
