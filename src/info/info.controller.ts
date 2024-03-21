@@ -343,6 +343,23 @@ export class InfoController {
     return this.infoService.getPoolVolumeChart(query.network, pool);
   }
 
+  @Get('/pool/fees-chart/:pool')
+  @ApiOperation({
+    summary: 'Get pool information',
+    description: 'Retrieve Fees by day for the specified pool',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'pool', description: 'Pool address', type: String })
+  @ApiOkResponse({
+    description: 'Array of Fees by day for the specified pool',
+  })
+  async getPoolFeesChart(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolFeesChart(query.network, pool);
+  }
+
   @Get('/pools')
   @ApiOperation({
     summary: 'Get all pools information',

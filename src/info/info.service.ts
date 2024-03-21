@@ -576,6 +576,36 @@ export class InfoService {
     return volumeByDay;
   }
 
+  async getPoolFeesChart(network: Network, poolAddress: string) {
+    const pools = await this.getPools(network);
+
+    const pool = pools.find((item) => item.contractId == poolAddress);
+
+    if (!pool) {
+      throw new ServiceUnavailableException('Liquidity pool not found');
+    }
+
+    const contractEvents = await this.getContractEvents(network);
+
+    const contractEventsByDay = getContractEventsByDayParser(contractEvents);
+
+    const xlmValue = await this.getXlmValue();
+
+    const volumeByDay = Promise.all(
+      contractEventsByDay.map(async (day) => {
+        let fees = 0;
+        for (const event of day.events) {
+          if (event.pair && event.pair == pool.contractId) {
+            fees += parseFloat(event.fee) * 10 ** -7;
+          }
+        }
+        return { date: day.date, fees: fees * xlmValue };
+      }),
+    );
+
+    return volumeByDay;
+  }
+
   async getPoolVolume(
     network: Network,
     pool: string,
