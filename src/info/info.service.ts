@@ -196,6 +196,53 @@ export class InfoService {
     return { token, tvl: tvlInUsd };
   }
 
+  async getTokenTvlChart(network: Network, tokenAddress: string) {
+    const pools: PairInstanceWithEntriesParserResult[] =
+      await this.pairs.getAllSoroswapPools(network, true);
+
+    const filteredPools = pools.filter(
+      (pool) => pool.token0 == tokenAddress || pool.token1 == tokenAddress,
+    );
+
+    if (filteredPools.length === 0) {
+      throw new ServiceUnavailableException('Liquidity pool not found');
+    }
+    const xlmValue = await this.getXlmValue();
+
+    const tokenPrice = await this.getTokenPriceInUSD(
+      network,
+      tokenAddress,
+      xlmValue,
+      pools,
+    );
+
+    const data = {};
+    for (const pool of filteredPools) {
+      const entriesByDay = getEntriesByDayParser<PairInstanceEntryParserResult>(
+        pool.entries,
+      );
+
+      entriesByDay.forEach((day) => {
+        let dayTvl = 0;
+        if (day.lastEntry.token0 === tokenAddress) {
+          dayTvl += parseFloat(day.lastEntry.reserve0) / 10 ** 7;
+        } else if (day.lastEntry.token1 === tokenAddress) {
+          dayTvl += parseFloat(day.lastEntry.reserve1) / 10 ** 7;
+        }
+        if (!data[day.date]) {
+          data[day.date] = 0;
+        }
+        data[day.date] += dayTvl * tokenPrice.price;
+      });
+    }
+
+    const tvlByDay = Object.keys(data).map((date) => {
+      return { date: date, tvl: data[date] };
+    });
+
+    return tvlByDay;
+  }
+
   async getTokenPriceInXLM(
     network: Network,
     token: string,

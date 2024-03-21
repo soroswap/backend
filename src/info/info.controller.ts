@@ -226,6 +226,23 @@ export class InfoController {
     return this.infoService.getTokenVolumeChart(query.network, token);
   }
 
+  @Get('/token/tvl-chart/:token')
+  @ApiOperation({
+    summary: 'Get token volume',
+    description: 'Retrieve Total Value Locked for a specific token per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'token', description: 'Token address', type: String })
+  @ApiOkResponse({
+    description: 'Retrieve Total Value Locked for a specific token per day',
+  })
+  async getTokenTVLChart(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenTvlChart(query.network, token);
+  }
+
   @Get('/tokenVolume7d/:token')
   @ApiOperation({
     summary: 'Get token 7d volume',
