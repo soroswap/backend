@@ -15,6 +15,7 @@ export const mercuryInstanceMainnet = new Mercury({
   password: process.env.MERCURY_PASSWORD,
 });
 
+// TODO: Replace the logic below in other parts of the code to use this function
 export const selectMercuryInstance = (network: Network) => {
   return network == Network.TESTNET
     ? mercuryInstanceTestnet
