@@ -159,10 +159,8 @@ export class InfoService {
       request: GET_CONTRACT_EVENTS,
       variables: { contractId: routerAddress },
     });
-    console.log('🚀 « mercuryResponse:', mercuryResponse);
 
     const parsedContractEvents = getContractEventsParser(mercuryResponse.data!);
-    console.log('🚀 « parsedContractEvents:', parsedContractEvents);
 
     return parsedContractEvents;
   }
@@ -1004,7 +1002,7 @@ export class InfoService {
       contractEvents,
       xlmValue,
     );
-    const volume7d = this.getTokenVolume(
+    const volume7d = await this.getTokenVolume(
       network,
       token,
       7,
@@ -1031,6 +1029,8 @@ export class InfoService {
       volume24h: volume24h,
       tvlSlippage24h: tvlSlippage24h,
       tvlSlippage7d: tvlSlippage7d,
+      volume24hChange: 1.5,
+      volume7dChange: 2.5,
     };
 
     return obj;
