@@ -312,7 +312,7 @@ export class InfoController {
   @Get('/pool/tvl-chart/:pool')
   @ApiOperation({
     summary: 'Get pool information',
-    description: 'Retrieve all relevant information of a specific pool',
+    description: 'Retrieve TVL by day for the specified pool',
   })
   @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
   @ApiParam({ name: 'pool', description: 'Pool address', type: String })
@@ -324,6 +324,23 @@ export class InfoController {
     @Param('pool') pool: string,
   ) {
     return this.infoService.getPoolTVLChart(query.network, pool);
+  }
+
+  @Get('/pool/volume-chart/:pool')
+  @ApiOperation({
+    summary: 'Get pool information',
+    description: 'Retrieve Volume by day for the specified pool',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'pool', description: 'Pool address', type: String })
+  @ApiOkResponse({
+    description: 'Array of Volume by day for the specified pool',
+  })
+  async getPoolVolumeChart(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolVolumeChart(query.network, pool);
   }
 
   @Get('/pools')
