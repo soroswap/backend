@@ -162,6 +162,32 @@ export class InfoController {
     return this.infoService.getSoroswapVolume(query.network, 1);
   }
 
+  @Get('/soroswap/volume-chart')
+  @ApiOperation({
+    summary: 'Get Soroswap 24h volume',
+    description: 'Retrieve Amount in USD of volume traded in Soroswap per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiOkResponse({
+    description: 'Amount in USD of volume traded in Soroswap per day',
+  })
+  async getSoroswapVolumeChart(@Query() query: QueryNetworkDto) {
+    return this.infoService.getSoroswapVolumeChart(query.network);
+  }
+
+  @Get('/soroswap/fees-chart')
+  @ApiOperation({
+    summary: 'Get Soroswap 24h volume',
+    description: 'Retrieve Amount in USD of fees collected in Soroswap per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiOkResponse({
+    description: 'Amount in USD of fees collected in Soroswap per day',
+  })
+  async getSoroswapFeesChart(@Query() query: QueryNetworkDto) {
+    return this.infoService.getSoroswapFeesChart(query.network);
+  }
+
   @Get('/tokenVolume24h/:token')
   @ApiOperation({
     summary: 'Get token 24h volume',
@@ -179,6 +205,59 @@ export class InfoController {
     @Param('token') token: string,
   ) {
     return this.infoService.getTokenVolume(query.network, token, 1);
+  }
+
+  @Get('/token/volume-chart/:token')
+  @ApiOperation({
+    summary: 'Get token volume',
+    description:
+      'Retrieve Amount in USD of volume traded of the specified token in Soroswap per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'token', description: 'Token address', type: String })
+  @ApiOkResponse({
+    description:
+      'Amount in USD of volume traded of the specified token in Soroswap per day',
+  })
+  async getTokenVolumeChart(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenVolumeChart(query.network, token);
+  }
+
+  @Get('/token/tvl-chart/:token')
+  @ApiOperation({
+    summary: 'Get token tvl',
+    description: 'Retrieve Total Value Locked for a specific token per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'token', description: 'Token address', type: String })
+  @ApiOkResponse({
+    description: 'Retrieve Total Value Locked for a specific token per day',
+  })
+  async getTokenTVLChart(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenTvlChart(query.network, token);
+  }
+
+  @Get('/token/price-chart/:token')
+  @ApiOperation({
+    summary: 'Get token price chart',
+    description: 'Retrieve price of a specific token per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'token', description: 'Token address', type: String })
+  @ApiOkResponse({
+    description: 'Retrieve price of a specific token per day',
+  })
+  async getTokenPriceChart(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenPriceChart(query.network, token);
   }
 
   @Get('/tokenVolume7d/:token')
@@ -307,6 +386,57 @@ export class InfoController {
     @Param('pool') pool: string,
   ) {
     return this.infoService.getPoolInfo(query.network, pool);
+  }
+
+  @Get('/pool/tvl-chart/:pool')
+  @ApiOperation({
+    summary: 'Get pool information',
+    description: 'Retrieve TVL by day for the specified pool',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'pool', description: 'Pool address', type: String })
+  @ApiOkResponse({
+    description: 'Array of TVL by day for the specified pool',
+  })
+  async getPoolChartTVL(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolTVLChart(query.network, pool);
+  }
+
+  @Get('/pool/volume-chart/:pool')
+  @ApiOperation({
+    summary: 'Get pool information',
+    description: 'Retrieve Volume by day for the specified pool',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'pool', description: 'Pool address', type: String })
+  @ApiOkResponse({
+    description: 'Array of Volume by day for the specified pool',
+  })
+  async getPoolVolumeChart(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolVolumeChart(query.network, pool);
+  }
+
+  @Get('/pool/fees-chart/:pool')
+  @ApiOperation({
+    summary: 'Get pool information',
+    description: 'Retrieve Fees by day for the specified pool',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'pool', description: 'Pool address', type: String })
+  @ApiOkResponse({
+    description: 'Array of Fees by day for the specified pool',
+  })
+  async getPoolFeesChart(
+    @Query() query: QueryNetworkDto,
+    @Param('pool') pool: string,
+  ) {
+    return this.infoService.getPoolFeesChart(query.network, pool);
   }
 
   @Get('/pools')

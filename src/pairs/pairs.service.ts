@@ -28,6 +28,7 @@ import {
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
+import { soroswapPairInstanceWithEntriesParser } from 'src/utils/parsers/soroswapPairInstanceWithEntriesParser';
 
 @Injectable()
 export class PairsService {
@@ -408,9 +409,11 @@ export class PairsService {
    * @returns Array with pair objects.
    * @throws Error if Mercury request fails.
    */
+
   async getSoroswapPairsWithTokensAndReserves(
     network: Network,
     addresses: string[],
+    withEntries: boolean,
   ) {
     const mercuryInstance =
       network == Network.TESTNET
@@ -429,7 +432,12 @@ export class PairsService {
         });
 
       if (mercuryResponse && mercuryResponse.ok) {
-        const parsedEntries = soroswapPairInstanceParser(mercuryResponse.data);
+        const parser = withEntries
+          ? soroswapPairInstanceWithEntriesParser
+          : soroswapPairInstanceParser;
+
+        const parsedEntries = parser(mercuryResponse.data);
+
         return parsedEntries;
       } else {
         throw new Error('Error getting pairs');
@@ -537,7 +545,7 @@ export class PairsService {
   /** Function to get all Soroswap liquidity pools with its details.
    * @returns Array with all Soroswap liquidity pools.
    */
-  async getAllSoroswapPools(network: Network) {
+  async getAllSoroswapPools(network: Network, withEntries = false) {
     const newCounter = await this.getSoroswapPairsCountFromMercury(network);
     console.log('🚀 « newCounter:', newCounter);
     const oldCounter = await this.getSoroswapPairsCountFromDB(network);
@@ -565,6 +573,7 @@ export class PairsService {
     const pools = await this.getSoroswapPairsWithTokensAndReserves(
       network,
       addresses,
+      withEntries,
     );
     console.log(pools.length, 'Soroswap pairs\n');
     return pools;
