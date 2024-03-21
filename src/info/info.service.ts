@@ -1,24 +1,26 @@
-import { GET_CONTRACT_EVENTS } from 'src/utils/queries';
-import { getContractEventsParser } from 'src/utils/parsers/getContractEventsParser';
-import { getRouterAddress } from 'src/utils/getRouterAddress';
-import { getTokensList } from 'src/utils/getTokensList';
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException, Logger } from '@nestjs/common';
 import { Network } from '@prisma/client';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { xlmToken } from 'src/constants';
-import getXLMPriceFromCoingecko from 'src/utils/getXLMPriceFromCoingecko';
 import {
   mercuryInstanceMainnet,
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
-import { Logger } from '@nestjs/common';
-import {
+import { xlmToken } from 'src/constants';
+import { 
+  GET_CONTRACT_EVENTS,
+  getContractEventsParser,
+  getRouterAddress,
+  getTokensList,
+  getXLMPriceFromCoingecko
+} from 'src/utils'
+import { 
   PairInstanceEntryParserResult,
   PairInstanceWithEntriesParserResult,
-} from 'src/utils/parsers/soroswapPairInstanceWithEntriesParser';
-import { getEntriesByDayParser } from 'src/utils/parsers/getEntriesByDayParser';
-import { getContractEventsByDayParser } from 'src/utils/parsers/getContractEventsByDayParser';
+  getEntriesByDayParser,
+  getContractEventsByDayParser,
+  shortenAddress, 
+} from 'src/utils/parsers';
 
 @Injectable()
 export class InfoService {
@@ -36,6 +38,10 @@ export class InfoService {
       symbol: currentToken?.code,
       logo: currentToken?.icon,
     };
+    if(currentToken.name === undefined) {
+      const shortAddr: string = shortenAddress(currentToken?.issuer);
+      tokenData.name = currentToken.issuer ? `${currentToken.code}:${shortAddr}` : currentToken.code;
+    }
     return tokenData;
   }
 
