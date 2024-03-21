@@ -243,6 +243,43 @@ export class InfoService {
     return tvlByDay;
   }
 
+  async getTokenPriceChart(network: Network, tokenAddress: string) {
+    const pools: PairInstanceWithEntriesParserResult[] =
+      await this.pairs.getAllSoroswapPools(network, true);
+    const xlm = xlmToken[network];
+
+    const tokenXLMPool = pools.find(
+      (pool) =>
+        (pool.token0 == tokenAddress && pool.token1 == xlm.contract) ||
+        (pool.token0 == xlm.contract && pool.token1 == tokenAddress),
+    );
+
+    if (!tokenXLMPool) {
+      throw new ServiceUnavailableException('Liquidity pool not found');
+    }
+
+    const entriesByDay = getEntriesByDayParser<PairInstanceEntryParserResult>(
+      tokenXLMPool.entries,
+    );
+
+    const xlmValue = await this.getXlmValue();
+
+    const priceByDay = await Promise.all(
+      entriesByDay.map(async (day) => {
+        const price = await this.getTokenPriceInUSD(
+          network,
+          tokenAddress,
+          xlmValue,
+          [day.lastEntry],
+        );
+
+        return { date: day.date, price: price.price };
+      }),
+    );
+
+    return priceByDay;
+  }
+
   async getTokenPriceInXLM(
     network: Network,
     token: string,

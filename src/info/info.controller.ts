@@ -228,7 +228,7 @@ export class InfoController {
 
   @Get('/token/tvl-chart/:token')
   @ApiOperation({
-    summary: 'Get token volume',
+    summary: 'Get token tvl',
     description: 'Retrieve Total Value Locked for a specific token per day',
   })
   @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
@@ -241,6 +241,23 @@ export class InfoController {
     @Param('token') token: string,
   ) {
     return this.infoService.getTokenTvlChart(query.network, token);
+  }
+
+  @Get('/token/price-chart/:token')
+  @ApiOperation({
+    summary: 'Get token price chart',
+    description: 'Retrieve price of a specific token per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'token', description: 'Token address', type: String })
+  @ApiOkResponse({
+    description: 'Retrieve price of a specific token per day',
+  })
+  async getTokenPriceChart(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenPriceChart(query.network, token);
   }
 
   @Get('/tokenVolume7d/:token')
