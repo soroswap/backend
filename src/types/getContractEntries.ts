@@ -15,6 +15,16 @@ export interface Node {
   contractId: string;
   keyXdr: string;
   valueXdr: string;
+  txInfoByTx?: TxInfoByTx;
+}
+
+export interface TxInfoByTx {
+  ledger: number;
+  ledgerByLedger: LedgerByLedger;
+}
+
+export interface LedgerByLedger {
+  closeTime: number;
 }
 
 export interface ParsedFactoryInstanceEntry {

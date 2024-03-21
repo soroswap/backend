@@ -26,6 +26,12 @@ export function buildGetPairWithTokensAndReservesQuery(pairCount: number) {
             contractId
             keyXdr
             valueXdr
+            txInfoByTx {
+              ledger
+              ledgerByLedger {
+                closeTime
+              }
+            }
           }
         }
       }
