@@ -207,6 +207,25 @@ export class InfoController {
     return this.infoService.getTokenVolume(query.network, token, 1);
   }
 
+  @Get('/token/volume-chart/:token')
+  @ApiOperation({
+    summary: 'Get token volume',
+    description:
+      'Retrieve Amount in USD of volume traded of the specified token in Soroswap per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiParam({ name: 'token', description: 'Token address', type: String })
+  @ApiOkResponse({
+    description:
+      'Amount in USD of volume traded of the specified token in Soroswap per day',
+  })
+  async getTokenVolumeChart(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getTokenVolumeChart(query.network, token);
+  }
+
   @Get('/tokenVolume7d/:token')
   @ApiOperation({
     summary: 'Get token 7d volume',

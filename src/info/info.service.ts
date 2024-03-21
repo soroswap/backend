@@ -484,6 +484,48 @@ export class InfoService {
     return volumeByDay;
   }
 
+  async calculateTokenVolumeFromEvent(
+    network: Network,
+    event: any,
+    token: string,
+    xlmValue: number,
+    pools: any[],
+  ) {
+    let volume = 0;
+    if (event.topic2 == 'add' || event.topic2 == 'remove') {
+      if (event.token_a == token) {
+        const tokenPrice = await this.getTokenPriceInUSD(
+          network,
+          event.token_a,
+          xlmValue,
+          pools,
+        );
+        volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPrice.price;
+      } else if (event.token_b == token) {
+        const tokenPrice = await this.getTokenPriceInUSD(
+          network,
+          event.token_b,
+          xlmValue,
+          pools,
+        );
+        volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPrice.price;
+      }
+    } else if (event.topic2 == 'swap') {
+      for (let i = 0; i < event.amounts.length; i++) {
+        if (event.path[i] == token) {
+          const tokenPrice = await this.getTokenPriceInUSD(
+            network,
+            event.path[i],
+            xlmValue,
+            pools,
+          );
+          volume += parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
+        }
+      }
+    }
+    return volume;
+  }
+
   async getTokenVolume(
     network: Network,
     token: string,
@@ -506,42 +548,46 @@ export class InfoService {
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
       if (timeDiff < oneDay * lastNDays) {
-        if (event.topic2 == 'add' || event.topic2 == 'remove') {
-          if (event.token_a == token) {
-            const tokenPrice = await this.getTokenPriceInUSD(
-              network,
-              event.token_a,
-              xlmValue,
-              pools,
-            );
-            volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPrice.price;
-          } else if (event.token_b == token) {
-            const tokenPrice = await this.getTokenPriceInUSD(
-              network,
-              event.token_b,
-              xlmValue,
-              pools,
-            );
-            volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPrice.price;
-          }
-        } else if (event.topic2 == 'swap') {
-          for (let i = 0; i < event.amounts.length; i++) {
-            if (event.path[i] == token) {
-              const tokenPrice = await this.getTokenPriceInUSD(
-                network,
-                event.path[i],
-                xlmValue,
-                pools,
-              );
-              volume +=
-                parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
-            }
-          }
-        }
+        const eventVolume = await this.calculateTokenVolumeFromEvent(
+          network,
+          event,
+          token,
+          xlmValue,
+          pools,
+        );
+        volume += eventVolume;
       }
     }
 
     return volume;
+  }
+
+  async getTokenVolumeChart(network: Network, tokenAddress: string) {
+    const contractEvents = await this.getContractEvents(network);
+
+    const contractEventsByDay = getContractEventsByDayParser(contractEvents);
+    const pools = await this.getPools(network);
+
+    const xlmValue = await this.getXlmValue();
+
+    const volumeByDay = Promise.all(
+      contractEventsByDay.map(async (day) => {
+        let volume = 0;
+        for (const event of day.events) {
+          const eventVolume = await this.calculateTokenVolumeFromEvent(
+            network,
+            event,
+            tokenAddress,
+            xlmValue,
+            pools,
+          );
+          volume += eventVolume;
+        }
+        return { date: day.date, volume };
+      }),
+    );
+
+    return volumeByDay;
   }
 
   async calculatePoolVolumeFromEvent(
