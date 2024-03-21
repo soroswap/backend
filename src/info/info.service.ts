@@ -386,6 +386,42 @@ export class InfoService {
     return { tvl: tvl, variation: variationLast24h };
   }
 
+  async calculateSoroswapVolumeFromEvent(
+    network: Network,
+    event: any,
+    pools: any[],
+    xlmValue: number,
+  ) {
+    let volume = 0;
+    if (event.topic2 == 'add' || event.topic2 == 'remove') {
+      const tokenPriceA = await this.getTokenPriceInUSD(
+        network,
+        event.token_a,
+        xlmValue,
+        pools,
+      );
+      const tokenPriceB = await this.getTokenPriceInUSD(
+        network,
+        event.token_b,
+        xlmValue,
+        pools,
+      );
+      volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
+      volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPriceB.price;
+    } else if (event.topic2 == 'swap') {
+      for (let i = 0; i < event.amounts.length; i++) {
+        const tokenPrice = await this.getTokenPriceInUSD(
+          network,
+          event.path[i],
+          xlmValue,
+          pools,
+        );
+        volume += parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
+      }
+    }
+    return volume;
+  }
+
   async getSoroswapVolume(
     network: Network,
     lastNDays: number,
@@ -409,36 +445,43 @@ export class InfoService {
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
       if (timeDiff < oneDay * lastNDays) {
-        if (event.topic2 == 'add' || event.topic2 == 'remove') {
-          const tokenPriceA = await this.getTokenPriceInUSD(
-            network,
-            event.token_a,
-            xlmValue,
-            pools,
-          );
-          const tokenPriceB = await this.getTokenPriceInUSD(
-            network,
-            event.token_b,
-            xlmValue,
-            pools,
-          );
-          volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
-          volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPriceB.price;
-        } else if (event.topic2 == 'swap') {
-          for (let i = 0; i < event.amounts.length; i++) {
-            const tokenPrice = await this.getTokenPriceInUSD(
-              network,
-              event.path[i],
-              xlmValue,
-              pools,
-            );
-            volume +=
-              parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
-          }
-        }
+        const eventVolume = await this.calculateSoroswapVolumeFromEvent(
+          network,
+          event,
+          pools,
+          xlmValue,
+        );
+        volume += eventVolume;
       }
     }
     return { volume: volume, variation: variationLast24h };
+  }
+
+  async getSoroswapVolumeChart(network: Network) {
+    const contractEvents = await this.getContractEvents(network);
+
+    const contractEventsByDay = getContractEventsByDayParser(contractEvents);
+    const pools = await this.getPools(network);
+
+    const xlmValue = await this.getXlmValue();
+
+    const volumeByDay = Promise.all(
+      contractEventsByDay.map(async (day) => {
+        let volume = 0;
+        for (const event of day.events) {
+          const eventVolume = await this.calculateSoroswapVolumeFromEvent(
+            network,
+            event,
+            pools,
+            xlmValue,
+          );
+          volume += eventVolume;
+        }
+        return { date: day.date, volume };
+      }),
+    );
+
+    return volumeByDay;
   }
 
   async getTokenVolume(
