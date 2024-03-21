@@ -713,6 +713,26 @@ export class InfoService {
     return { fees: fees * xlmValue, variationLast24h };
   }
 
+  async getSoroswapFeesChart(network: Network) {
+    const contractEvents = await this.getContractEvents(network);
+
+    const contractEventsByDay = getContractEventsByDayParser(contractEvents);
+
+    const xlmValue = await this.getXlmValue();
+
+    const feesByDay = Promise.all(
+      contractEventsByDay.map(async (day) => {
+        let fees = 0;
+        for (const event of day.events) {
+          fees += parseFloat(event.fee) * 10 ** -7;
+        }
+        return { date: day.date, fees: fees * xlmValue };
+      }),
+    );
+
+    return feesByDay;
+  }
+
   async getPoolFees(
     network: Network,
     pool: string,

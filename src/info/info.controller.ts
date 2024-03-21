@@ -175,6 +175,19 @@ export class InfoController {
     return this.infoService.getSoroswapVolumeChart(query.network);
   }
 
+  @Get('/soroswap/fees-chart')
+  @ApiOperation({
+    summary: 'Get Soroswap 24h volume',
+    description: 'Retrieve Amount in USD of fees collected in Soroswap per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiOkResponse({
+    description: 'Amount in USD of fees collected in Soroswap per day',
+  })
+  async getSoroswapFeesChart(@Query() query: QueryNetworkDto) {
+    return this.infoService.getSoroswapFeesChart(query.network);
+  }
+
   @Get('/tokenVolume24h/:token')
   @ApiOperation({
     summary: 'Get token 24h volume',
