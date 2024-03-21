@@ -1,6 +1,7 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { scValToNative } from '@stellar/stellar-sdk';
 import { scValToJs } from 'mercury-sdk';
+import { RouterTopic2 } from 'src/events/dto/events.dto';
 import { GetContractEventsResponse } from 'src/types';
 
 export const getContractEventsParser = (data: GetContractEventsResponse) => {
@@ -38,9 +39,32 @@ export const eventsByContractIdAndTopicParser = (
     const data = scValToNative(
       StellarSdk.xdr.ScVal.fromXDR(edge.node.data, 'base64'),
     );
-    const amounts = data.amounts.map((amount) => Number(BigInt(amount)));
-    data.amounts = amounts;
-    edge.node.data = data;
+    switch (edge.node.topic2) {
+      case RouterTopic2.add:
+        data.amount_a = Number(BigInt(data.amount_a));
+        data.amount_b = Number(BigInt(data.amount_b));
+        data.liquidity = Number(BigInt(data.liquidity));
+        edge.node.data = data;
+        break;
+      case RouterTopic2.init:
+        edge.node.data = data;
+        break;
+      case RouterTopic2.remove:
+        data.amount_a = Number(BigInt(data.amount_a));
+        data.amount_b = Number(BigInt(data.amount_b));
+        data.liquidity = Number(BigInt(data.liquidity));
+        edge.node.data = data;
+        break;
+      case RouterTopic2.swap:
+        const amounts = data.amounts.map((amount: bigint) =>
+          Number(BigInt(amount)),
+        );
+        data.amounts = amounts;
+        edge.node.data = data;
+        break;
+      default:
+        break;
+    }
 
     const topic1 = scValToNative(
       StellarSdk.xdr.ScVal.fromXDR(edge.node.topic1, 'base64'),
