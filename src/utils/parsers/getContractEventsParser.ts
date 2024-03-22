@@ -1,8 +1,10 @@
+import { Network } from '@prisma/client';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { scValToNative } from '@stellar/stellar-sdk';
 import { scValToJs } from 'mercury-sdk';
 import { RouterTopic2 } from 'src/events/dto/events.dto';
 import { GetContractEventsResponse } from 'src/types';
+import { getTokenData } from '../getToken';
 
 export const getContractEventsParser = (data: GetContractEventsResponse) => {
   const parsedData = data.eventByContractId.edges.map((edge) => {
@@ -31,53 +33,55 @@ export const getContractEventsParser = (data: GetContractEventsResponse) => {
   return parsedData;
 };
 
-export const eventsByContractIdAndTopicParser = (
+export const eventsByContractIdAndTopicParser = async (
+  network: Network,
   data: GetContractEventsResponse,
 ) => {
   const returnObject: any = data;
-  const parsedEdges = data.eventByContractIdAndTopic.edges.map((edge) => {
-    const data = scValToNative(
-      StellarSdk.xdr.ScVal.fromXDR(edge.node.data, 'base64'),
-    );
-    switch (edge.node.topic2) {
-      case RouterTopic2.add:
-        data.amount_a = Number(BigInt(data.amount_a));
-        data.amount_b = Number(BigInt(data.amount_b));
-        data.liquidity = Number(BigInt(data.liquidity));
-        edge.node.data = data;
-        break;
-      case RouterTopic2.init:
-        edge.node.data = data;
-        break;
-      case RouterTopic2.remove:
-        data.amount_a = Number(BigInt(data.amount_a));
-        data.amount_b = Number(BigInt(data.amount_b));
-        data.liquidity = Number(BigInt(data.liquidity));
-        edge.node.data = data;
-        break;
-      case RouterTopic2.swap:
-        const amounts = data.amounts.map((amount: bigint) =>
-          Number(BigInt(amount)),
-        );
-        data.amounts = amounts;
-        edge.node.data = data;
-        break;
-      default:
-        break;
-    }
+  const parsedEdgesPromises = data.eventByContractIdAndTopic.edges.map(
+    async (edge) => {
+      const data = scValToNative(
+        StellarSdk.xdr.ScVal.fromXDR(edge.node.data, 'base64'),
+      );
+      switch (edge.node.topic2) {
+        case RouterTopic2.add:
+        case RouterTopic2.remove:
+          data.amount_a = Number(BigInt(data.amount_a));
+          data.amount_b = Number(BigInt(data.amount_b));
+          data.liquidity = Number(BigInt(data.liquidity));
+          [data.token_a, data.token_b] = await Promise.all([
+            getTokenData(network, data.token_a),
+            getTokenData(network, data.token_b),
+          ]);
+          edge.node.data = data;
+          break;
+        case RouterTopic2.swap:
+          const amounts = data.amounts.map((amount) => Number(BigInt(amount)));
+          data.amounts = amounts;
+          data.path = await Promise.all(
+            data.path.map(async (contract) => getTokenData(network, contract)),
+          );
+          edge.node.data = data;
+          break;
+        default:
+          break;
+      }
 
-    const topic1 = scValToNative(
-      StellarSdk.xdr.ScVal.fromXDR(edge.node.topic1, 'base64'),
-    );
-    edge.node.topic1 = topic1;
+      const topic1 = scValToNative(
+        StellarSdk.xdr.ScVal.fromXDR(edge.node.topic1, 'base64'),
+      );
+      edge.node.topic1 = topic1;
 
-    const topic2 = scValToNative(
-      StellarSdk.xdr.ScVal.fromXDR(edge.node.topic2, 'base64'),
-    );
-    edge.node.topic2 = topic2;
+      const topic2 = scValToNative(
+        StellarSdk.xdr.ScVal.fromXDR(edge.node.topic2, 'base64'),
+      );
+      edge.node.topic2 = topic2;
 
-    return edge;
-  });
+      return edge;
+    },
+  );
+
+  const parsedEdges = await Promise.all(parsedEdgesPromises);
 
   returnObject.eventByContractIdAndTopic.edges = parsedEdges;
 

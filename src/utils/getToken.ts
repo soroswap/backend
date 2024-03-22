@@ -7,7 +7,6 @@ export async function getTokenData(
 ): Promise<TokenType> {
   const tokens = await getTokensList(network);
   const currentToken = tokens.find((item) => item.contract === token);
-  console.log('🚀 « currentToken:', currentToken);
 
   if (!currentToken) {
     return {

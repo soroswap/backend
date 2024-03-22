@@ -30,6 +30,7 @@ export class EventsService {
     });
 
     const parsedContractEvents = eventsByContractIdAndTopicParser(
+      network,
       mercuryResponse.data!,
     );
 
