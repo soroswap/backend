@@ -2,7 +2,7 @@ import { Network } from '@prisma/client';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { scValToNative } from '@stellar/stellar-sdk';
 import { scValToJs } from 'mercury-sdk';
-import { RouterTopic2 } from 'src/events/dto/events.dto';
+import { PairTopic2, RouterTopic2 } from 'src/events/dto/events.dto';
 import { GetContractEventsResponse } from 'src/types';
 import { getTokenData } from '../getToken';
 
@@ -93,3 +93,55 @@ export const eventsByContractIdAndTopicParser = async (
 
   return returnObject.eventByContractIdAndTopic;
 };
+
+export const pairEventsParser = async (
+  network: Network,
+  data: GetContractEventsResponse,
+) => {
+  const returnObject: any = data;
+  
+  const parsedEdgesPromises = data.eventByContractIdAndTopic.edges.map(
+    async (edge) => {
+      const topic1 = scValToNative(
+        StellarSdk.xdr.ScVal.fromXDR(edge.node.topic1, 'base64'),
+      );
+      console.log('🚀 ~ topic1:', topic1);
+      edge.node.topic1 = topic1;
+
+      const topic2 = scValToNative(
+        StellarSdk.xdr.ScVal.fromXDR(edge.node.topic2, 'base64'),
+      );
+      console.log('🚀 ~ topic2:', topic2);
+      edge.node.topic2 = topic2;
+
+      if (edge.node.txInfoByTx.txHash) {
+        const txHashBuffer = Buffer.from(edge.node.txInfoByTx.txHash, 'base64');
+        const txHashHex = txHashBuffer.toString('hex');
+        console.log('🚀 ~ txHashHex:', txHashHex);
+        edge.node.txInfoByTx.txHash = txHashHex;
+      }
+      const data = scValToNative(
+        StellarSdk.xdr.ScVal.fromXDR(edge.node.data, 'base64'),
+      );
+      console.log('🚀 ~ data:', data);
+      switch (edge.node.topic2) {
+        case PairTopic2.deposit:
+        case PairTopic2.withdraw:
+        case PairTopic2.swap:
+          data.amount0In = Number(BigInt(data.amount_0_in));
+          data.amount0Out = Number(BigInt(data.amount_0_out));
+          data.amount1In = Number(BigInt(data.amount_1_in));
+          data.amount1Out = Number(BigInt(data.amount_1_out));
+        case PairTopic2.sync:
+          break;
+      }
+      return edge;
+    },
+  );
+
+  const parsedEdges = await Promise.all(parsedEdgesPromises);
+
+  returnObject.eventByContractIdAndTopic.edges = parsedEdges;
+
+  return returnObject.eventByContractIdAndTopic;
+}
