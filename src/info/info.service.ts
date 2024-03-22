@@ -1,4 +1,8 @@
-import { Injectable, ServiceUnavailableException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  ServiceUnavailableException,
+  Logger,
+} from '@nestjs/common';
 import { Network } from '@prisma/client';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -7,19 +11,19 @@ import {
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
 import { xlmToken } from 'src/constants';
-import { 
+import {
   GET_CONTRACT_EVENTS,
   getContractEventsParser,
   getRouterAddress,
   getTokensList,
-  getXLMPriceFromCoingecko
-} from 'src/utils'
-import { 
+  getXLMPriceFromCoingecko,
+} from 'src/utils';
+import {
   PairInstanceEntryParserResult,
   PairInstanceWithEntriesParserResult,
   getEntriesByDayParser,
   getContractEventsByDayParser,
-  shortenAddress, 
+  shortenAddress,
 } from 'src/utils/parsers';
 
 @Injectable()
@@ -38,9 +42,11 @@ export class InfoService {
       symbol: currentToken?.code,
       logo: currentToken?.icon,
     };
-    if(currentToken.name === undefined) {
+    if (currentToken.name === undefined) {
       const shortAddr: string = shortenAddress(currentToken?.issuer);
-      tokenData.name = currentToken.issuer ? `${currentToken.code}:${shortAddr}` : currentToken.code;
+      tokenData.name = currentToken.issuer
+        ? `${currentToken.code}:${shortAddr}`
+        : currentToken.code;
     }
     return tokenData;
   }
@@ -84,6 +90,48 @@ export class InfoService {
         return { date: day.date, tvl: dayTVL };
       }),
     );
+
+    return tvlByDay;
+  }
+
+  async getSoroswapTVLChart(network: Network) {
+    const pools: PairInstanceWithEntriesParserResult[] =
+      await this.pairs.getAllSoroswapPools(network, true);
+
+    const xlmValue = await this.getXlmValue();
+
+    const data = {};
+
+    await Promise.all(
+      pools.map(async (pool) => {
+        const entriesByDay =
+          getEntriesByDayParser<PairInstanceEntryParserResult>(pool.entries);
+
+        await Promise.all(
+          entriesByDay.map(async (day) => {
+            const dayTVL = await this.calculateTVL(
+              network,
+              day.lastEntry.token0,
+              day.lastEntry.token1,
+              day.lastEntry.reserve0,
+              day.lastEntry.reserve1,
+              pools,
+              xlmValue,
+            );
+
+            if (!data[day.date]) {
+              data[day.date] = 0;
+            }
+
+            data[day.date] += dayTVL;
+          }),
+        );
+      }),
+    );
+
+    const tvlByDay = Object.keys(data).map((date) => {
+      return { date: date, tvl: data[date] };
+    });
 
     return tvlByDay;
   }
