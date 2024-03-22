@@ -99,49 +99,55 @@ export const pairEventsParser = async (
   data: GetContractEventsResponse,
 ) => {
   const returnObject: any = data;
-  
   const parsedEdgesPromises = data.eventByContractIdAndTopic.edges.map(
     async (edge) => {
       const topic1 = scValToNative(
         StellarSdk.xdr.ScVal.fromXDR(edge.node.topic1, 'base64'),
       );
-      console.log('🚀 ~ topic1:', topic1);
       edge.node.topic1 = topic1;
-
       const topic2 = scValToNative(
         StellarSdk.xdr.ScVal.fromXDR(edge.node.topic2, 'base64'),
       );
-      console.log('🚀 ~ topic2:', topic2);
       edge.node.topic2 = topic2;
 
       if (edge.node.txInfoByTx.txHash) {
         const txHashBuffer = Buffer.from(edge.node.txInfoByTx.txHash, 'base64');
         const txHashHex = txHashBuffer.toString('hex');
-        console.log('🚀 ~ txHashHex:', txHashHex);
         edge.node.txInfoByTx.txHash = txHashHex;
       }
       const data = scValToNative(
         StellarSdk.xdr.ScVal.fromXDR(edge.node.data, 'base64'),
       );
-      console.log('🚀 ~ data:', data);
-      switch (edge.node.topic2) {
+      switch (topic2) {
         case PairTopic2.deposit:
         case PairTopic2.withdraw:
-        case PairTopic2.swap:
-          data.amount0In = Number(BigInt(data.amount_0_in));
-          data.amount0Out = Number(BigInt(data.amount_0_out));
-          data.amount1In = Number(BigInt(data.amount_1_in));
-          data.amount1Out = Number(BigInt(data.amount_1_out));
-        case PairTopic2.sync:
+          data.amount_0 = Number(BigInt(data.amount_0));
+          data.amount_1 = Number(BigInt(data.amount_1));
+          data.liquidity = Number(BigInt(data.liquidity));
+          data.new_reserve_0 = Number(BigInt(data.new_reserve_0));
+          data.new_reserve_1 = Number(BigInt(data.new_reserve_1));
+          const toBuffer = data.to;
+          data.to = toBuffer.toString('hex');
           break;
+        case PairTopic2.swap:
+          data.amount_0_in = Number(BigInt(data.amount_0_in));
+          data.amount_0_out = Number(BigInt(data.amount_0_out));
+          data.amount_1_in = Number(BigInt(data.amount_1_in));
+          data.amount_1_out = Number(BigInt(data.amount_1_out));
+          edge.node.data = data;
+          break;
+        default:
+          return;
       }
       return edge;
     },
   );
 
   const parsedEdges = await Promise.all(parsedEdgesPromises);
-
-  returnObject.eventByContractIdAndTopic.edges = parsedEdges;
+  const filteredEdges = parsedEdges.filter((edge) => edge !== undefined);
+  console.log('🚀 ~ filteredEdges:', filteredEdges);
+  returnObject.totalCount = filteredEdges.length;
+  returnObject.eventByContractIdAndTopic.edges = filteredEdges;
 
   return returnObject.eventByContractIdAndTopic;
-}
+};

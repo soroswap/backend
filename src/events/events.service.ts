@@ -48,10 +48,11 @@ export class EventsService {
         contractId: pool,
       },
     });
-    const parsedContractEvents = pairEventsParser(
+    const parsedContractEvents = await pairEventsParser(
       network,
       mercuryResponse.data!,
     );
+    console.log(JSON.stringify(parsedContractEvents, null, 2));
     return parsedContractEvents;
   }
 }
