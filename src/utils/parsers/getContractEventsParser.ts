@@ -77,6 +77,12 @@ export const eventsByContractIdAndTopicParser = async (
       );
       edge.node.topic2 = topic2;
 
+      if (edge.node.txInfoByTx.txHash) {
+        const txHashBuffer = Buffer.from(edge.node.txInfoByTx.txHash, 'base64');
+        const txHashHex = txHashBuffer.toString('hex');
+        edge.node.txInfoByTx.txHash = txHashHex;
+      }
+
       return edge;
     },
   );
