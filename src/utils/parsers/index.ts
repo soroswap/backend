@@ -6,8 +6,11 @@ export {
 } from './pairInstanceParser';
 export { phoenixFactoryLpVecParser } from './phoenixFactoryLpVecParser';
 
-export { PairInstanceEntryParserResult, PairInstanceWithEntriesParserResult } from './soroswapPairInstanceWithEntriesParser';
-export { getEntriesByDayParser } from './getEntriesByDayParser';
 export { getContractEventsByDayParser } from './getContractEventsByDayParser';
+export { getEntriesByDayParser } from './getEntriesByDayParser';
+export {
+  PairInstanceEntryParserResult,
+  PairInstanceWithEntriesParserResult
+} from './soroswapPairInstanceWithEntriesParser';
 
 export { shortenAddress } from './addressParsers';

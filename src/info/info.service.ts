@@ -1,29 +1,29 @@
 import {
   Injectable,
-  ServiceUnavailableException,
   Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Network } from '@prisma/client';
+import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   mercuryInstanceMainnet,
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
-import { xlmToken } from 'src/constants';
 import {
   GET_CONTRACT_EVENTS,
   getContractEventsParser,
   getRouterAddress,
+  getTokenData,
   getTokensList,
   getXLMPriceFromCoingecko,
 } from 'src/utils';
 import {
   PairInstanceEntryParserResult,
   PairInstanceWithEntriesParserResult,
-  getEntriesByDayParser,
   getContractEventsByDayParser,
-  shortenAddress,
+  getEntriesByDayParser,
 } from 'src/utils/parsers';
 
 @Injectable()
@@ -32,31 +32,6 @@ export class InfoService {
     private prisma: PrismaService,
     private pairs: PairsService,
   ) {}
-
-  async getTokenData(network: Network, token: string) {
-    const tokens = await getTokensList(network);
-    const currentToken = tokens.find((item) => item.contract === token);
-
-    if (currentToken === undefined) {
-      return {
-        name: undefined,
-        symbol: undefined,
-        logo: undefined,
-      };
-    }
-    const tokenData = {
-      name: currentToken?.name,
-      symbol: currentToken?.code,
-      logo: currentToken?.icon,
-    };
-    if (currentToken.name === undefined) {
-      const shortAddr: string = shortenAddress(currentToken?.issuer);
-      tokenData.name = currentToken.issuer
-        ? `${currentToken.code}:${shortAddr}`
-        : currentToken.code;
-    }
-    return tokenData;
-  }
 
   async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
@@ -964,8 +939,8 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const token0 = await this.getTokenData(network, filteredPools[0].token0);
-    const token1 = await this.getTokenData(network, filteredPools[0].token1);
+    const token0 = await getTokenData(network, filteredPools[0].token0);
+    const token1 = await getTokenData(network, filteredPools[0].token1);
 
     token0['contract'] = filteredPools[0].token0;
     token1['contract'] = filteredPools[0].token1;
@@ -1072,16 +1047,13 @@ export class InfoService {
     );
     const priceChange24h = 0;
     const fees24h = 0; // await this.getPoolFees(network)
-    const tokenData = await this.getTokenData(network, token);
+    const tokenData = await getTokenData(network, token);
     const tvlSlippage24h = 0;
     const tvlSlippage7d = 0;
 
     const obj = {
       fees24h: fees24h,
-      token: token,
-      name: tokenData.name,
-      symbol: tokenData.symbol,
-      logo: tokenData.logo,
+      asset: tokenData,
       tvl: tvl.tvl,
       price: priceInUsd.price,
       priceChange24h: priceChange24h,

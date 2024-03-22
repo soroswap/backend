@@ -1,3 +1,4 @@
+import { Network } from '@prisma/client';
 import { Mercury } from 'mercury-sdk';
 
 export const mercuryInstanceTestnet = new Mercury({
@@ -13,3 +14,10 @@ export const mercuryInstanceMainnet = new Mercury({
   email: process.env.MERCURY_EMAIL,
   password: process.env.MERCURY_PASSWORD,
 });
+
+// TODO: Replace the logic below in other parts of the code to use this function
+export const selectMercuryInstance = (network: Network) => {
+  return network == Network.TESTNET
+    ? mercuryInstanceTestnet
+    : mercuryInstanceMainnet;
+};

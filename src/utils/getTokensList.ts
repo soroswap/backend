@@ -26,11 +26,12 @@ export async function getTokensList(
 }
 
 export interface TokenType {
+  code: string;
   issuer?: string;
   contract: string;
-  name: string;
-  code: string;
-  decimals?: number;
-  logoURI?: string;
+  name?: string;
+  org?: string;
+  domain?: string;
   icon?: string;
+  decimals?: number;
 }

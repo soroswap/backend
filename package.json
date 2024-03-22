@@ -22,7 +22,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "create:pair": "ts-node scripts/createPair.ts",
     "subscribe:factory": "ts-node scripts/subscribeToFactory.ts",
-    "subscribe:phoenix": "ts-node scripts/subscribeToPhoenixContracts.ts"
+    "subscribe:phoenix": "ts-node scripts/subscribeToPhoenixContracts.ts",
+    "subscribe:router": "ts-node scripts/subscribeToRouter.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
