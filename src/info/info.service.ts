@@ -37,6 +37,13 @@ export class InfoService {
     const tokens = await getTokensList(network);
     const currentToken = tokens.find((item) => item.contract === token);
 
+    if (currentToken === undefined) {
+      return {
+        name: undefined,
+        symbol: undefined,
+        logo: undefined,
+      };
+    }
     const tokenData = {
       name: currentToken?.name,
       symbol: currentToken?.code,
@@ -1004,7 +1011,6 @@ export class InfoService {
       feesYearly: feesYearly,
       liquidity: liquidity.shares,
     };
-    console.log('🚀 ~ InfoService ~ obj:', obj)
 
     return obj;
   }
