@@ -188,6 +188,19 @@ export class InfoController {
     return this.infoService.getSoroswapFeesChart(query.network);
   }
 
+  @Get('/soroswap/tvl-chart')
+  @ApiOperation({
+    summary: 'Get Soroswap tvl chart',
+    description: 'Retrieve Total Value Locked in the Soroswap DEX per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiOkResponse({
+    description: 'Retrieve Total Value Locked in the Soroswap DEX per day',
+  })
+  async getSoroswapTVLChart(@Query() query: QueryNetworkDto) {
+    return this.infoService.getSoroswapTVLChart(query.network);
+  }
+
   @Get('/tokenVolume24h/:token')
   @ApiOperation({
     summary: 'Get token 24h volume',

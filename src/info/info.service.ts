@@ -11,18 +11,20 @@ import {
   mercuryInstanceMainnet,
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
-import { getTokenData } from 'src/utils';
-import { getRouterAddress } from 'src/utils/getRouterAddress';
-import { getTokensList } from 'src/utils/getTokensList';
-import getXLMPriceFromCoingecko from 'src/utils/getXLMPriceFromCoingecko';
-import { getContractEventsByDayParser } from 'src/utils/parsers/getContractEventsByDayParser';
-import { getContractEventsParser } from 'src/utils/parsers/getContractEventsParser';
-import { getEntriesByDayParser } from 'src/utils/parsers/getEntriesByDayParser';
+import {
+  GET_CONTRACT_EVENTS,
+  getContractEventsParser,
+  getRouterAddress,
+  getTokenData,
+  getTokensList,
+  getXLMPriceFromCoingecko,
+} from 'src/utils';
 import {
   PairInstanceEntryParserResult,
   PairInstanceWithEntriesParserResult,
-} from 'src/utils/parsers/soroswapPairInstanceWithEntriesParser';
-import { GET_CONTRACT_EVENTS } from 'src/utils/queries';
+  getContractEventsByDayParser,
+  getEntriesByDayParser,
+} from 'src/utils/parsers';
 
 @Injectable()
 export class InfoService {
@@ -70,6 +72,48 @@ export class InfoService {
         return { date: day.date, tvl: dayTVL };
       }),
     );
+
+    return tvlByDay;
+  }
+
+  async getSoroswapTVLChart(network: Network) {
+    const pools: PairInstanceWithEntriesParserResult[] =
+      await this.pairs.getAllSoroswapPools(network, true);
+
+    const xlmValue = await this.getXlmValue();
+
+    const data = {};
+
+    await Promise.all(
+      pools.map(async (pool) => {
+        const entriesByDay =
+          getEntriesByDayParser<PairInstanceEntryParserResult>(pool.entries);
+
+        await Promise.all(
+          entriesByDay.map(async (day) => {
+            const dayTVL = await this.calculateTVL(
+              network,
+              day.lastEntry.token0,
+              day.lastEntry.token1,
+              day.lastEntry.reserve0,
+              day.lastEntry.reserve1,
+              pools,
+              xlmValue,
+            );
+
+            if (!data[day.date]) {
+              data[day.date] = 0;
+            }
+
+            data[day.date] += dayTVL;
+          }),
+        );
+      }),
+    );
+
+    const tvlByDay = Object.keys(data).map((date) => {
+      return { date: date, tvl: data[date] };
+    });
 
     return tvlByDay;
   }
@@ -897,8 +941,11 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const tokenA = await getTokenData(network, filteredPools[0].token0);
-    const tokenB = await getTokenData(network, filteredPools[0].token1);
+    const token0 = await getTokenData(network, filteredPools[0].token0);
+    const token1 = await getTokenData(network, filteredPools[0].token1);
+
+    token0['contract'] = filteredPools[0].token0;
+    token1['contract'] = filteredPools[0].token1;
 
     const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
     const volume24h = await this.getPoolVolume(
@@ -928,8 +975,8 @@ export class InfoService {
 
     const obj = {
       pool: poolAddress,
-      token0: filteredPools[0].token0,
-      token1: filteredPools[0].token1,
+      token0: token0,
+      token1: token1,
       reserve0: filteredPools[0].reserve0 * 10 ** -7,
       reserve1: filteredPools[0].reserve1 * 10 ** -7,
       tvl: tvl.tvl,
@@ -938,9 +985,8 @@ export class InfoService {
       fees24h: fees24h,
       feesYearly: feesYearly,
       liquidity: liquidity.shares,
-      tokenA: tokenA,
-      tokenB: tokenB,
     };
+    console.log('🚀 ~ InfoService ~ obj:', obj);
 
     return obj;
   }
@@ -1010,10 +1056,7 @@ export class InfoService {
 
     const obj = {
       fees24h: fees24h,
-      token: token,
-      name: tokenData.name,
-      symbol: tokenData.symbol,
-      logo: tokenData.logo,
+      asset: tokenData,
       tvl: tvl.tvl,
       price: priceInUsd.price,
       priceChange24h: priceChange24h,
