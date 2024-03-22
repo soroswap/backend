@@ -861,7 +861,6 @@ export class InfoService {
       network,
       inheritedContractEvents,
     );
-    console.log('🚀 « contractEvents:', contractEvents);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const now = new Date();
@@ -904,7 +903,6 @@ export class InfoService {
     inheritedXlmValue?: number,
   ) {
     const contractEvents = await this.getContractEvents(network);
-    console.log('🚀 « contractEvents:', contractEvents);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const now = new Date();
@@ -986,7 +984,6 @@ export class InfoService {
       feesYearly: feesYearly,
       liquidity: liquidity.shares,
     };
-    console.log('🚀 ~ InfoService ~ obj:', obj);
 
     return obj;
   }
