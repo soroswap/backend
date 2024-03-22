@@ -1,24 +1,28 @@
-import { GET_CONTRACT_EVENTS } from 'src/utils/queries';
-import { getContractEventsParser } from 'src/utils/parsers/getContractEventsParser';
-import { getRouterAddress } from 'src/utils/getRouterAddress';
-import { getTokensList } from 'src/utils/getTokensList';
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Network } from '@prisma/client';
+import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { xlmToken } from 'src/constants';
-import getXLMPriceFromCoingecko from 'src/utils/getXLMPriceFromCoingecko';
 import {
   mercuryInstanceMainnet,
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
-import { Logger } from '@nestjs/common';
+import { getTokenData } from 'src/utils';
+import { getRouterAddress } from 'src/utils/getRouterAddress';
+import { getTokensList } from 'src/utils/getTokensList';
+import getXLMPriceFromCoingecko from 'src/utils/getXLMPriceFromCoingecko';
+import { getContractEventsByDayParser } from 'src/utils/parsers/getContractEventsByDayParser';
+import { getContractEventsParser } from 'src/utils/parsers/getContractEventsParser';
+import { getEntriesByDayParser } from 'src/utils/parsers/getEntriesByDayParser';
 import {
   PairInstanceEntryParserResult,
   PairInstanceWithEntriesParserResult,
 } from 'src/utils/parsers/soroswapPairInstanceWithEntriesParser';
-import { getEntriesByDayParser } from 'src/utils/parsers/getEntriesByDayParser';
-import { getContractEventsByDayParser } from 'src/utils/parsers/getContractEventsByDayParser';
+import { GET_CONTRACT_EVENTS } from 'src/utils/queries';
 
 @Injectable()
 export class InfoService {
@@ -26,18 +30,6 @@ export class InfoService {
     private prisma: PrismaService,
     private pairs: PairsService,
   ) {}
-
-  async getTokenData(network: Network, token: string) {
-    const tokens = await getTokensList(network);
-    const currentToken = tokens.find((item) => item.contract === token);
-
-    const tokenData = {
-      name: currentToken?.name,
-      symbol: currentToken?.code,
-      logo: currentToken?.icon,
-    };
-    return tokenData;
-  }
 
   async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
@@ -905,8 +897,8 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const tokenA = await this.getTokenData(network, filteredPools[0].token0);
-    const tokenB = await this.getTokenData(network, filteredPools[0].token1);
+    const tokenA = await getTokenData(network, filteredPools[0].token0);
+    const tokenB = await getTokenData(network, filteredPools[0].token1);
 
     const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
     const volume24h = await this.getPoolVolume(
@@ -1012,7 +1004,7 @@ export class InfoService {
     );
     const priceChange24h = 0;
     const fees24h = 0; // await this.getPoolFees(network)
-    const tokenData = await this.getTokenData(network, token);
+    const tokenData = await getTokenData(network, token);
     const tvlSlippage24h = 0;
     const tvlSlippage7d = 0;
 
