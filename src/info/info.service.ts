@@ -959,8 +959,11 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const tokenA = await this.getTokenData(network, filteredPools[0].token0);
-    const tokenB = await this.getTokenData(network, filteredPools[0].token1);
+    const token0 = await this.getTokenData(network, filteredPools[0].token0);
+    const token1 = await this.getTokenData(network, filteredPools[0].token1);
+
+    token0['contract'] = filteredPools[0].token0;
+    token1['contract'] = filteredPools[0].token1;
 
     const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
     const volume24h = await this.getPoolVolume(
@@ -990,8 +993,8 @@ export class InfoService {
 
     const obj = {
       pool: poolAddress,
-      token0: filteredPools[0].token0,
-      token1: filteredPools[0].token1,
+      token0: token0,
+      token1: token1,
       reserve0: filteredPools[0].reserve0 * 10 ** -7,
       reserve1: filteredPools[0].reserve1 * 10 ** -7,
       tvl: tvl.tvl,
@@ -1000,9 +1003,8 @@ export class InfoService {
       fees24h: fees24h,
       feesYearly: feesYearly,
       liquidity: liquidity.shares,
-      tokenA: tokenA,
-      tokenB: tokenB,
     };
+    console.log('🚀 ~ InfoService ~ obj:', obj)
 
     return obj;
   }
