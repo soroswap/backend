@@ -30,12 +30,12 @@ import {
 export class InfoService {
   constructor(
     private prisma: PrismaService,
-    private pairs: PairsService,
+    private pairsModule: PairsService,
   ) {}
 
   async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
-      return await this.pairs.getAllPools(network, ['soroswap']);
+      return await this.pairsModule.getAllPools(network, ['soroswap']);
     } else {
       return inheritedPools;
     }
@@ -43,7 +43,7 @@ export class InfoService {
 
   async getPoolTVLChart(network: Network, poolAddress: string) {
     const pools: PairInstanceWithEntriesParserResult[] =
-      await this.pairs.getAllSoroswapPools(network, true);
+      await this.pairsModule.getAllSoroswapPools(network, true);
 
     const pool = pools.find((pool) => pool.contractId == poolAddress);
 
@@ -78,7 +78,7 @@ export class InfoService {
 
   async getSoroswapTVLChart(network: Network) {
     const pools: PairInstanceWithEntriesParserResult[] =
-      await this.pairs.getAllSoroswapPools(network, true);
+      await this.pairsModule.getAllSoroswapPools(network, true);
 
     const xlmValue = await this.getXlmValue();
 
@@ -232,7 +232,7 @@ export class InfoService {
 
   async getTokenTvlChart(network: Network, tokenAddress: string) {
     const pools: PairInstanceWithEntriesParserResult[] =
-      await this.pairs.getAllSoroswapPools(network, true);
+      await this.pairsModule.getAllSoroswapPools(network, true);
 
     const filteredPools = pools.filter(
       (pool) => pool.token0 == tokenAddress || pool.token1 == tokenAddress,
@@ -279,7 +279,7 @@ export class InfoService {
 
   async getTokenPriceChart(network: Network, tokenAddress: string) {
     const pools: PairInstanceWithEntriesParserResult[] =
-      await this.pairs.getAllSoroswapPools(network, true);
+      await this.pairsModule.getAllSoroswapPools(network, true);
     const xlm = xlmToken[network];
 
     const tokenXLMPool = pools.find(
@@ -1095,5 +1095,38 @@ export class InfoService {
     }
 
     return tokensInfo;
+  }
+
+  async getPoolsOfGivenToken(network: Network, contract: string) {
+    const allPairAddresses =
+      await this.pairsModule.getSoroswapPairAddresses(network);
+    const allPools =
+      await this.pairsModule.getSoroswapPairsWithTokensAndReserves(
+        network,
+        allPairAddresses,
+        false,
+      );
+    let contractPools = allPools.filter(
+      (pool) => pool.token0 == contract || pool.token1 == contract,
+    );
+
+    contractPools = await Promise.all(
+      contractPools.map(async (pool) => {
+        pool.token0 = await getTokenData(network, pool.token0);
+        pool.token1 = await getTokenData(network, pool.token1);
+
+        // TODO: Add TVL and other info similar to getPoolInfo()
+        const obj = {
+          pool: pool.contractId,
+          token0: pool.token0,
+          token1: pool.token1,
+          reserve0: pool.reserve0,
+          reserve1: pool.reserve1,
+        };
+        return obj;
+      }),
+    );
+
+    return contractPools;
   }
 }

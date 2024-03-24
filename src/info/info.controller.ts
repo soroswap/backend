@@ -502,4 +502,19 @@ export class InfoController {
   async getxlm() {
     return this.infoService.getXlmValue();
   }
+
+  @Get('pools/:token')
+  @ApiOperation({
+    summary: 'Get all pools of a tokens contract',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiOkResponse({
+    description: 'All the pools of a given token contract',
+  })
+  async getPoolsOfGivenToken(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getPoolsOfGivenToken(query.network, token);
+  }
 }
