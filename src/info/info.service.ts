@@ -30,12 +30,12 @@ import {
 export class InfoService {
   constructor(
     private prisma: PrismaService,
-    private pairs: PairsService,
+    private pairsModule: PairsService,
   ) {}
 
   async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
-      return await this.pairs.getAllPools(network, ['soroswap']);
+      return await this.pairsModule.getAllPools(network, ['soroswap']);
     } else {
       return inheritedPools;
     }
@@ -43,7 +43,7 @@ export class InfoService {
 
   async getPoolTVLChart(network: Network, poolAddress: string) {
     const pools: PairInstanceWithEntriesParserResult[] =
-      await this.pairs.getAllSoroswapPools(network, true);
+      await this.pairsModule.getAllSoroswapPools(network, true);
 
     const pool = pools.find((pool) => pool.contractId == poolAddress);
 
@@ -78,7 +78,7 @@ export class InfoService {
 
   async getSoroswapTVLChart(network: Network) {
     const pools: PairInstanceWithEntriesParserResult[] =
-      await this.pairs.getAllSoroswapPools(network, true);
+      await this.pairsModule.getAllSoroswapPools(network, true);
 
     const xlmValue = await this.getXlmValue();
 
@@ -232,7 +232,7 @@ export class InfoService {
 
   async getTokenTvlChart(network: Network, tokenAddress: string) {
     const pools: PairInstanceWithEntriesParserResult[] =
-      await this.pairs.getAllSoroswapPools(network, true);
+      await this.pairsModule.getAllSoroswapPools(network, true);
 
     const filteredPools = pools.filter(
       (pool) => pool.token0 == tokenAddress || pool.token1 == tokenAddress,
@@ -279,7 +279,7 @@ export class InfoService {
 
   async getTokenPriceChart(network: Network, tokenAddress: string) {
     const pools: PairInstanceWithEntriesParserResult[] =
-      await this.pairs.getAllSoroswapPools(network, true);
+      await this.pairsModule.getAllSoroswapPools(network, true);
     const xlm = xlmToken[network];
 
     const tokenXLMPool = pools.find(
@@ -896,23 +896,33 @@ export class InfoService {
     return feesByDay;
   }
 
+  /**
+   * Retrieves the total fees earned by a pool within the specified time frame.
+   * @param network - The network on which the pool exists.
+   * @param poolAddress - The address of the pool.
+   * @param lastNDays - The number of days to consider for calculating the fees. Defaults to 1.
+   * @param inheritedXlmValue - The inherited XLM value to use for fee calculation.
+   * @returns The total fees earned by the pool, multiplied by the XLM value.
+   */
   async getPoolFees(
     network: Network,
-    pool: string,
-    lastNDays: number,
+    poolAddress: string,
+    lastNDays: number = 1,
     inheritedXlmValue?: number,
   ) {
     const contractEvents = await this.getContractEvents(network);
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
-
     const now = new Date();
-    const oneDay = 24 * 60 * 60 * 1000;
-
     let fees = 0;
-    for (const event of contractEvents) {
-      const timeDiff = now.getTime() - event.closeTime.getTime();
-      if (timeDiff < oneDay * lastNDays && event.pair && event.pair == pool) {
-        fees += parseFloat(event.fee) * 10 ** -7;
+    const relatedEvents = contractEvents.filter((event) => event.pair == poolAddress);
+    for (const event of relatedEvents) {
+      const closeTime = new Date(event.closeTime);
+      const hoursAgo = lastNDays * 24;
+      const timeDiff = now.getTime() - closeTime.getTime();
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+      if (hoursDiff < hoursAgo) {
+
+        fees = fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
     return fees * xlmValue;
@@ -1008,6 +1018,15 @@ export class InfoService {
     return poolsInfo;
   }
 
+  /**
+   * Retrieves information about a token.
+   * @param network - The network to retrieve the token information from.
+   * @param token - The token to retrieve information for.
+   * @param inheritedXlmValue - The inherited XLM value.
+   * @param inheritedPools - The inherited pools.
+   * @param inheritedContractEvents - The inherited contract events.
+   * @returns An object containing various information about the token.
+   */
   async getTokenInfo(
     network: Network,
     token: string,
@@ -1021,7 +1040,7 @@ export class InfoService {
     );
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const pools = await this.getPools(network, inheritedPools);
-
+    const relatedPools = pools.filter((pool)=> pool.token0 == token || pool.token1 == token);
     const tvl = await this.getTokenTvl(network, token, xlmValue, pools);
     const priceInUsd = await this.getTokenPriceInUSD(
       network,
@@ -1046,7 +1065,11 @@ export class InfoService {
       xlmValue,
     );
     const priceChange24h = 0;
-    const fees24h = 0; // await this.getPoolFees(network)
+    let fees24h = 0;
+    for (const pool of relatedPools) {
+      const poolFees = await this.getPoolFees(network, pool.contractId, 10, xlmValue);
+      fees24h += poolFees
+    }
     const tokenData = await getTokenData(network, token);
     const tvlSlippage24h = 0;
     const tvlSlippage7d = 0;
@@ -1095,5 +1118,38 @@ export class InfoService {
     }
 
     return tokensInfo;
+  }
+
+  async getPoolsOfGivenToken(network: Network, contract: string) {
+    const allPairAddresses =
+      await this.pairsModule.getSoroswapPairAddresses(network);
+    const allPools =
+      await this.pairsModule.getSoroswapPairsWithTokensAndReserves(
+        network,
+        allPairAddresses,
+        false,
+      );
+    let contractPools = allPools.filter(
+      (pool) => pool.token0 == contract || pool.token1 == contract,
+    );
+
+    contractPools = await Promise.all(
+      contractPools.map(async (pool) => {
+        pool.token0 = await getTokenData(network, pool.token0);
+        pool.token1 = await getTokenData(network, pool.token1);
+
+        // TODO: Add TVL and other info similar to getPoolInfo()
+        const obj = {
+          pool: pool.contractId,
+          token0: pool.token0,
+          token1: pool.token1,
+          reserve0: pool.reserve0,
+          reserve1: pool.reserve1,
+        };
+        return obj;
+      }),
+    );
+
+    return contractPools;
   }
 }
