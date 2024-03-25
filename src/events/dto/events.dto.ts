@@ -9,6 +9,13 @@ export enum RouterTopic2 {
   remove = 'AAAADwAAAAZyZW1vdmUAAA==',
 }
 
+export enum PairTopic2 {
+  deposit = 'deposit',
+  swap = 'swap',
+  withdraw = 'withdraw',
+  sync = 'sync',
+}
+
 export class getRouterEventsDto {
   @ApiProperty({ enum: RouterTopic2 })
   @IsOptional()
