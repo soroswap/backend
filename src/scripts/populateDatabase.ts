@@ -202,23 +202,6 @@ export async function populateDatabase(network: Network) {
       node.keyXdr === constants.instanceStorageKeyXdr
     ) {
       pairStorage++;
-      await prisma.subscriptions.upsert({
-        where: {
-          contractId_keyXdr: {
-            contractId: node.contractId,
-            keyXdr: node.keyXdr,
-          },
-          network,
-        },
-        update: {},
-        create: {
-          contractId: node.contractId,
-          keyXdr: node.keyXdr,
-          contractType: 'PAIR',
-          storageType: 'INSTANCE',
-          network,
-        },
-      });
     } else {
       others++;
     }
