@@ -19,35 +19,24 @@ export interface EntriesByDayParserResult<T> {
   allEntries: T[];
 }
 
-//Get entries and group them by day from lowest timestamp to today's date in intervals of 24 hours.
+//Get entries and group them by day.
 //Useful for charts
 export function getEntriesByDayParser<T extends { timestamp: number | null }>(
   entries: T[],
 ) {
+  const soroswapCreationTimestamp =
+    new Date('2024-03-11 16:23:45 UTC').getTime() / 1000;
+
+  entries = entries.map((e) => {
+    return {
+      ...e,
+      timestamp: e.timestamp ? e.timestamp : soroswapCreationTimestamp,
+    };
+  });
+
   const sortedEntries = entries.sort((a, b) => a.timestamp - b.timestamp);
 
-  const todayTimestamp = new Date().getTime() / 1000;
-
-  const oneDayInMs = 1 * 24 * 60 * 60;
-
-  if (sortedEntries.length === 1) {
-    sortedEntries[0].timestamp = todayTimestamp;
-  }
-
-  if (sortedEntries.length > 1) {
-    sortedEntries[0].timestamp = sortedEntries[1].timestamp - 1;
-  }
-
   const entriesByDay = {};
-
-  for (
-    let i = sortedEntries[0].timestamp;
-    i <= todayTimestamp;
-    i += oneDayInMs
-  ) {
-    const dayKey = getDayKey(i);
-    entriesByDay[dayKey] = [];
-  }
 
   sortedEntries.forEach((entry) => {
     const dayKey = getDayKey(entry.timestamp);
@@ -57,17 +46,7 @@ export function getEntriesByDayParser<T extends { timestamp: number | null }>(
     entriesByDay[dayKey].push(entry);
   });
 
-  let lastEntries = null;
-
   for (const dayKey in entriesByDay) {
-    if (entriesByDay[dayKey].length > 0) {
-      lastEntries = entriesByDay[dayKey];
-    }
-
-    if (entriesByDay[dayKey].length === 0 && lastEntries) {
-      entriesByDay[dayKey] = lastEntries;
-    }
-
     entriesByDay[dayKey].sort((a, b) => a.timestamp - b.timestamp);
   }
 
