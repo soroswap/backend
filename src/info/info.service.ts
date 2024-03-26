@@ -914,14 +914,15 @@ export class InfoService {
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const now = new Date();
     let fees = 0;
-    const relatedEvents = contractEvents.filter((event) => event.pair == poolAddress);
+    const relatedEvents = contractEvents.filter(
+      (event) => event.pair == poolAddress,
+    );
     for (const event of relatedEvents) {
       const closeTime = new Date(event.closeTime);
       const hoursAgo = lastNDays * 24;
       const timeDiff = now.getTime() - closeTime.getTime();
       const hoursDiff = timeDiff / (1000 * 60 * 60);
       if (hoursDiff < hoursAgo) {
-
         fees = fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
@@ -955,31 +956,31 @@ export class InfoService {
     token0['contract'] = filteredPools[0].token0;
     token1['contract'] = filteredPools[0].token1;
 
-    const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
-    const volume24h = await this.getPoolVolume(
-      network,
-      poolAddress,
-      1,
-      xlmValue,
-      pools,
-      contractEvents,
-    );
-    const volume7d = await this.getPoolVolume(
-      network,
-      poolAddress,
-      7,
-      xlmValue,
-      pools,
-      contractEvents,
-    );
-    const fees24h = await this.getPoolFees(network, poolAddress, 1, xlmValue);
-    const feesYearly = await this.getPoolFees(
-      network,
-      poolAddress,
-      365,
-      xlmValue,
-    );
-    const liquidity = await this.getPoolShares(network, poolAddress, pools);
+    // const tvl = await this.getPoolTvl(network, poolAddress, xlmValue, pools);
+    // const volume24h = await this.getPoolVolume(
+    //   network,
+    //   poolAddress,
+    //   1,
+    //   xlmValue,
+    //   pools,
+    //   contractEvents,
+    // );
+    // const volume7d = await this.getPoolVolume(
+    //   network,
+    //   poolAddress,
+    //   7,
+    //   xlmValue,
+    //   pools,
+    //   contractEvents,
+    // );
+    // const fees24h = await this.getPoolFees(network, poolAddress, 1, xlmValue);
+    // const feesYearly = await this.getPoolFees(
+    //   network,
+    //   poolAddress,
+    //   365,
+    //   xlmValue,
+    // );
+    // const liquidity = await this.getPoolShares(network, poolAddress, pools);
 
     const obj = {
       pool: poolAddress,
@@ -987,12 +988,12 @@ export class InfoService {
       token1: token1,
       reserve0: filteredPools[0].reserve0 * 10 ** -7,
       reserve1: filteredPools[0].reserve1 * 10 ** -7,
-      tvl: tvl.tvl,
-      volume24h: volume24h,
-      volume7d: volume7d,
-      fees24h: fees24h,
-      feesYearly: feesYearly,
-      liquidity: liquidity.shares,
+      // tvl: tvl.tvl,
+      // volume24h: volume24h,
+      // volume7d: volume7d,
+      // fees24h: fees24h,
+      // feesYearly: feesYearly,
+      // liquidity: liquidity.shares,
     };
 
     return obj;
@@ -1040,7 +1041,9 @@ export class InfoService {
     );
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const pools = await this.getPools(network, inheritedPools);
-    const relatedPools = pools.filter((pool)=> pool.token0 == token || pool.token1 == token);
+    const relatedPools = pools.filter(
+      (pool) => pool.token0 == token || pool.token1 == token,
+    );
     const tvl = await this.getTokenTvl(network, token, xlmValue, pools);
     const priceInUsd = await this.getTokenPriceInUSD(
       network,
@@ -1067,8 +1070,13 @@ export class InfoService {
     const priceChange24h = 0;
     let fees24h = 0;
     for (const pool of relatedPools) {
-      const poolFees = await this.getPoolFees(network, pool.contractId, 10, xlmValue);
-      fees24h += poolFees
+      const poolFees = await this.getPoolFees(
+        network,
+        pool.contractId,
+        10,
+        xlmValue,
+      );
+      fees24h += poolFees;
     }
     const tokenData = await getTokenData(network, token);
     const tvlSlippage24h = 0;
