@@ -188,6 +188,19 @@ export class InfoController {
     return this.infoService.getSoroswapFeesChart(query.network);
   }
 
+  @Get('/soroswap/tvl-chart')
+  @ApiOperation({
+    summary: 'Get Soroswap tvl chart',
+    description: 'Retrieve Total Value Locked in the Soroswap DEX per day',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiOkResponse({
+    description: 'Retrieve Total Value Locked in the Soroswap DEX per day',
+  })
+  async getSoroswapTVLChart(@Query() query: QueryNetworkDto) {
+    return this.infoService.getSoroswapTVLChart(query.network);
+  }
+
   @Get('/tokenVolume24h/:token')
   @ApiOperation({
     summary: 'Get token 24h volume',
@@ -488,5 +501,20 @@ export class InfoController {
   @Get('/xlmPrice')
   async getxlm() {
     return this.infoService.getXlmValue();
+  }
+
+  @Get('pools/:token')
+  @ApiOperation({
+    summary: 'Get all pools of a tokens contract',
+  })
+  @ApiQuery({ name: 'network', description: '<MAINNET | TESTNET>' })
+  @ApiOkResponse({
+    description: 'All the pools of a given token contract',
+  })
+  async getPoolsOfGivenToken(
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string,
+  ) {
+    return this.infoService.getPoolsOfGivenToken(query.network, token);
   }
 }

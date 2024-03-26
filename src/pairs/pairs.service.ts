@@ -23,12 +23,12 @@ import {
   phoenixPairInstanceParser,
   soroswapPairInstanceParser,
 } from 'src/utils/parsers';
+import { soroswapPairInstanceWithEntriesParser } from 'src/utils/parsers/soroswapPairInstanceWithEntriesParser';
 import {
   GET_LAST_CONTRACT_ENTRY,
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
-import { soroswapPairInstanceWithEntriesParser } from 'src/utils/parsers/soroswapPairInstanceWithEntriesParser';
 
 @Injectable()
 export class PairsService {
