@@ -936,11 +936,11 @@ export class InfoService {
     inheritedPools?: any[],
     inheritedContractEvents?: any[],
   ) {
-    const contractEvents = await this.getContractEvents(
-      network,
-      inheritedContractEvents,
-    );
-    const xlmValue = await this.getXlmValue(inheritedXlmValue);
+    // const contractEvents = await this.getContractEvents(
+    //   network,
+    //   inheritedContractEvents,
+    // );
+    // const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const pools = await this.getPools(network, inheritedPools);
 
     const filteredPools: any = pools.filter(
