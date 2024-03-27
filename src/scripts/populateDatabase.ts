@@ -26,6 +26,7 @@ export async function populateDatabase(network: Network) {
       console.log(err);
       throw new Error('Error getting ledger entry subscriptions');
     });
+  console.log('🚀 « ledgerEntrySubscriptions:', ledgerEntrySubscriptions);
 
   if (ledgerEntrySubscriptions.data == null) {
     Logger.log('Database up to date!', `MERCURY ${network}`);
@@ -44,6 +45,7 @@ export async function populateDatabase(network: Network) {
   for (const sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
     .edges) {
     const node = sub.node;
+    console.log('🚀 « node:', node);
 
     // Case: Soroswap Factory instance
     if (
