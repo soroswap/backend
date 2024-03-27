@@ -22,7 +22,7 @@ export class EventsController {
     @Query() query: QueryNetworkDto,
     @Body() body: getRouterEventsDto,
   ) {
-    return await this.eventsService.getRouterEvents(query.network, body);
+    return this.eventsService.getRouterEvents(query.network, body);
   }
 
   @Get('pool/:pool')

@@ -9,6 +9,7 @@ import {
 } from 'src/utils/parsers/getContractEventsParser';
 import { GET_EVENTS_BY_CONTRACT_AND_TOPIC } from 'src/utils/queries';
 import { getRouterEventsDto } from './dto/events.dto';
+import { routerEventsParser } from 'src/utils/parsers/routerEventsParser';
 
 @Injectable()
 export class EventsService {
@@ -32,12 +33,12 @@ export class EventsService {
       },
     });
 
-    const parsedContractEvents = eventsByContractIdAndTopicParser(
+    const parsedContractEvents = await eventsByContractIdAndTopicParser(
       network,
       mercuryResponse.data!,
     );
 
-    return parsedContractEvents;
+    return routerEventsParser(parsedContractEvents);
   }
 
   async getPoolEvents(pool: string, network: Network) {
