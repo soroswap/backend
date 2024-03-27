@@ -1,9 +1,11 @@
 import {
   Injectable,
+  Inject,
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { Network } from '@prisma/client';
+import { Cache } from 'cache-manager';
 import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -31,6 +33,7 @@ export class InfoService {
   constructor(
     private prisma: PrismaService,
     private pairsModule: PairsService,
+    @Inject('CACHE_MANAGER') private cacheManager: Cache,
   ) {}
 
   async getPools(network: Network, inheritedPools?: any[]) {

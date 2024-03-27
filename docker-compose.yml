@@ -1,4 +1,7 @@
 version: "3"
+networks: 
+  app-network:
+    driver: bridge
 services:
   backend:
     image: node:lts
@@ -31,10 +34,29 @@ services:
       - app-network
     env_file:
       - .env
-      
-networks: 
-  app-network:
-    driver: bridge
+
+  redis:
+    container_name: redis
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis:/data
+    network:
+      - app-network
+
+  redis_insight:
+    container_name: redis_insight
+    image: redislabs/redisinsight:latest
+    restart: always
+    ports:
+      - "8001:8001"
+    volumes:
+      - redis_insight:/db
+    network:
+      - app-network
 
 volumes: 
   db-volume:
+  redis:
+  redis_insight:
