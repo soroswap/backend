@@ -132,3 +132,6 @@ dist
 
 #PGAdmin
 pgadmin/
+
+#Redis dump
+dump.rdb
