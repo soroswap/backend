@@ -5,8 +5,8 @@ import { scValToJs } from 'mercury-sdk';
 import { RouterTopic2 } from 'src/events/dto/events.dto';
 import { GetContractEventsResponse } from 'src/types';
 import { getTokenData } from '../getToken';
-import { TokenType } from '../getTokensList';
 import { adjustAmountByDecimals } from '../adjustAmountByDecimals';
+import { RouterEventFormatted } from './routerEventsFormatter';
 
 export const getContractEventsParser = (data: GetContractEventsResponse) => {
   const parsedData = data.eventByContractId.edges.map((edge) => {
@@ -155,23 +155,12 @@ export const pairEventsParser = async (
   return returnObject.eventByContractIdAndTopic;
 };
 
-export interface PairEventFormatted {
-  tokenA?: TokenType;
-  tokenB?: TokenType;
-  amountA: string;
-  amountB: string;
-  txHash: string;
-  event: 'swap' | 'add' | 'remove';
-  account?: string;
-  timestamp: number;
-}
-
 export const pairEventsFormatter = async (
   network: Network,
   data: any,
   tokenAddressA: string,
   tokenAddressB: string,
-): Promise<PairEventFormatted[]> => {
+): Promise<RouterEventFormatted[]> => {
   if (!data) return [];
 
   const tokenA = await getTokenData(network, tokenAddressA);
