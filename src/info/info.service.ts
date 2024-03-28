@@ -1053,24 +1053,33 @@ export class InfoService {
   }
 
   async getPoolsInfo(network: Network) {
-    const contractEvents = await this.getContractEvents(network);
-    const pools = await this.getPools(network);
-    const xlmValue = await this.getXlmValue();
-    const tokensList = await this.fetchTokenList(network);
-    const poolsInfo = [];
-    for (const pool of pools) {
-      const poolInfo = await this.getPoolInfo(
-        network,
-        pool.contractId,
-        xlmValue,
-        pools,
-        contractEvents,
-        tokensList,
-      );
-      poolsInfo.push(poolInfo);
+    const key = `POOLS-INFO-${network}`;
+    const ttl = 5 * 1000 * 60; // 5 minutes
+    const cachedPoolsInfo = await this.cacheManager.get(key);
+    if (cachedPoolsInfo) {
+      console.log('Returning cached pools info')
+      return cachedPoolsInfo;
+    } else {
+      console.log('Fetching pools info')
+      const contractEvents = await this.getContractEvents(network);
+      const pools = await this.getPools(network);
+      const xlmValue = await this.getXlmValue();
+      const tokensList = await this.fetchTokenList(network);
+      const poolsInfo = [];
+      for (const pool of pools) {
+        const poolInfo = await this.getPoolInfo(
+          network,
+          pool.contractId,
+          xlmValue,
+          pools,
+          contractEvents,
+          tokensList,
+        );
+        poolsInfo.push(poolInfo);
+      }
+      await this.cacheManager.set(key, poolsInfo, ttl);
+      return poolsInfo;
     }
-
-    return poolsInfo;
   }
 
   /**
