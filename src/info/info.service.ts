@@ -4,8 +4,10 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Network } from '@prisma/client';
 import { Cache } from 'cache-manager';
+import axios from 'axios';
+import { axiosApiBackendInstance } from 'src/utils/axios';
+import { Network } from '@prisma/client';
 import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -20,6 +22,7 @@ import {
   getTokenData,
   getTokensList,
   getXLMPriceFromCoingecko,
+  sleep,
 } from 'src/utils';
 import {
   PairInstanceEntryParserResult,
@@ -27,6 +30,7 @@ import {
   getContractEventsByDayParser,
   getEntriesByDayParser,
 } from 'src/utils/parsers';
+import { TokenType } from 'src/types';
 
 @Injectable()
 export class InfoService {
@@ -35,6 +39,37 @@ export class InfoService {
     private pairsModule: PairsService,
     @Inject('CACHE_MANAGER') private cacheManager: Cache,
   ) {}
+  
+  async fetchTokenList(network: Network) {
+    const key = `TOKENS-LIST-${network}`;
+    const ttl = (60*1000*60); // 1 hour
+
+    let cachedTokens = await this.cacheManager.get<TokenType[]>(
+      key,
+    );
+
+    if(cachedTokens) {
+      console.log('Returning cached tokens')
+      return cachedTokens;
+    } else {
+      console.log('Fetching tokens from the API')
+      let tokens: TokenType[];
+
+      if (network == Network.MAINNET) {
+        const { data } = await axios.get(
+          'https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json',
+        );
+        tokens = data.tokens;
+      } else {
+        const { data } = await axiosApiBackendInstance.get('/api/tokens');
+        tokens = data.find(
+          (item) => item.network === network.toLowerCase(),
+        ).tokens;
+      }
+      await this.cacheManager.set(key, tokens, ttl);
+      return tokens;
+    }
+  }
 
   async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
