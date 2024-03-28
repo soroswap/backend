@@ -42,18 +42,7 @@ services:
       - "6379:6379"
     volumes:
       - redis:/data
-    network:
-      - app-network
-
-  redis_insight:
-    container_name: redis_insight
-    image: redislabs/redisinsight:latest
-    restart: always
-    ports:
-      - "8001:8001"
-    volumes:
-      - redis_insight:/db
-    network:
+    networks:
       - app-network
 
 volumes: 
