@@ -39,6 +39,11 @@ export class InfoService {
     @Inject('CACHE_MANAGER') private cacheManager: Cache,
   ) {}
 
+  /**
+   * Fetches the token list for the specified network.
+   * @param network The network for which to fetch the token list.
+   * @returns A promise that resolves to an array of tokens.
+   */
   async fetchTokenList(network: Network) {
     const key = `TOKENS-LIST-${network}`;
     const ttl = (60*1000*60); // 1 hour
@@ -1052,6 +1057,15 @@ export class InfoService {
     return obj;
   }
 
+  /**
+   * Retrieves the pools information for the specified network.
+   * If the information is available in the cache, it returns the cached data.
+   * Otherwise, it fetches the pools information, calculates the pool info for each pool,
+   * and stores the result in the cache for future use.
+   *
+   * @param network - The network for which to retrieve the pools information.
+   * @returns A Promise that resolves to an array of pool information objects.
+   */
   async getPoolsInfo(network: Network) {
     const key = `POOLS-INFO-${network}`;
     const ttl = 5 * 1000 * 60; // 5 minutes
