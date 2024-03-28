@@ -19,10 +19,9 @@ import {
   GET_CONTRACT_EVENTS,
   getContractEventsParser,
   getRouterAddress,
-  getTokenData,
   getTokensList,
+  getTokenData,
   getXLMPriceFromCoingecko,
-  sleep,
 } from 'src/utils';
 import {
   PairInstanceEntryParserResult,
@@ -39,7 +38,7 @@ export class InfoService {
     private pairsModule: PairsService,
     @Inject('CACHE_MANAGER') private cacheManager: Cache,
   ) {}
-  
+
   async fetchTokenList(network: Network) {
     const key = `TOKENS-LIST-${network}`;
     const ttl = (60*1000*60); // 1 hour
@@ -69,6 +68,21 @@ export class InfoService {
       await this.cacheManager.set(key, tokens, ttl);
       return tokens;
     }
+  }
+
+  async getTokenData(
+    token: string,
+    tokensList: TokenType[],
+  ): Promise<TokenType> {
+    const currentToken = tokensList.find((item) => item.contract === token);
+    if (!currentToken) {
+      return {
+        code: token,
+        name: token,
+        contract: token,
+      };
+    }
+    return currentToken;
   }
 
   async getPools(network: Network, inheritedPools?: any[]) {
@@ -972,6 +986,7 @@ export class InfoService {
     inheritedXlmValue?: number,
     inheritedPools?: any[],
     inheritedContractEvents?: any[],
+    inheritedTokens?: TokenType[],
   ) {
     const contractEvents = await this.getContractEvents(
       network,
@@ -987,8 +1002,9 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const token0 = await getTokenData(network, filteredPools[0].token0);
-    const token1 = await getTokenData(network, filteredPools[0].token1);
+    const tokensList = inheritedTokens ? inheritedTokens : await this.fetchTokenList(network);
+    const token0 = await this.getTokenData(filteredPools[0].token0, tokensList);
+    const token1 = await this.getTokenData(filteredPools[0].token1, tokensList);
 
     token0['contract'] = filteredPools[0].token0;
     token1['contract'] = filteredPools[0].token1;
@@ -1040,7 +1056,7 @@ export class InfoService {
     const contractEvents = await this.getContractEvents(network);
     const pools = await this.getPools(network);
     const xlmValue = await this.getXlmValue();
-
+    const tokensList = await this.fetchTokenList(network);
     const poolsInfo = [];
     for (const pool of pools) {
       const poolInfo = await this.getPoolInfo(
@@ -1049,6 +1065,7 @@ export class InfoService {
         xlmValue,
         pools,
         contractEvents,
+        tokensList,
       );
       poolsInfo.push(poolInfo);
     }
