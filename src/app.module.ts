@@ -17,14 +17,15 @@ import { redisStore } from 'cache-manager-redis-yet';
     ConfigModule.forRoot({
       load: [configLoader],
       validationSchema: envSchema,
+      isGlobal: true,
     }),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: async () => ({
         store: await redisStore({
           socket: {
-            host: 'redis',
-            port: parseInt(process.env.REDIS_PORT),
+            host: configLoader().redis.host,
+            port: configLoader().redis.port,
           },
         }),
       }),
