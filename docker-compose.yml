@@ -8,6 +8,7 @@ services:
     ports:
       - "${PORT}:${PORT}"
       - 5555:5555
+      - 6379:6379
     working_dir: /app
     networks:
       - app-network
@@ -48,4 +49,3 @@ services:
 volumes: 
   db-volume:
   redis:
-  redis_insight:
