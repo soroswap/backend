@@ -20,6 +20,9 @@ POSTGRES_URL=protocol://user:password@host:port/database_name
 
 and fill in the remaining values.
 
+>[!NOTE]
+> If you will run the development instance (with docker-compose) the "REDIS_HOST" value should be "redis"
+
 If you are developing locally and using the PostgreSQL container of the Docker Compose, your setup should be:
 
 ```bash
