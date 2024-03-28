@@ -5,11 +5,17 @@ import { selectMercuryInstance } from 'src/services/mercury';
 import { getRouterAddress } from 'src/utils';
 import {
   eventsByContractIdAndTopicParser,
+  pairEventsFormatter,
   pairEventsParser,
 } from 'src/utils/parsers/getContractEventsParser';
-import { GET_EVENTS_BY_CONTRACT_AND_TOPIC } from 'src/utils/queries';
-import { getRouterEventsDto } from './dto/events.dto';
-import { routerEventsParser } from 'src/utils/parsers/routerEventsParser';
+import {
+  GET_EVENTS_BY_CONTRACT_AND_TOPIC,
+  buildGetPairWithTokensAndReservesQuery,
+} from 'src/utils/queries';
+import { getPairEventsDto, getRouterEventsDto } from './dto/events.dto';
+import { routerEventsFormatter } from 'src/utils/parsers/routerEventsFormatter';
+import { soroswapPairInstanceParser } from 'src/utils/parsers';
+import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
 
 @Injectable()
 export class EventsService {
@@ -38,22 +44,51 @@ export class EventsService {
       mercuryResponse.data!,
     );
 
-    return routerEventsParser(parsedContractEvents);
+    return routerEventsFormatter(parsedContractEvents);
   }
 
-  async getPoolEvents(pool: string, network: Network) {
+  async getPoolEvents(
+    network: Network,
+    poolAddress: string,
+    pairEventsDto: getPairEventsDto,
+  ) {
     const mercuryInstance = selectMercuryInstance(network);
-    const mercuryResponse = await mercuryInstance.getCustomQuery({
+    const eventsMercuryResponse = await mercuryInstance.getCustomQuery({
       request: GET_EVENTS_BY_CONTRACT_AND_TOPIC,
       variables: {
-        contractId: pool,
+        contractId: poolAddress,
+        t2: pairEventsDto.topic2,
       },
     });
+
     const parsedContractEvents = await pairEventsParser(
       network,
-      mercuryResponse.data!,
+      eventsMercuryResponse.data!,
     );
-    console.log(JSON.stringify(parsedContractEvents, null, 2));
-    return parsedContractEvents;
+
+    const query = buildGetPairWithTokensAndReservesQuery(1);
+    const variables = createVariablesForPairsTokensAndReserves([poolAddress]);
+
+    const mercuryResponse = await mercuryInstance
+      .getCustomQuery({ request: query, variables })
+      .catch((err: any) => {
+        console.log(err);
+      });
+
+    let tokenAddressA = '';
+    let tokenAddressB = '';
+
+    if (mercuryResponse && mercuryResponse.ok) {
+      const parsedEntries = soroswapPairInstanceParser(mercuryResponse.data);
+      tokenAddressA = parsedEntries?.[0]?.token0;
+      tokenAddressB = parsedEntries?.[0]?.token1;
+    }
+
+    return pairEventsFormatter(
+      network,
+      parsedContractEvents,
+      tokenAddressA,
+      tokenAddressB,
+    );
   }
 }

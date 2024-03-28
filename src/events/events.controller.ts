@@ -1,12 +1,7 @@
-import { Body, Controller, Post, Query, Get, Param } from '@nestjs/common';
-import {
-  ApiHeader,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Body, Controller, Post, Query, Param } from '@nestjs/common';
+import { ApiHeader } from '@nestjs/swagger';
 import { QueryNetworkDto } from 'src/dto';
-import { getRouterEventsDto } from './dto/events.dto';
+import { getPairEventsDto, getRouterEventsDto } from './dto/events.dto';
 import { EventsService } from './events.service';
 
 @ApiHeader({
@@ -25,24 +20,12 @@ export class EventsController {
     return this.eventsService.getRouterEvents(query.network, body);
   }
 
-  @Get('pool/:pool')
-  @ApiOperation({
-    summary: 'Get pool events',
-    description: 'Retrieve all events for a Liquidity Pool',
-  })
-  @ApiParam({
-    name: 'pool',
-    description: 'Liquidity Pool address',
-    type: String,
-  })
-  @ApiOkResponse({
-    description:
-      'Array with all events for the Liquidity Pool. Empty array if no events found.',
-  })
+  @Post('pool/:pool')
   async getPoolEvents(
     @Query() query: QueryNetworkDto,
     @Param('pool') pool: string,
+    @Body() body: getPairEventsDto,
   ) {
-    return await this.eventsService.getPoolEvents(pool, query.network);
+    return this.eventsService.getPoolEvents(query.network, pool, body);
   }
 }

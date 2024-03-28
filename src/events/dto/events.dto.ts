@@ -10,10 +10,18 @@ export enum RouterTopic2 {
 }
 
 export enum PairTopic2 {
-  deposit = 'deposit',
-  swap = 'swap',
-  withdraw = 'withdraw',
-  sync = 'sync',
+  add = 'AAAADwAAAAdkZXBvc2l0AA==', // deposit
+  swap = 'AAAADwAAAARzd2Fw',
+  remove = 'AAAADwAAAAh3aXRoZHJhdw==', // withdraw
+  sync = 'AAAADwAAAARzeW5j',
+}
+
+export class getPairEventsDto {
+  @ApiProperty({ enum: PairTopic2 })
+  @IsOptional()
+  @Transform(({ value }) => PairTopic2[value] || value)
+  @IsEnum(PairTopic2)
+  topic2: PairTopic2;
 }
 
 export class getRouterEventsDto {

@@ -29,6 +29,7 @@ import {
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
+import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
 
 @Injectable()
 export class PairsService {
@@ -389,21 +390,6 @@ export class PairsService {
   }
 
   /**
-   * Function to create object with variables to be used in the Mercury instance query.
-   * @param pairCount Number of pairs to be retrieved.
-   * @returns Object with the query variables.
-   */
-  async createVariablesForPairsTokensAndReserves(addresses: string[]) {
-    const variables = {};
-
-    for (let i = 0; i < addresses.length; i++) {
-      variables[`contractId${i + 1}`] = addresses[i];
-    }
-
-    return variables;
-  }
-
-  /**
    * Function to get array with all subscribed pairs, along with their tokens and reserves.
    * @param addresses Array with the addresses of the pairs to be retrieved.
    * @returns Array with pair objects.
@@ -422,8 +408,7 @@ export class PairsService {
 
     if (addresses.length > 0) {
       const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
-      const variables =
-        await this.createVariablesForPairsTokensAndReserves(addresses);
+      const variables = createVariablesForPairsTokensAndReserves(addresses);
 
       const mercuryResponse = await mercuryInstance
         .getCustomQuery({ request: query, variables })
@@ -464,8 +449,7 @@ export class PairsService {
 
     if (addresses.length > 0) {
       const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
-      const variables =
-        await this.createVariablesForPairsTokensAndReserves(addresses);
+      const variables = createVariablesForPairsTokensAndReserves(addresses);
 
       const mercuryResponse = await mercuryInstance
         .getCustomQuery({ request: query, variables })
