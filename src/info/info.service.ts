@@ -30,6 +30,7 @@ import {
   getEntriesByDayParser,
 } from 'src/utils/parsers';
 import { TokenType } from 'src/types';
+import { PredefinedTTL } from 'src/config/predefinedTtl';
 
 @Injectable()
 export class InfoService {
@@ -46,7 +47,6 @@ export class InfoService {
    */
   async fetchTokenList(network: Network) {
     const key = `TOKENS-LIST-${network}`;
-    const ttl = (60*1000*60); // 1 hour
 
     let cachedTokens = await this.cacheManager.get<TokenType[]>(
       key,
@@ -70,7 +70,7 @@ export class InfoService {
           (item) => item.network === network.toLowerCase(),
         ).tokens;
       }
-      await this.cacheManager.set(key, tokens, ttl);
+      await this.cacheManager.set(key, tokens, PredefinedTTL.OneHour);
       return tokens;
     }
   }
@@ -1068,7 +1068,6 @@ export class InfoService {
    */
   async getPoolsInfo(network: Network) {
     const key = `POOLS-INFO-${network}`;
-    const ttl = 5 * 1000 * 60; // 5 minutes
     const cachedPoolsInfo = await this.cacheManager.get(key);
     if (cachedPoolsInfo) {
       console.log('Returning cached pools info')
@@ -1091,7 +1090,7 @@ export class InfoService {
         );
         poolsInfo.push(poolInfo);
       }
-      await this.cacheManager.set(key, poolsInfo, ttl);
+      await this.cacheManager.set(key, poolsInfo, PredefinedTTL.FiveMinutes);
       return poolsInfo;
     }
   }
