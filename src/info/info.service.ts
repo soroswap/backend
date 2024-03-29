@@ -19,8 +19,6 @@ import {
   GET_CONTRACT_EVENTS,
   getContractEventsParser,
   getRouterAddress,
-  getTokensList,
-  getTokenData,
   getXLMPriceFromCoingecko,
 } from 'src/utils';
 import {
@@ -45,7 +43,7 @@ export class InfoService {
    * @param network The network for which to fetch the token list.
    * @returns A promise that resolves to an array of tokens.
    */
-  async fetchTokenList(network: Network) {
+  async fetchTokensList(network: Network) {
     const key = `TOKENS-LIST-${network}`;
 
     let cachedTokens = await this.cacheManager.get<TokenType[]>(
@@ -410,7 +408,7 @@ export class InfoService {
     inheritedTokens?: any[],
   ) {
     const pools = await this.getPools(network, inheritedPools);
-    const tokens = await getTokensList(network, inheritedTokens);
+    const tokens = await this.fetchTokensList(network);
 
     const usdc = tokens.find((item) => item.code === 'USDC');
 
@@ -1007,7 +1005,7 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const tokensList = inheritedTokens ? inheritedTokens : await this.fetchTokenList(network);
+    const tokensList = inheritedTokens ? inheritedTokens : await this.fetchTokensList(network);
     const token0 = await this.getTokenData(filteredPools[0].token0, tokensList);
     const token1 = await this.getTokenData(filteredPools[0].token1, tokensList);
 
@@ -1077,7 +1075,7 @@ export class InfoService {
       const contractEvents = await this.getContractEvents(network);
       const pools = await this.getPools(network);
       const xlmValue = await this.getXlmValue();
-      const tokensList = await this.fetchTokenList(network);
+      const tokensList = await this.fetchTokensList(network);
       const poolsInfo = [];
       for (const pool of pools) {
         const poolInfo = await this.getPoolInfo(
@@ -1110,7 +1108,9 @@ export class InfoService {
     inheritedXlmValue?: number,
     inheritedPools?: any[],
     inheritedContractEvents?: any[],
+    inheritedTokensList?: TokenType[],
   ) {
+    const tokensList = inheritedTokensList ? inheritedTokensList : await this.fetchTokensList(network);
     const contractEvents = await this.getContractEvents(
       network,
       inheritedContractEvents,
@@ -1147,7 +1147,7 @@ export class InfoService {
       const poolFees = await this.getPoolFees(network, pool.contractId, 10, xlmValue);
       fees24h += poolFees
     }
-    const tokenData = await getTokenData(network, token);
+    const tokenData = await this.getTokenData(token, tokensList);
     const tvlSlippage24h = 0;
     const tvlSlippage7d = 0;
 
@@ -1173,7 +1173,7 @@ export class InfoService {
     const xlmValue = await this.getXlmValue();
     const pools = await this.getPools(network);
 
-    const tokens = await getTokensList(network);
+    const tokens = await this.fetchTokensList(network);
 
     const tokensInfo = [];
     for (const token of tokens) {
@@ -1184,6 +1184,7 @@ export class InfoService {
           xlmValue,
           pools,
           contractEvents,
+          tokens,
         );
         tokensInfo.push(tokenInfo);
       } catch (error) {
@@ -1197,7 +1198,8 @@ export class InfoService {
     return tokensInfo;
   }
 
-  async getPoolsOfGivenToken(network: Network, contract: string) {
+  async getPoolsOfGivenToken(network: Network, contract: string, inheritedTokensList?: TokenType[]) {
+    const tokensList = inheritedTokensList ? inheritedTokensList : await this.fetchTokensList(network);
     const allPairAddresses =
       await this.pairsModule.getSoroswapPairAddresses(network);
     const allPools =
@@ -1212,8 +1214,8 @@ export class InfoService {
 
     contractPools = await Promise.all(
       contractPools.map(async (pool) => {
-        pool.token0 = await getTokenData(network, pool.token0);
-        pool.token1 = await getTokenData(network, pool.token1);
+        pool.token0 = await this.getTokenData(pool.token0, tokensList);
+        pool.token1 = await this.getTokenData(pool.token1, tokensList);
 
         // TODO: Add TVL and other info similar to getPoolInfo()
         const obj = {

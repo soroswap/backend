@@ -3,8 +3,7 @@ import * as StellarSdk from '@stellar/stellar-sdk';
 import { scValToNative } from '@stellar/stellar-sdk';
 import { scValToJs } from 'mercury-sdk';
 import { PairTopic2, RouterTopic2 } from 'src/events/dto/events.dto';
-import { GetContractEventsResponse } from 'src/types';
-import { getTokenData } from '../getToken';
+import { GetContractEventsResponse, TokenType } from 'src/types';
 
 export const getContractEventsParser = (data: GetContractEventsResponse) => {
   const parsedData = data.eventByContractId.edges.map((edge) => {
@@ -36,6 +35,8 @@ export const getContractEventsParser = (data: GetContractEventsResponse) => {
 export const eventsByContractIdAndTopicParser = async (
   network: Network,
   data: GetContractEventsResponse,
+  tokensList: TokenType[],
+  getTokenData: (token: string, tokensList: TokenType[]) => Promise<TokenType>,
 ) => {
   const returnObject: any = data;
   const parsedEdgesPromises = data.eventByContractIdAndTopic.edges.map(
@@ -50,8 +51,8 @@ export const eventsByContractIdAndTopicParser = async (
           data.amount_b = Number(BigInt(data.amount_b));
           data.liquidity = Number(BigInt(data.liquidity));
           [data.token_a, data.token_b] = await Promise.all([
-            getTokenData(network, data.token_a),
-            getTokenData(network, data.token_b),
+            getTokenData(data.token_a, tokensList),
+            getTokenData(data.token_b, tokensList),
           ]);
           edge.node.data = data;
           break;
@@ -59,7 +60,7 @@ export const eventsByContractIdAndTopicParser = async (
           const amounts = data.amounts.map((amount) => Number(BigInt(amount)));
           data.amounts = amounts;
           data.path = await Promise.all(
-            data.path.map(async (contract) => getTokenData(network, contract)),
+            data.path.map(async (contract) => getTokenData(contract, tokensList)),
           );
           edge.node.data = data;
           break;

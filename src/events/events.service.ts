@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Network } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { InfoService } from 'src/info/info.service';
 import { selectMercuryInstance } from 'src/services/mercury';
 import { getRouterAddress } from 'src/utils';
 import {
@@ -13,7 +14,10 @@ import { routerEventsParser } from 'src/utils/parsers/routerEventsParser';
 
 @Injectable()
 export class EventsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private infoService: InfoService
+  ) {}
 
   async getRouterEvents(network: Network, routerEventsDto: getRouterEventsDto) {
     const mercuryInstance = selectMercuryInstance(network);
@@ -32,10 +36,12 @@ export class EventsService {
         after: routerEventsDto.after,
       },
     });
-
+    const tokensList = await this.infoService.fetchTokensList(network);
     const parsedContractEvents = await eventsByContractIdAndTopicParser(
       network,
       mercuryResponse.data!,
+      tokensList,
+      this.infoService.getTokenData,
     );
 
     return routerEventsParser(parsedContractEvents);
