@@ -1,25 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { Network } from '@prisma/client';
+import { InfoService } from 'src/info/info.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { selectMercuryInstance } from 'src/services/mercury';
 import { getRouterAddress } from 'src/utils';
+import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
+import { soroswapPairInstanceParser } from 'src/utils/parsers';
 import {
   eventsByContractIdAndTopicParser,
   pairEventsFormatter,
   pairEventsParser,
 } from 'src/utils/parsers/getContractEventsParser';
+import { routerEventsFormatter } from 'src/utils/parsers/routerEventsFormatter';
 import {
   GET_EVENTS_BY_CONTRACT_AND_TOPIC,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
 import { getPairEventsDto, getRouterEventsDto } from './dto/events.dto';
-import { routerEventsFormatter } from 'src/utils/parsers/routerEventsFormatter';
-import { soroswapPairInstanceParser } from 'src/utils/parsers';
-import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
 
 @Injectable()
 export class EventsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private infoService: InfoService,
+  ) {}
 
   async getRouterEvents(network: Network, routerEventsDto: getRouterEventsDto) {
     const mercuryInstance = selectMercuryInstance(network);
@@ -38,10 +42,12 @@ export class EventsService {
         after: routerEventsDto.after,
       },
     });
-
+    const tokensList = await this.infoService.fetchTokensList(network);
     const parsedContractEvents = await eventsByContractIdAndTopicParser(
       network,
       mercuryResponse.data!,
+      tokensList,
+      this.infoService.getTokenData,
     );
 
     return routerEventsFormatter(parsedContractEvents);
@@ -83,12 +89,14 @@ export class EventsService {
       tokenAddressA = parsedEntries?.[0]?.token0;
       tokenAddressB = parsedEntries?.[0]?.token1;
     }
+    const tokensList = await this.infoService.fetchTokensList(network);
 
     return pairEventsFormatter(
-      network,
       parsedContractEvents,
       tokenAddressA,
       tokenAddressB,
+      tokensList,
+      this.infoService.getTokenData,
     );
   }
 }

@@ -1,5 +1,5 @@
 import { adjustAmountByDecimals } from '../adjustAmountByDecimals';
-import { TokenType } from '../getTokensList';
+import { TokenType } from 'src/types';
 
 export interface RouterEventFormatted {
   tokenA?: TokenType;
