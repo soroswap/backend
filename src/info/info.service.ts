@@ -1,8 +1,12 @@
 import {
   Injectable,
+  Inject,
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { Cache } from 'cache-manager';
+import axios from 'axios';
+import { axiosApiBackendInstance } from 'src/utils/axios';
 import { Network } from '@prisma/client';
 import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
@@ -15,8 +19,8 @@ import {
   GET_CONTRACT_EVENTS,
   getContractEventsParser,
   getRouterAddress,
-  getTokenData,
   getTokensList,
+  getTokenData,
   getXLMPriceFromCoingecko,
 } from 'src/utils';
 import {
@@ -25,13 +29,66 @@ import {
   getContractEventsByDayParser,
   getEntriesByDayParser,
 } from 'src/utils/parsers';
+import { TokenType } from 'src/types';
+import { PredefinedTTL } from 'src/config/predefinedTtl';
 
 @Injectable()
 export class InfoService {
   constructor(
     private prisma: PrismaService,
     private pairsModule: PairsService,
+    @Inject('CACHE_MANAGER') private cacheManager: Cache,
   ) {}
+
+  /**
+   * Fetches the token list for the specified network.
+   * @param network The network for which to fetch the token list.
+   * @returns A promise that resolves to an array of tokens.
+   */
+  async fetchTokenList(network: Network) {
+    const key = `TOKENS-LIST-${network}`;
+
+    let cachedTokens = await this.cacheManager.get<TokenType[]>(
+      key,
+    );
+
+    if(cachedTokens) {
+      console.log('Returning cached tokens')
+      return cachedTokens;
+    } else {
+      console.log('Fetching tokens from the API')
+      let tokens: TokenType[];
+
+      if (network == Network.MAINNET) {
+        const { data } = await axios.get(
+          'https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json',
+        );
+        tokens = data.tokens;
+      } else {
+        const { data } = await axiosApiBackendInstance.get('/api/tokens');
+        tokens = data.find(
+          (item) => item.network === network.toLowerCase(),
+        ).tokens;
+      }
+      await this.cacheManager.set(key, tokens, PredefinedTTL.OneHour);
+      return tokens;
+    }
+  }
+
+  async getTokenData(
+    token: string,
+    tokensList: TokenType[],
+  ): Promise<TokenType> {
+    const currentToken = tokensList.find((item) => item.contract === token);
+    if (!currentToken) {
+      return {
+        code: token,
+        name: token,
+        contract: token,
+      };
+    }
+    return currentToken;
+  }
 
   async getPools(network: Network, inheritedPools?: any[]) {
     if (!inheritedPools) {
@@ -937,6 +994,7 @@ export class InfoService {
     inheritedXlmValue?: number,
     inheritedPools?: any[],
     inheritedContractEvents?: any[],
+    inheritedTokens?: TokenType[],
   ) {
     const contractEvents = await this.getContractEvents(
       network,
@@ -952,8 +1010,9 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const token0 = await getTokenData(network, filteredPools[0].token0);
-    const token1 = await getTokenData(network, filteredPools[0].token1);
+    const tokensList = inheritedTokens ? inheritedTokens : await this.fetchTokenList(network);
+    const token0 = await this.getTokenData(filteredPools[0].token0, tokensList);
+    const token1 = await this.getTokenData(filteredPools[0].token1, tokensList);
 
     token0['contract'] = filteredPools[0].token0;
     token1['contract'] = filteredPools[0].token1;
@@ -1001,24 +1060,42 @@ export class InfoService {
     return obj;
   }
 
+  /**
+   * Retrieves the pools information for the specified network.
+   * If the information is available in the cache, it returns the cached data.
+   * Otherwise, it fetches the pools information, calculates the pool info for each pool,
+   * and stores the result in the cache for future use.
+   *
+   * @param network - The network for which to retrieve the pools information.
+   * @returns A Promise that resolves to an array of pool information objects.
+   */
   async getPoolsInfo(network: Network) {
-    const contractEvents = await this.getContractEvents(network);
-    const pools = await this.getPools(network);
-    const xlmValue = await this.getXlmValue();
-
-    const poolsInfo = [];
-    for (const pool of pools) {
-      const poolInfo = await this.getPoolInfo(
-        network,
-        pool.contractId,
-        xlmValue,
-        pools,
-        contractEvents,
-      );
-      poolsInfo.push(poolInfo);
+    const key = `POOLS-INFO-${network}`;
+    const cachedPoolsInfo = await this.cacheManager.get(key);
+    if (cachedPoolsInfo) {
+      console.log('Returning cached pools info')
+      return cachedPoolsInfo;
+    } else {
+      console.log('Fetching pools info')
+      const contractEvents = await this.getContractEvents(network);
+      const pools = await this.getPools(network);
+      const xlmValue = await this.getXlmValue();
+      const tokensList = await this.fetchTokenList(network);
+      const poolsInfo = [];
+      for (const pool of pools) {
+        const poolInfo = await this.getPoolInfo(
+          network,
+          pool.contractId,
+          xlmValue,
+          pools,
+          contractEvents,
+          tokensList,
+        );
+        poolsInfo.push(poolInfo);
+      }
+      await this.cacheManager.set(key, poolsInfo, PredefinedTTL.FiveMinutes);
+      return poolsInfo;
     }
-
-    return poolsInfo;
   }
 
   /**

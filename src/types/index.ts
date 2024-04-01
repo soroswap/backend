@@ -4,4 +4,5 @@ export {
   SubscribeToLedgerEntriesInterface
 } from './getContractEntries';
 export { GetContractEventsResponse } from './getContractEvents';
+export { TokenType } from './tokenType';
 
