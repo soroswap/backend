@@ -1,13 +1,13 @@
 import {
-  Injectable,
   Inject,
+  Injectable,
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Cache } from 'cache-manager';
-import axios from 'axios';
-import { axiosApiBackendInstance } from 'src/utils/axios';
 import { Network } from '@prisma/client';
+import axios from 'axios';
+import { Cache } from 'cache-manager';
+import { PredefinedTTL } from 'src/config/predefinedTtl';
 import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -15,22 +15,22 @@ import {
   mercuryInstanceMainnet,
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
+import { TokenType } from 'src/types';
 import {
   GET_CONTRACT_EVENTS,
   getContractEventsParser,
   getRouterAddress,
-  getTokensList,
   getTokenData,
+  getTokensList,
   getXLMPriceFromCoingecko,
 } from 'src/utils';
+import { axiosApiBackendInstance } from 'src/utils/axios';
 import {
   PairInstanceEntryParserResult,
   PairInstanceWithEntriesParserResult,
   getContractEventsByDayParser,
   getEntriesByDayParser,
 } from 'src/utils/parsers';
-import { TokenType } from 'src/types';
-import { PredefinedTTL } from 'src/config/predefinedTtl';
 
 @Injectable()
 export class InfoService {
@@ -48,27 +48,25 @@ export class InfoService {
   async fetchTokenList(network: Network) {
     const key = `TOKENS-LIST-${network}`;
 
-    let cachedTokens = await this.cacheManager.get<TokenType[]>(
-      key,
-    );
+    const cachedTokens = await this.cacheManager.get<TokenType[]>(key);
 
-    if(cachedTokens) {
-      console.log('Returning cached tokens')
+    if (cachedTokens) {
+      console.log('Returning cached tokens');
       return cachedTokens;
     } else {
-      console.log('Fetching tokens from the API')
+      console.log('Fetching tokens from the API');
       let tokens: TokenType[];
 
       if (network == Network.MAINNET) {
         const { data } = await axios.get(
           'https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json',
         );
-        tokens = data.tokens;
+        tokens = data.assets;
       } else {
         const { data } = await axiosApiBackendInstance.get('/api/tokens');
         tokens = data.find(
           (item) => item.network === network.toLowerCase(),
-        ).tokens;
+        ).assets;
       }
       await this.cacheManager.set(key, tokens, PredefinedTTL.OneHour);
       return tokens;
@@ -971,14 +969,15 @@ export class InfoService {
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const now = new Date();
     let fees = 0;
-    const relatedEvents = contractEvents.filter((event) => event.pair == poolAddress);
+    const relatedEvents = contractEvents.filter(
+      (event) => event.pair == poolAddress,
+    );
     for (const event of relatedEvents) {
       const closeTime = new Date(event.closeTime);
       const hoursAgo = lastNDays * 24;
       const timeDiff = now.getTime() - closeTime.getTime();
       const hoursDiff = timeDiff / (1000 * 60 * 60);
       if (hoursDiff < hoursAgo) {
-
         fees = fees += parseFloat(event.fee) * 10 ** -7;
       }
     }
@@ -1007,7 +1006,9 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const tokensList = inheritedTokens ? inheritedTokens : await this.fetchTokenList(network);
+    const tokensList = inheritedTokens
+      ? inheritedTokens
+      : await this.fetchTokenList(network);
     const token0 = await this.getTokenData(filteredPools[0].token0, tokensList);
     const token1 = await this.getTokenData(filteredPools[0].token1, tokensList);
 
@@ -1070,10 +1071,10 @@ export class InfoService {
     const key = `POOLS-INFO-${network}`;
     const cachedPoolsInfo = await this.cacheManager.get(key);
     if (cachedPoolsInfo) {
-      console.log('Returning cached pools info')
+      console.log('Returning cached pools info');
       return cachedPoolsInfo;
     } else {
-      console.log('Fetching pools info')
+      console.log('Fetching pools info');
       const contractEvents = await this.getContractEvents(network);
       const pools = await this.getPools(network);
       const xlmValue = await this.getXlmValue();
@@ -1117,7 +1118,9 @@ export class InfoService {
     );
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const pools = await this.getPools(network, inheritedPools);
-    const relatedPools = pools.filter((pool)=> pool.token0 == token || pool.token1 == token);
+    const relatedPools = pools.filter(
+      (pool) => pool.token0 == token || pool.token1 == token,
+    );
     const tvl = await this.getTokenTvl(network, token, xlmValue, pools);
     const priceInUsd = await this.getTokenPriceInUSD(
       network,
@@ -1144,8 +1147,13 @@ export class InfoService {
     const priceChange24h = 0;
     let fees24h = 0;
     for (const pool of relatedPools) {
-      const poolFees = await this.getPoolFees(network, pool.contractId, 10, xlmValue);
-      fees24h += poolFees
+      const poolFees = await this.getPoolFees(
+        network,
+        pool.contractId,
+        10,
+        xlmValue,
+      );
+      fees24h += poolFees;
     }
     const tokenData = await getTokenData(network, token);
     const tvlSlippage24h = 0;
