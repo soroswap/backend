@@ -215,9 +215,9 @@ export class InfoService {
     let tvl = 0;
     for (const pool of filteredPools) {
       if (pool.token0 == token) {
-        tvl += parseFloat(pool.reserve0) / 10 ** 7;
+        tvl += parseFloat(pool.reserve0);
       } else if (pool.token1 == token) {
-        tvl += parseFloat(pool.reserve1) / 10 ** 7;
+        tvl += parseFloat(pool.reserve1);
       }
     }
     const tokenPrice = await this.getTokenPriceInUSD(
@@ -259,9 +259,9 @@ export class InfoService {
       entriesByDay.forEach((day) => {
         let dayTvl = 0;
         if (day.lastEntry.token0 === tokenAddress) {
-          dayTvl += parseFloat(day.lastEntry.reserve0) / 10 ** 7;
+          dayTvl += parseFloat(day.lastEntry.reserve0);
         } else if (day.lastEntry.token1 === tokenAddress) {
-          dayTvl += parseFloat(day.lastEntry.reserve1) / 10 ** 7;
+          dayTvl += parseFloat(day.lastEntry.reserve1);
         }
         if (!data[day.date]) {
           data[day.date] = 0;
@@ -443,15 +443,17 @@ export class InfoService {
       xlmValue,
       pools,
     );
+
     const token1Price = await this.getTokenPriceInUSD(
       network,
       token1,
       xlmValue,
       pools,
     );
+
     const tvl =
-      parseFloat(reserve0) * token0Price.price * 10 ** -7 +
-      parseFloat(reserve1) * token1Price.price * 10 ** -7;
+      parseFloat(reserve0) * token0Price.price +
+      parseFloat(reserve1) * token1Price.price;
 
     return tvl;
   }
@@ -471,7 +473,7 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const shares = filteredPools[0].totalShares * 10 ** -7;
+    const shares = filteredPools[0].totalShares;
     return { pool: poolAddress, shares: shares };
   }
 
@@ -498,8 +500,8 @@ export class InfoService {
         pools,
       );
       tvl +=
-        parseFloat(pool.reserve0) * 10 ** -7 * token0Price.price +
-        parseFloat(pool.reserve1) * 10 ** -7 * token1Price.price;
+        parseFloat(pool.reserve0) * token0Price.price +
+        parseFloat(pool.reserve1) * token1Price.price;
     }
     return { tvl: tvl, variation: variationLast24h };
   }
@@ -524,8 +526,8 @@ export class InfoService {
         xlmValue,
         pools,
       );
-      volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
-      volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPriceB.price;
+      volume += parseFloat(event.amount_a) * tokenPriceA.price;
+      volume += parseFloat(event.amount_b) * tokenPriceB.price;
     } else if (event.topic2 == 'swap') {
       for (let i = 0; i < event.amounts.length; i++) {
         const tokenPrice = await this.getTokenPriceInUSD(
@@ -534,7 +536,7 @@ export class InfoService {
           xlmValue,
           pools,
         );
-        volume += parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
+        volume += parseFloat(event.amounts[i]) * tokenPrice.price;
       }
     }
     return volume;
@@ -618,7 +620,7 @@ export class InfoService {
           xlmValue,
           pools,
         );
-        volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPrice.price;
+        volume += parseFloat(event.amount_a) * tokenPrice.price;
       } else if (event.token_b == token) {
         const tokenPrice = await this.getTokenPriceInUSD(
           network,
@@ -626,7 +628,7 @@ export class InfoService {
           xlmValue,
           pools,
         );
-        volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPrice.price;
+        volume += parseFloat(event.amount_b) * tokenPrice.price;
       }
     } else if (event.topic2 == 'swap') {
       for (let i = 0; i < event.amounts.length; i++) {
@@ -637,7 +639,7 @@ export class InfoService {
             xlmValue,
             pools,
           );
-          volume += parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
+          volume += parseFloat(event.amounts[i]) * tokenPrice.price;
         }
       }
     }
@@ -730,8 +732,8 @@ export class InfoService {
         xlmValue,
         pools,
       );
-      volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
-      volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPriceB.price;
+      volume += parseFloat(event.amount_a) * tokenPriceA.price;
+      volume += parseFloat(event.amount_b) * tokenPriceB.price;
     } else if (event.topic2 == 'swap') {
       for (let i = 0; i < event.amounts.length; i++) {
         if (event.path[i] == pool.token0 || event.path[i] == pool.token1) {
@@ -741,7 +743,7 @@ export class InfoService {
             xlmValue,
             pools,
           );
-          volume += parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
+          volume += parseFloat(event.amounts[i]) * tokenPrice.price;
         }
       }
     }
@@ -803,7 +805,7 @@ export class InfoService {
         let fees = 0;
         for (const event of day.events) {
           if (event.pair && event.pair == pool.contractId) {
-            fees += parseFloat(event.fee) * 10 ** -7;
+            fees += parseFloat(event.fee);
           }
         }
         return { date: day.date, fees: fees * xlmValue };
@@ -869,7 +871,7 @@ export class InfoService {
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
       if (timeDiff < oneDay * lastNDays) {
-        fees += parseFloat(event.fee) * 10 ** -7;
+        fees += parseFloat(event.fee);
       }
     }
     const variationLast24h = 0.03;
@@ -887,7 +889,7 @@ export class InfoService {
       contractEventsByDay.map(async (day) => {
         let fees = 0;
         for (const event of day.events) {
-          fees += parseFloat(event.fee) * 10 ** -7;
+          fees += parseFloat(event.fee);
         }
         return { date: day.date, fees: fees * xlmValue };
       }),
@@ -914,15 +916,16 @@ export class InfoService {
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const now = new Date();
     let fees = 0;
-    const relatedEvents = contractEvents.filter((event) => event.pair == poolAddress);
+    const relatedEvents = contractEvents.filter(
+      (event) => event.pair == poolAddress,
+    );
     for (const event of relatedEvents) {
       const closeTime = new Date(event.closeTime);
       const hoursAgo = lastNDays * 24;
       const timeDiff = now.getTime() - closeTime.getTime();
       const hoursDiff = timeDiff / (1000 * 60 * 60);
       if (hoursDiff < hoursAgo) {
-
-        fees = fees += parseFloat(event.fee) * 10 ** -7;
+        fees = fees += parseFloat(event.fee);
       }
     }
     return fees * xlmValue;
@@ -985,8 +988,8 @@ export class InfoService {
       pool: poolAddress,
       token0: token0,
       token1: token1,
-      reserve0: filteredPools[0].reserve0 * 10 ** -7,
-      reserve1: filteredPools[0].reserve1 * 10 ** -7,
+      reserve0: filteredPools[0].reserve0,
+      reserve1: filteredPools[0].reserve1,
       tvl: tvl.tvl,
       volume24h: volume24h,
       volume7d: volume7d,
@@ -1040,7 +1043,9 @@ export class InfoService {
     );
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const pools = await this.getPools(network, inheritedPools);
-    const relatedPools = pools.filter((pool)=> pool.token0 == token || pool.token1 == token);
+    const relatedPools = pools.filter(
+      (pool) => pool.token0 == token || pool.token1 == token,
+    );
     const tvl = await this.getTokenTvl(network, token, xlmValue, pools);
     const priceInUsd = await this.getTokenPriceInUSD(
       network,
@@ -1067,8 +1072,13 @@ export class InfoService {
     const priceChange24h = 0;
     let fees24h = 0;
     for (const pool of relatedPools) {
-      const poolFees = await this.getPoolFees(network, pool.contractId, 10, xlmValue);
-      fees24h += poolFees
+      const poolFees = await this.getPoolFees(
+        network,
+        pool.contractId,
+        10,
+        xlmValue,
+      );
+      fees24h += poolFees;
     }
     const tokenData = await getTokenData(network, token);
     const tvlSlippage24h = 0;
