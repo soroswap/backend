@@ -51,7 +51,7 @@ export class PairsService {
   }
 
   /**
-   * Subscribes to pairs in the ledger based on the provided data.
+   * Subscribes to pair ledger entries and events on mercury, based on the provided data.
    * @param data - The data needed to subscribe to pairs.
    * @returns A promise that resolves to an array of subscribed pairs if multiple contract IDs are provided,
    * or a single subscribed pair if only one contract ID is provided.
