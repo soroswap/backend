@@ -29,6 +29,7 @@ import {
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
+import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
 
 @Injectable()
 export class PairsService {
@@ -51,7 +52,7 @@ export class PairsService {
   }
 
   /**
-   * Subscribes to pairs in the ledger based on the provided data.
+   * Subscribes to pair ledger entries and events on mercury, based on the provided data.
    * @param data - The data needed to subscribe to pairs.
    * @returns A promise that resolves to an array of subscribed pairs if multiple contract IDs are provided,
    * or a single subscribed pair if only one contract ID is provided.
@@ -72,6 +73,7 @@ export class PairsService {
 
     const response = [];
     let subscribeResponse;
+    let eventSubscribeResponse;
     for (let i = 0; i < data.contractId.length; i++) {
       const subscriptionExists = await this.prisma.subscriptions.findFirst({
         where: {
@@ -80,6 +82,14 @@ export class PairsService {
           keyXdr: data.keyXdr,
         },
       });
+
+      const eventSubscriptionExists =
+        await this.prisma.eventSubscriptions.findFirst({
+          where: {
+            network,
+            contractId: data.contractId[i],
+          },
+        });
 
       if (!subscriptionExists) {
         const args = {
@@ -116,6 +126,38 @@ export class PairsService {
         console.log('Subscription already exists for pair with:');
         console.log('contractId:', data.contractId[i]);
         console.log('key_xdr:', data.keyXdr);
+      }
+
+      if (!eventSubscriptionExists) {
+        const args = {
+          contractId: data.contractId[i],
+        };
+
+        eventSubscribeResponse = await mercuryInstance
+          .subscribeToContractEvents(args)
+          .then((response) => {
+            if (!(response as SubscribeToLedgerEntriesInterface).ok) {
+              throw new Error(
+                `Error subscribing to events of pair ${i}: ${(response as SubscribeToLedgerEntriesInterface).error}`,
+              );
+            }
+          });
+
+        const eventSubscription = await this.prisma.eventSubscriptions.create({
+          data: {
+            contractId: data.contractId[i],
+            network,
+          },
+        });
+
+        response.push(eventSubscribeResponse);
+        console.log(
+          'Subscribed to events of pair',
+          eventSubscription.contractId,
+        );
+      } else {
+        console.log('Subscription already exists for events of pair with:');
+        console.log('contractId:', data.contractId[i]);
       }
     }
     return response;
@@ -353,6 +395,14 @@ export class PairsService {
       },
     });
 
+    const eventSubscriptionExists =
+      await this.prisma.eventSubscriptions.findFirst({
+        where: {
+          network,
+          contractId,
+        },
+      });
+
     if (!subscriptionExists) {
       const args = {
         contractId,
@@ -382,25 +432,39 @@ export class PairsService {
       });
 
       console.log('Subscription stored in db', subscribeStored);
-      return subscribeStored;
     } else {
       console.log('Already subscribed to factory contract', contractId);
     }
-  }
 
-  /**
-   * Function to create object with variables to be used in the Mercury instance query.
-   * @param pairCount Number of pairs to be retrieved.
-   * @returns Object with the query variables.
-   */
-  async createVariablesForPairsTokensAndReserves(addresses: string[]) {
-    const variables = {};
+    if (!eventSubscriptionExists) {
+      const args = {
+        contractId,
+      };
 
-    for (let i = 0; i < addresses.length; i++) {
-      variables[`contractId${i + 1}`] = addresses[i];
+      await mercuryInstance.subscribeToContractEvents(args).then((response) => {
+        if (!(response as SubscribeToLedgerEntriesInterface).ok) {
+          throw new Error(
+            `Error subscribing to events of phoenix pair: ${(response as SubscribeToLedgerEntriesInterface).error}`,
+          );
+        }
+      });
+
+      console.log(
+        'Subscribed to events of Phoenix pair with contract ID',
+        contractId,
+      );
+
+      const eventSubscribeStored = await this.prisma.eventSubscriptions.create({
+        data: {
+          contractId,
+          network,
+        },
+      });
+
+      console.log('Subscription stored in db', eventSubscribeStored);
+    } else {
+      console.log('Already subscribed to factory contract', contractId);
     }
-
-    return variables;
   }
 
   /**
@@ -422,8 +486,7 @@ export class PairsService {
 
     if (addresses.length > 0) {
       const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
-      const variables =
-        await this.createVariablesForPairsTokensAndReserves(addresses);
+      const variables = createVariablesForPairsTokensAndReserves(addresses);
 
       const mercuryResponse = await mercuryInstance
         .getCustomQuery({ request: query, variables })
@@ -464,8 +527,7 @@ export class PairsService {
 
     if (addresses.length > 0) {
       const query = buildGetPairWithTokensAndReservesQuery(addresses.length);
-      const variables =
-        await this.createVariablesForPairsTokensAndReserves(addresses);
+      const variables = createVariablesForPairsTokensAndReserves(addresses);
 
       const mercuryResponse = await mercuryInstance
         .getCustomQuery({ request: query, variables })
@@ -503,7 +565,15 @@ export class PairsService {
           },
         });
 
-        if (!subscriptionExists) {
+        const eventSubscriptionExists =
+          await this.prisma.eventSubscriptions.findFirst({
+            where: {
+              network,
+              contractId: pairAddress,
+            },
+          });
+
+        if (!subscriptionExists || !eventSubscriptionExists) {
           console.log('New Phoenix pair found');
           await this.subscribeToPhoenixPair(network, pairAddress);
         }

@@ -1,7 +1,20 @@
 import { adjustAmountByDecimals } from '../adjustAmountByDecimals';
 import { TokenType } from 'src/types';
 
-export const routerEventsParser = async (parsedContractEvents: any) => {
+export interface RouterEventFormatted {
+  tokenA?: TokenType;
+  tokenB?: TokenType;
+  amountA: string;
+  amountB: string;
+  txHash: string;
+  event: 'swap' | 'add' | 'remove';
+  account?: string;
+  timestamp: number;
+}
+
+export const routerEventsFormatter = (
+  parsedContractEvents: any,
+): RouterEventFormatted[] => {
   if (!parsedContractEvents) return [];
   return parsedContractEvents?.edges.map((edge) => {
     let tokenA: TokenType | undefined;
