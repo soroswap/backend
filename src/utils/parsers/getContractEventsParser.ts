@@ -2,9 +2,10 @@ import { Network } from '@prisma/client';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { scValToNative } from '@stellar/stellar-sdk';
 import { scValToJs } from 'mercury-sdk';
-import { PairTopic2, RouterTopic2 } from 'src/events/dto/events.dto';
-import { GetContractEventsResponse } from 'src/types';
-import { getTokenData } from '../getToken';
+import { RouterTopic2 } from 'src/events/dto/events.dto';
+import { GetContractEventsResponse, TokenType } from 'src/types';
+import { adjustAmountByDecimals } from '../adjustAmountByDecimals';
+import { RouterEventFormatted } from './routerEventsFormatter';
 
 export const getContractEventsParser = (data: GetContractEventsResponse) => {
   const parsedData = data.eventByContractId.edges.map((edge) => {
@@ -36,6 +37,8 @@ export const getContractEventsParser = (data: GetContractEventsResponse) => {
 export const eventsByContractIdAndTopicParser = async (
   network: Network,
   data: GetContractEventsResponse,
+  tokensList: TokenType[],
+  getTokenData: (token: string, tokensList: TokenType[]) => Promise<TokenType>,
 ) => {
   const returnObject: any = data;
   const parsedEdgesPromises = data.eventByContractIdAndTopic.edges.map(
@@ -50,8 +53,8 @@ export const eventsByContractIdAndTopicParser = async (
           data.amount_b = Number(BigInt(data.amount_b));
           data.liquidity = Number(BigInt(data.liquidity));
           [data.token_a, data.token_b] = await Promise.all([
-            getTokenData(network, data.token_a),
-            getTokenData(network, data.token_b),
+            getTokenData(data.token_a, tokensList),
+            getTokenData(data.token_b, tokensList),
           ]);
           edge.node.data = data;
           break;
@@ -59,7 +62,9 @@ export const eventsByContractIdAndTopicParser = async (
           const amounts = data.amounts.map((amount) => Number(BigInt(amount)));
           data.amounts = amounts;
           data.path = await Promise.all(
-            data.path.map(async (contract) => getTokenData(network, contract)),
+            data.path.map(async (contract) =>
+              getTokenData(contract, tokensList),
+            ),
           );
           edge.node.data = data;
           break;
@@ -108,6 +113,7 @@ export const pairEventsParser = async (
       const topic2 = scValToNative(
         StellarSdk.xdr.ScVal.fromXDR(edge.node.topic2, 'base64'),
       );
+      console.log({ before: edge.node.topic2, after: topic2 });
       edge.node.topic2 = topic2;
 
       if (edge.node.txInfoByTx.txHash) {
@@ -119,8 +125,8 @@ export const pairEventsParser = async (
         StellarSdk.xdr.ScVal.fromXDR(edge.node.data, 'base64'),
       );
       switch (topic2) {
-        case PairTopic2.deposit:
-        case PairTopic2.withdraw:
+        case 'deposit':
+        case 'withdraw':
           data.amount_0 = Number(BigInt(data.amount_0));
           data.amount_1 = Number(BigInt(data.amount_1));
           data.liquidity = Number(BigInt(data.liquidity));
@@ -128,8 +134,9 @@ export const pairEventsParser = async (
           data.new_reserve_1 = Number(BigInt(data.new_reserve_1));
           const toBuffer = data.to;
           data.to = toBuffer.toString('hex');
+          edge.node.data = data;
           break;
-        case PairTopic2.swap:
+        case 'swap':
           data.amount_0_in = Number(BigInt(data.amount_0_in));
           data.amount_0_out = Number(BigInt(data.amount_0_out));
           data.amount_1_in = Number(BigInt(data.amount_1_in));
@@ -145,9 +152,69 @@ export const pairEventsParser = async (
 
   const parsedEdges = await Promise.all(parsedEdgesPromises);
   const filteredEdges = parsedEdges.filter((edge) => edge !== undefined);
-  console.log('🚀 ~ filteredEdges:', filteredEdges);
   returnObject.totalCount = filteredEdges.length;
   returnObject.eventByContractIdAndTopic.edges = filteredEdges;
 
   return returnObject.eventByContractIdAndTopic;
+};
+
+export const pairEventsFormatter = async (
+  data: any,
+  tokenAddressA: string,
+  tokenAddressB: string,
+  tokensList: TokenType[],
+  getTokenData: (token: string, tokensList: TokenType[]) => Promise<TokenType>,
+): Promise<RouterEventFormatted[]> => {
+  if (!data) return [];
+
+  const tokenA = await getTokenData(tokenAddressA, tokensList);
+  const tokenB = await getTokenData(tokenAddressB, tokensList);
+
+  return data?.edges?.map((edge) => {
+    let event = edge.node.topic2;
+
+    let amountA = 0;
+    let amountB = 0;
+    const txHash = edge.node.txInfoByTx.txHash;
+    const account = edge.node.data.to || null;
+    const timestamp = edge.node.txInfoByTx.ledgerByLedger.closeTime * 1000;
+
+    switch (event) {
+      case 'deposit':
+        event = 'add';
+        amountA = edge.node.data.amount_0;
+        amountB = edge.node.data.amount_1;
+        break;
+      case 'withdraw':
+        amountA = edge.node.data.amount_0;
+        amountB = edge.node.data.amount_1;
+        event = 'remove';
+        break;
+      case 'swap':
+        if (
+          edge.node.data.amount_0_in === 0 &&
+          edge.node.data.amount_1_out === 0
+        ) {
+          amountA = edge.node.data.amount_0_out;
+          amountB = edge.node.data.amount_1_in;
+        } else {
+          amountA = edge.node.data.amount_0_in;
+          amountB = edge.node.data.amount_1_out;
+        }
+        break;
+      default:
+        break;
+    }
+
+    return {
+      tokenA,
+      tokenB,
+      amountA: adjustAmountByDecimals(amountA, tokenA.decimals),
+      amountB: adjustAmountByDecimals(amountB, tokenB.decimals),
+      txHash,
+      event,
+      account,
+      timestamp,
+    };
+  });
 };
