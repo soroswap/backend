@@ -60,12 +60,9 @@ export class InfoService {
           'https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json',
         );
         tokens = data.assets;
-<<<<<<< HEAD
-=======
         console.log('🚀 « tokens before:', tokens);
         tokens.unshift(xlmToken.MAINNET);
         console.log('🚀 « tokens after:', tokens);
->>>>>>> c2b62712efffc8c8570ddefa3d223f1ec09cf75f
       } else {
         const { data } = await axiosApiBackendInstance.get('/api/tokens');
         tokens = data.find(
@@ -427,7 +424,6 @@ export class InfoService {
     network: Network,
     token: string,
     inheritedPools?: any[],
-    inheritedTokens?: any[],
   ) {
     const pools = await this.getPools(network, inheritedPools);
     const tokens = await this.fetchTokensList(network);
