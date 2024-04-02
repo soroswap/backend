@@ -102,6 +102,7 @@ export async function populateDatabase(network: Network) {
 
     if (!isSoroswapFactory && !isPhoenixFactory && !isPairStorage) {
       counters.others++;
+      return;
     }
 
     await prisma.subscriptions.upsert({
