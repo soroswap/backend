@@ -311,6 +311,12 @@ export class InfoService {
       pools,
     );
 
+    const tokensList = await this.fetchTokenList(network);
+
+    const tokenData = await this.getTokenData(tokenAddress, tokensList);
+
+    const decimals = tokenData.decimals || 7;
+
     const data = {};
     for (const pool of filteredPools) {
       const entriesByDay = getEntriesByDayParser<PairInstanceEntryParserResult>(
@@ -327,7 +333,7 @@ export class InfoService {
         if (!data[day.date]) {
           data[day.date] = 0;
         }
-        data[day.date] += dayTvl * tokenPrice.price;
+        data[day.date] += (dayTvl / 10 ** decimals) * tokenPrice.price;
       });
     }
 
@@ -585,7 +591,14 @@ export class InfoService {
     event: any,
     pools: any[],
     xlmValue: number,
+    tokensList: TokenType[],
   ) {
+    const tokenDataA = await this.getTokenData(event.token_a, tokensList);
+    const tokenDataB = await this.getTokenData(event.token_b, tokensList);
+
+    const decimalsA = tokenDataA.decimals || 7;
+    const decimalsB = tokenDataB.decimals || 7;
+
     let volume = 0;
     if (event.topic2 == 'add' || event.topic2 == 'remove') {
       const tokenPriceA = await this.getTokenPriceInUSD(
@@ -600,8 +613,10 @@ export class InfoService {
         xlmValue,
         pools,
       );
-      volume += parseFloat(event.amount_a) * tokenPriceA.price;
-      volume += parseFloat(event.amount_b) * tokenPriceB.price;
+      volume +=
+        (parseFloat(event.amount_a) / 10 ** decimalsA) * tokenPriceA.price;
+      volume +=
+        (parseFloat(event.amount_b) / 10 ** decimalsB) * tokenPriceB.price;
     } else if (event.topic2 == 'swap') {
       for (let i = 0; i < event.amounts.length; i++) {
         const tokenPrice = await this.getTokenPriceInUSD(
@@ -610,7 +625,10 @@ export class InfoService {
           xlmValue,
           pools,
         );
-        volume += parseFloat(event.amounts[i]) * tokenPrice.price;
+        const tokenData = await this.getTokenData(event.path[i], tokensList);
+        const decimals = tokenData.decimals || 7;
+        volume +=
+          (parseFloat(event.amounts[i]) / 10 ** decimals) * tokenPrice.price;
       }
     }
     return volume;
@@ -635,6 +653,8 @@ export class InfoService {
 
     let volume = 0;
 
+    const tokensList = await this.fetchTokenList(network);
+
     const variationLast24h = 0.03;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
@@ -644,6 +664,7 @@ export class InfoService {
           event,
           pools,
           xlmValue,
+          tokensList,
         );
         volume += eventVolume;
       }
@@ -658,6 +679,7 @@ export class InfoService {
     const pools = await this.getPools(network);
 
     const xlmValue = await this.getXlmValue();
+    const tokensList = await this.fetchTokenList(network);
 
     const volumeByDay = Promise.all(
       contractEventsByDay.map(async (day) => {
@@ -668,6 +690,7 @@ export class InfoService {
             event,
             pools,
             xlmValue,
+            tokensList,
           );
           volume += eventVolume;
         }
@@ -790,7 +813,14 @@ export class InfoService {
     pool: any,
     pools: any[],
     xlmValue: number,
+    tokensList: TokenType[],
   ) {
+    const tokenDataA = await this.getTokenData(event.token_a, tokensList);
+    const tokenDataB = await this.getTokenData(event.token_b, tokensList);
+
+    const decimalsA = tokenDataA.decimals || 7;
+    const decimalsB = tokenDataB.decimals || 7;
+
     if (event.pair && event.pair != pool.contractId) return 0;
     let volume = 0;
     if (event.topic2 == 'add' || event.topic2 == 'remove') {
@@ -806,8 +836,10 @@ export class InfoService {
         xlmValue,
         pools,
       );
-      volume += parseFloat(event.amount_a) * tokenPriceA.price;
-      volume += parseFloat(event.amount_b) * tokenPriceB.price;
+      volume +=
+        (parseFloat(event.amount_a) / 10 ** decimalsA) * tokenPriceA.price;
+      volume +=
+        (parseFloat(event.amount_b) / 10 ** decimalsB) * tokenPriceB.price;
     } else if (event.topic2 == 'swap') {
       for (let i = 0; i < event.amounts.length; i++) {
         if (event.path[i] == pool.token0 || event.path[i] == pool.token1) {
@@ -817,7 +849,10 @@ export class InfoService {
             xlmValue,
             pools,
           );
-          volume += parseFloat(event.amounts[i]) * tokenPrice.price;
+          const tokenData = await this.getTokenData(event.path[i], tokensList);
+          const decimals = tokenData.decimals || 7;
+          volume +=
+            (parseFloat(event.amounts[i]) / 10 ** decimals) * tokenPrice.price;
         }
       }
     }
@@ -839,6 +874,8 @@ export class InfoService {
 
     const xlmValue = await this.getXlmValue();
 
+    const tokensList = await this.fetchTokenList(network);
+
     const volumeByDay = Promise.all(
       contractEventsByDay.map(async (day) => {
         let volume = 0;
@@ -849,6 +886,7 @@ export class InfoService {
             pool,
             pools,
             xlmValue,
+            tokensList,
           );
           volume += eventVolume;
         }
