@@ -14,13 +14,14 @@ export async function getTokensList(
       const { data } = await axios.get(
         'https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json',
       );
-      tokens = data.tokens;
+      tokens = data.assets;
     } else {
       const { data } = await axiosApiBackendInstance.get('/api/tokens');
       tokens = data.find(
         (item) => item.network === network.toLowerCase(),
-      ).tokens;
+      ).assets;
     }
+
     return tokens;
   }
 }

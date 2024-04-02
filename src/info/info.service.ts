@@ -48,27 +48,25 @@ export class InfoService {
   async fetchTokenList(network: Network) {
     const key = `TOKENS-LIST-${network}`;
 
-    let cachedTokens = await this.cacheManager.get<TokenType[]>(
-      key,
-    );
+    let cachedTokens = await this.cacheManager.get<TokenType[]>(key);
 
-    if(cachedTokens) {
-      console.log('Returning cached tokens')
+    if (cachedTokens) {
+      console.log('Returning cached tokens');
       return cachedTokens;
     } else {
-      console.log('Fetching tokens from the API')
+      console.log('Fetching tokens from the API');
       let tokens: TokenType[];
 
       if (network == Network.MAINNET) {
         const { data } = await axios.get(
           'https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json',
         );
-        tokens = data.tokens;
+        tokens = data.assets;
       } else {
         const { data } = await axiosApiBackendInstance.get('/api/tokens');
         tokens = data.find(
           (item) => item.network === network.toLowerCase(),
-        ).tokens;
+        ).assets;
       }
       await this.cacheManager.set(key, tokens, PredefinedTTL.OneHour);
       return tokens;
@@ -114,6 +112,8 @@ export class InfoService {
 
     const xlmValue = await this.getXlmValue();
 
+    const tokensList = await this.fetchTokenList(network);
+
     const tvlByDay = Promise.all(
       entriesByDay.map(async (day) => {
         const dayTVL = await this.calculateTVL(
@@ -124,6 +124,7 @@ export class InfoService {
           day.lastEntry.reserve1,
           pools,
           xlmValue,
+          tokensList,
         );
 
         return { date: day.date, tvl: dayTVL };
@@ -141,6 +142,8 @@ export class InfoService {
 
     const data = {};
 
+    const tokensList = await this.fetchTokenList(network);
+
     await Promise.all(
       pools.map(async (pool) => {
         const entriesByDay =
@@ -156,6 +159,7 @@ export class InfoService {
               day.lastEntry.reserve1,
               pools,
               xlmValue,
+              tokensList,
             );
 
             if (!data[day.date]) {
@@ -469,6 +473,7 @@ export class InfoService {
     }
 
     const pool = filteredPools[0];
+    const tokensList = await this.fetchTokenList(network);
 
     const tvl = await this.calculateTVL(
       network,
@@ -478,6 +483,7 @@ export class InfoService {
       pool.reserve1,
       pools,
       inheritedXlmValue,
+      tokensList,
     );
 
     return { pool: poolAddress, tvl };
@@ -491,7 +497,10 @@ export class InfoService {
     reserve1: string,
     pools: any[],
     inheritedXlmValue?: number,
+    tokensList?: TokenType[],
   ) {
+    tokensList = tokensList ? tokensList : await this.fetchTokenList(network);
+
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const token0Price = await this.getTokenPriceInUSD(
@@ -508,9 +517,13 @@ export class InfoService {
       pools,
     );
 
-    const tvl =
-      parseFloat(reserve0) * token0Price.price +
-      parseFloat(reserve1) * token1Price.price;
+    const token0Data = await this.getTokenData(token0, tokensList);
+    const token1Data = await this.getTokenData(token1, tokensList);
+
+    const value0 = parseFloat(reserve0) / 10 ** (token0Data.decimals || 7);
+    const value1 = parseFloat(reserve1) / 10 ** (token1Data.decimals || 7);
+
+    const tvl = value0 * token0Price.price + value1 * token1Price.price;
 
     return tvl;
   }
@@ -543,23 +556,27 @@ export class InfoService {
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const variationLast24h = 0.03;
     let tvl = 0;
-    for (const pool of pools) {
-      const token0Price = await this.getTokenPriceInUSD(
-        network,
-        pool.token0,
-        xlmValue,
-        pools,
-      );
-      const token1Price = await this.getTokenPriceInUSD(
-        network,
-        pool.token1,
-        xlmValue,
-        pools,
-      );
-      tvl +=
-        parseFloat(pool.reserve0) * token0Price.price +
-        parseFloat(pool.reserve1) * token1Price.price;
-    }
+
+    const tokensList = await this.fetchTokenList(network);
+
+    await Promise.all(
+      pools.map(async (pool) => {
+        const poolTvl = await this.calculateTVL(
+          network,
+          pool.token0,
+          pool.token1,
+          pool.reserve0,
+          pool.reserve1,
+          pools,
+          xlmValue,
+          tokensList,
+        );
+
+        console.log({ poolTvl });
+        tvl += poolTvl;
+      }),
+    );
+
     return { tvl: tvl, variation: variationLast24h };
   }
 
@@ -1010,7 +1027,9 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const tokensList = inheritedTokens ? inheritedTokens : await this.fetchTokenList(network);
+    const tokensList = inheritedTokens
+      ? inheritedTokens
+      : await this.fetchTokenList(network);
     const token0 = await this.getTokenData(filteredPools[0].token0, tokensList);
     const token1 = await this.getTokenData(filteredPools[0].token1, tokensList);
 
@@ -1073,10 +1092,10 @@ export class InfoService {
     const key = `POOLS-INFO-${network}`;
     const cachedPoolsInfo = await this.cacheManager.get(key);
     if (cachedPoolsInfo) {
-      console.log('Returning cached pools info')
+      console.log('Returning cached pools info');
       return cachedPoolsInfo;
     } else {
-      console.log('Fetching pools info')
+      console.log('Fetching pools info');
       const contractEvents = await this.getContractEvents(network);
       const pools = await this.getPools(network);
       const xlmValue = await this.getXlmValue();
