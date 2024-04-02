@@ -1,13 +1,13 @@
 import {
-  Injectable,
   Inject,
+  Injectable,
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Cache } from 'cache-manager';
-import axios from 'axios';
-import { axiosApiBackendInstance } from 'src/utils/axios';
 import { Network } from '@prisma/client';
+import axios from 'axios';
+import { Cache } from 'cache-manager';
+import { PredefinedTTL } from 'src/config/predefinedTtl';
 import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -15,22 +15,20 @@ import {
   mercuryInstanceMainnet,
   mercuryInstanceTestnet,
 } from 'src/services/mercury';
+import { TokenType } from 'src/types';
 import {
   GET_CONTRACT_EVENTS,
   getContractEventsParser,
   getRouterAddress,
-  getTokensList,
-  getTokenData,
   getXLMPriceFromCoingecko,
 } from 'src/utils';
+import { axiosApiBackendInstance } from 'src/utils/axios';
 import {
   PairInstanceEntryParserResult,
   PairInstanceWithEntriesParserResult,
   getContractEventsByDayParser,
   getEntriesByDayParser,
 } from 'src/utils/parsers';
-import { TokenType } from 'src/types';
-import { PredefinedTTL } from 'src/config/predefinedTtl';
 
 @Injectable()
 export class InfoService {
@@ -45,7 +43,7 @@ export class InfoService {
    * @param network The network for which to fetch the token list.
    * @returns A promise that resolves to an array of tokens.
    */
-  async fetchTokenList(network: Network) {
+  async fetchTokensList(network: Network) {
     const key = `TOKENS-LIST-${network}`;
 
     const cachedTokens = await this.cacheManager.get<TokenType[]>(key);
@@ -62,6 +60,12 @@ export class InfoService {
           'https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json',
         );
         tokens = data.assets;
+<<<<<<< HEAD
+=======
+        console.log('🚀 « tokens before:', tokens);
+        tokens.unshift(xlmToken.MAINNET);
+        console.log('🚀 « tokens after:', tokens);
+>>>>>>> c2b62712efffc8c8570ddefa3d223f1ec09cf75f
       } else {
         const { data } = await axiosApiBackendInstance.get('/api/tokens');
         tokens = data.find(
@@ -112,7 +116,7 @@ export class InfoService {
 
     const xlmValue = await this.getXlmValue();
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     const tvlByDay = Promise.all(
       entriesByDay.map(async (day) => {
@@ -142,7 +146,7 @@ export class InfoService {
 
     const data = {};
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     await Promise.all(
       pools.map(async (pool) => {
@@ -269,7 +273,7 @@ export class InfoService {
     inheritedXlmValue?: number,
     inheritedPools?: any[],
   ) {
-    tokensList = tokensList ? tokensList : await this.fetchTokenList(network);
+    tokensList = tokensList ? tokensList : await this.fetchTokensList(network);
     const tokenData = await this.getTokenData(token, tokensList);
 
     const decimals = tokenData.decimals || 7;
@@ -317,7 +321,7 @@ export class InfoService {
       pools,
     );
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     const tokenData = await this.getTokenData(tokenAddress, tokensList);
 
@@ -426,7 +430,7 @@ export class InfoService {
     inheritedTokens?: any[],
   ) {
     const pools = await this.getPools(network, inheritedPools);
-    const tokens = await getTokensList(network, inheritedTokens);
+    const tokens = await this.fetchTokensList(network);
 
     const usdc = tokens.find((item) => item.code === 'USDC');
 
@@ -485,7 +489,7 @@ export class InfoService {
     }
 
     const pool = filteredPools[0];
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     const tvl = await this.calculateTVL(
       network,
@@ -511,7 +515,7 @@ export class InfoService {
     inheritedXlmValue?: number,
     tokensList?: TokenType[],
   ) {
-    tokensList = tokensList ? tokensList : await this.fetchTokenList(network);
+    tokensList = tokensList ? tokensList : await this.fetchTokensList(network);
 
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
@@ -569,7 +573,7 @@ export class InfoService {
     const variationLast24h = 0.03;
     let tvl = 0;
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     await Promise.all(
       pools.map(async (pool) => {
@@ -658,7 +662,7 @@ export class InfoService {
 
     let volume = 0;
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     const variationLast24h = 0.03;
     for (const event of contractEvents) {
@@ -684,7 +688,7 @@ export class InfoService {
     const pools = await this.getPools(network);
 
     const xlmValue = await this.getXlmValue();
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     const volumeByDay = Promise.all(
       contractEventsByDay.map(async (day) => {
@@ -776,7 +780,7 @@ export class InfoService {
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     let volume = 0;
     for (const event of contractEvents) {
@@ -805,7 +809,7 @@ export class InfoService {
 
     const xlmValue = await this.getXlmValue();
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     const volumeByDay = Promise.all(
       contractEventsByDay.map(async (day) => {
@@ -895,7 +899,7 @@ export class InfoService {
 
     const xlmValue = await this.getXlmValue();
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     const volumeByDay = Promise.all(
       contractEventsByDay.map(async (day) => {
@@ -968,7 +972,7 @@ export class InfoService {
     const oneDay = 24 * 60 * 60 * 1000;
     const poolData = pools.find((item) => item.contractId == pool);
 
-    const tokensList = await this.fetchTokenList(network);
+    const tokensList = await this.fetchTokensList(network);
 
     let volume = 0;
     for (const event of contractEvents) {
@@ -1091,7 +1095,7 @@ export class InfoService {
 
     const tokensList = inheritedTokens
       ? inheritedTokens
-      : await this.fetchTokenList(network);
+      : await this.fetchTokensList(network);
     const token0 = await this.getTokenData(filteredPools[0].token0, tokensList);
     const token1 = await this.getTokenData(filteredPools[0].token1, tokensList);
 
@@ -1161,7 +1165,7 @@ export class InfoService {
       const contractEvents = await this.getContractEvents(network);
       const pools = await this.getPools(network);
       const xlmValue = await this.getXlmValue();
-      const tokensList = await this.fetchTokenList(network);
+      const tokensList = await this.fetchTokensList(network);
       const poolsInfo = [];
       for (const pool of pools) {
         const poolInfo = await this.getPoolInfo(
@@ -1194,7 +1198,11 @@ export class InfoService {
     inheritedXlmValue?: number,
     inheritedPools?: any[],
     inheritedContractEvents?: any[],
+    inheritedTokensList?: TokenType[],
   ) {
+    const tokensList = inheritedTokensList
+      ? inheritedTokensList
+      : await this.fetchTokensList(network);
     const contractEvents = await this.getContractEvents(
       network,
       inheritedContractEvents,
@@ -1204,7 +1212,6 @@ export class InfoService {
     const relatedPools = pools.filter(
       (pool) => pool.token0 == token || pool.token1 == token,
     );
-    const tokensList = await this.fetchTokenList(network);
     const tvl = await this.getTokenTvl(
       network,
       token,
@@ -1245,7 +1252,7 @@ export class InfoService {
       );
       fees24h += poolFees;
     }
-    const tokenData = await getTokenData(network, token);
+    const tokenData = await this.getTokenData(token, tokensList);
     const tvlSlippage24h = 0;
     const tvlSlippage7d = 0;
 
@@ -1271,7 +1278,7 @@ export class InfoService {
     const xlmValue = await this.getXlmValue();
     const pools = await this.getPools(network);
 
-    const tokens = await getTokensList(network);
+    const tokens = await this.fetchTokensList(network);
 
     const tokensInfo = [];
     for (const token of tokens) {
@@ -1282,6 +1289,7 @@ export class InfoService {
           xlmValue,
           pools,
           contractEvents,
+          tokens,
         );
         tokensInfo.push(tokenInfo);
       } catch (error) {
@@ -1295,7 +1303,14 @@ export class InfoService {
     return tokensInfo;
   }
 
-  async getPoolsOfGivenToken(network: Network, contract: string) {
+  async getPoolsOfGivenToken(
+    network: Network,
+    contract: string,
+    inheritedTokensList?: TokenType[],
+  ) {
+    const tokensList = inheritedTokensList
+      ? inheritedTokensList
+      : await this.fetchTokensList(network);
     const allPairAddresses =
       await this.pairsModule.getSoroswapPairAddresses(network);
     const allPools =
@@ -1310,8 +1325,8 @@ export class InfoService {
 
     contractPools = await Promise.all(
       contractPools.map(async (pool) => {
-        pool.token0 = await getTokenData(network, pool.token0);
-        pool.token1 = await getTokenData(network, pool.token1);
+        pool.token0 = await this.getTokenData(pool.token0, tokensList);
+        pool.token1 = await this.getTokenData(pool.token1, tokensList);
 
         // TODO: Add TVL and other info similar to getPoolInfo()
         const obj = {
