@@ -48,7 +48,7 @@ export class InfoService {
   async fetchTokenList(network: Network) {
     const key = `TOKENS-LIST-${network}`;
 
-    let cachedTokens = await this.cacheManager.get<TokenType[]>(key);
+    const cachedTokens = await this.cacheManager.get<TokenType[]>(key);
 
     if (cachedTokens) {
       console.log('Returning cached tokens');
@@ -265,10 +265,11 @@ export class InfoService {
   async getTokenTvl(
     network: Network,
     token: string,
-    tokensList: TokenType[],
+    tokensList?: TokenType[],
     inheritedXlmValue?: number,
     inheritedPools?: any[],
   ) {
+    tokensList = tokensList ? tokensList : await this.fetchTokenList(network);
     const tokenData = await this.getTokenData(token, tokensList);
 
     const decimals = tokenData.decimals || 7;
@@ -583,7 +584,6 @@ export class InfoService {
           tokensList,
         );
 
-        console.log({ poolTvl });
         tvl += poolTvl;
       }),
     );
@@ -968,6 +968,8 @@ export class InfoService {
     const oneDay = 24 * 60 * 60 * 1000;
     const poolData = pools.find((item) => item.contractId == pool);
 
+    const tokensList = await this.fetchTokenList(network);
+
     let volume = 0;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
@@ -978,6 +980,7 @@ export class InfoService {
           poolData,
           pools,
           xlmValue,
+          tokensList,
         );
 
         volume += eventVolume;
