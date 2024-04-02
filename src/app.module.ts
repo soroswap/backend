@@ -23,8 +23,6 @@ import { redisStore } from 'cache-manager-redis-yet';
       isGlobal: true,
       useFactory: async () => ({
         store: await redisStore({
-          password: 'KfyTrLBWVcAQiXagnuYxMiVHVjaZFNPj',
-          username: 'default',
           socket: {
             host: configLoader().redis.host,
             port: configLoader().redis.port,
