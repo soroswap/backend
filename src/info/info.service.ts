@@ -60,9 +60,7 @@ export class InfoService {
           'https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json',
         );
         tokens = data.assets;
-        console.log('🚀 « tokens before:', tokens);
         tokens.unshift(xlmToken.MAINNET);
-        console.log('🚀 « tokens after:', tokens);
       } else {
         const { data } = await axiosApiBackendInstance.get('/api/tokens');
         tokens = data.find(
