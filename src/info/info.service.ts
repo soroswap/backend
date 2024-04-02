@@ -938,7 +938,7 @@ export class InfoService {
         let fees = 0;
         for (const event of day.events) {
           if (event.pair && event.pair == pool.contractId) {
-            fees += parseFloat(event.fee);
+            fees += parseFloat(event.fee) / 10 ** 7;
           }
         }
         return { date: day.date, fees: fees * xlmValue };
@@ -1007,7 +1007,7 @@ export class InfoService {
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
       if (timeDiff < oneDay * lastNDays) {
-        fees += parseFloat(event.fee);
+        fees += parseFloat(event.fee) / 10 ** 7;
       }
     }
     const variationLast24h = 0.03;
@@ -1025,7 +1025,7 @@ export class InfoService {
       contractEventsByDay.map(async (day) => {
         let fees = 0;
         for (const event of day.events) {
-          fees += parseFloat(event.fee);
+          fees += parseFloat(event.fee) / 10 ** 7;
         }
         return { date: day.date, fees: fees * xlmValue };
       }),
@@ -1061,7 +1061,7 @@ export class InfoService {
       const timeDiff = now.getTime() - closeTime.getTime();
       const hoursDiff = timeDiff / (1000 * 60 * 60);
       if (hoursDiff < hoursAgo) {
-        fees = fees += parseFloat(event.fee);
+        fees = fees += parseFloat(event.fee) / 10 ** 7;
       }
     }
     return fees * xlmValue;
