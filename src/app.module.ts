@@ -8,6 +8,7 @@ import { configLoader } from './config/config-loader';
 import { envSchema } from './config/env-schema';
 import { EventsModule } from './events/events.module';
 import { InfoModule } from './info/info.module';
+import { UtilsModule } from './Utils/utils.module';
 import { PairsModule } from './pairs/pairs.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { redisStore } from 'cache-manager-redis-yet';
@@ -35,6 +36,7 @@ import { redisStore } from 'cache-manager-redis-yet';
     PairsModule,
     InfoModule,
     EventsModule,
+    UtilsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
