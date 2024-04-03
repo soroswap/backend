@@ -23,6 +23,7 @@ import {
   getXLMPriceFromCoingecko,
 } from 'src/utils';
 import { axiosApiBackendInstance } from 'src/utils/axios';
+import { calculateAPY } from 'src/utils/calculateAPY';
 import {
   PairInstanceEntryParserResult,
   PairInstanceWithEntriesParserResult,
@@ -1134,6 +1135,7 @@ export class InfoService {
       fees24h: fees24h,
       feesYearly: feesYearly,
       liquidity: liquidity.shares,
+      apy: calculateAPY(volume24h, Number(liquidity.shares)),
     };
 
     return obj;
