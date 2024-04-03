@@ -111,6 +111,8 @@ export class InfoService {
 
     const xlmValue = await this.getXlmValue();
 
+    const tokensList = await this.fetchTokensList(network);
+
     const tvlByDay = Promise.all(
       entriesByDay.map(async (day) => {
         const dayTVL = await this.calculateTVL(
@@ -121,6 +123,7 @@ export class InfoService {
           day.lastEntry.reserve1,
           pools,
           xlmValue,
+          tokensList,
         );
 
         return { date: day.date, tvl: dayTVL };
@@ -138,6 +141,8 @@ export class InfoService {
 
     const data = {};
 
+    const tokensList = await this.fetchTokensList(network);
+
     await Promise.all(
       pools.map(async (pool) => {
         const entriesByDay =
@@ -153,6 +158,7 @@ export class InfoService {
               day.lastEntry.reserve1,
               pools,
               xlmValue,
+              tokensList,
             );
 
             if (!data[day.date]) {
@@ -258,9 +264,15 @@ export class InfoService {
   async getTokenTvl(
     network: Network,
     token: string,
+    tokensList?: TokenType[],
     inheritedXlmValue?: number,
     inheritedPools?: any[],
   ) {
+    tokensList = tokensList ? tokensList : await this.fetchTokensList(network);
+    const tokenData = await this.getTokenData(token, tokensList);
+
+    const decimals = tokenData.decimals || 7;
+
     const pools = await this.getPools(network, inheritedPools);
 
     const filteredPools = pools.filter(
@@ -269,9 +281,9 @@ export class InfoService {
     let tvl = 0;
     for (const pool of filteredPools) {
       if (pool.token0 == token) {
-        tvl += parseFloat(pool.reserve0) / 10 ** 7;
+        tvl += parseFloat(pool.reserve0) / 10 ** decimals;
       } else if (pool.token1 == token) {
-        tvl += parseFloat(pool.reserve1) / 10 ** 7;
+        tvl += parseFloat(pool.reserve1) / 10 ** decimals;
       }
     }
     const tokenPrice = await this.getTokenPriceInUSD(
@@ -304,6 +316,12 @@ export class InfoService {
       pools,
     );
 
+    const tokensList = await this.fetchTokensList(network);
+
+    const tokenData = await this.getTokenData(tokenAddress, tokensList);
+
+    const decimals = tokenData.decimals || 7;
+
     const data = {};
     for (const pool of filteredPools) {
       const entriesByDay = getEntriesByDayParser<PairInstanceEntryParserResult>(
@@ -313,14 +331,14 @@ export class InfoService {
       entriesByDay.forEach((day) => {
         let dayTvl = 0;
         if (day.lastEntry.token0 === tokenAddress) {
-          dayTvl += parseFloat(day.lastEntry.reserve0) / 10 ** 7;
+          dayTvl += parseFloat(day.lastEntry.reserve0);
         } else if (day.lastEntry.token1 === tokenAddress) {
-          dayTvl += parseFloat(day.lastEntry.reserve1) / 10 ** 7;
+          dayTvl += parseFloat(day.lastEntry.reserve1);
         }
         if (!data[day.date]) {
           data[day.date] = 0;
         }
-        data[day.date] += dayTvl * tokenPrice.price;
+        data[day.date] += (dayTvl / 10 ** decimals) * tokenPrice.price;
       });
     }
 
@@ -404,7 +422,6 @@ export class InfoService {
     network: Network,
     token: string,
     inheritedPools?: any[],
-    inheritedTokens?: any[],
   ) {
     const pools = await this.getPools(network, inheritedPools);
     const tokens = await this.fetchTokensList(network);
@@ -466,6 +483,7 @@ export class InfoService {
     }
 
     const pool = filteredPools[0];
+    const tokensList = await this.fetchTokensList(network);
 
     const tvl = await this.calculateTVL(
       network,
@@ -475,6 +493,7 @@ export class InfoService {
       pool.reserve1,
       pools,
       inheritedXlmValue,
+      tokensList,
     );
 
     return { pool: poolAddress, tvl };
@@ -488,7 +507,10 @@ export class InfoService {
     reserve1: string,
     pools: any[],
     inheritedXlmValue?: number,
+    tokensList?: TokenType[],
   ) {
+    tokensList = tokensList ? tokensList : await this.fetchTokensList(network);
+
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
 
     const token0Price = await this.getTokenPriceInUSD(
@@ -497,15 +519,21 @@ export class InfoService {
       xlmValue,
       pools,
     );
+
     const token1Price = await this.getTokenPriceInUSD(
       network,
       token1,
       xlmValue,
       pools,
     );
-    const tvl =
-      parseFloat(reserve0) * token0Price.price * 10 ** -7 +
-      parseFloat(reserve1) * token1Price.price * 10 ** -7;
+
+    const token0Data = await this.getTokenData(token0, tokensList);
+    const token1Data = await this.getTokenData(token1, tokensList);
+
+    const value0 = parseFloat(reserve0) / 10 ** (token0Data.decimals || 7);
+    const value1 = parseFloat(reserve1) / 10 ** (token1Data.decimals || 7);
+
+    const tvl = value0 * token0Price.price + value1 * token1Price.price;
 
     return tvl;
   }
@@ -525,7 +553,7 @@ export class InfoService {
       throw new ServiceUnavailableException('Liquidity pool not found');
     }
 
-    const shares = filteredPools[0].totalShares * 10 ** -7;
+    const shares = filteredPools[0].totalShares;
     return { pool: poolAddress, shares: shares };
   }
 
@@ -538,23 +566,26 @@ export class InfoService {
     const xlmValue = await this.getXlmValue(inheritedXlmValue);
     const variationLast24h = 0.03;
     let tvl = 0;
-    for (const pool of pools) {
-      const token0Price = await this.getTokenPriceInUSD(
-        network,
-        pool.token0,
-        xlmValue,
-        pools,
-      );
-      const token1Price = await this.getTokenPriceInUSD(
-        network,
-        pool.token1,
-        xlmValue,
-        pools,
-      );
-      tvl +=
-        parseFloat(pool.reserve0) * 10 ** -7 * token0Price.price +
-        parseFloat(pool.reserve1) * 10 ** -7 * token1Price.price;
-    }
+
+    const tokensList = await this.fetchTokensList(network);
+
+    await Promise.all(
+      pools.map(async (pool) => {
+        const poolTvl = await this.calculateTVL(
+          network,
+          pool.token0,
+          pool.token1,
+          pool.reserve0,
+          pool.reserve1,
+          pools,
+          xlmValue,
+          tokensList,
+        );
+
+        tvl += poolTvl;
+      }),
+    );
+
     return { tvl: tvl, variation: variationLast24h };
   }
 
@@ -563,7 +594,14 @@ export class InfoService {
     event: any,
     pools: any[],
     xlmValue: number,
+    tokensList: TokenType[],
   ) {
+    const tokenDataA = await this.getTokenData(event.token_a, tokensList);
+    const tokenDataB = await this.getTokenData(event.token_b, tokensList);
+
+    const decimalsA = tokenDataA.decimals || 7;
+    const decimalsB = tokenDataB.decimals || 7;
+
     let volume = 0;
     if (event.topic2 == 'add' || event.topic2 == 'remove') {
       const tokenPriceA = await this.getTokenPriceInUSD(
@@ -578,8 +616,10 @@ export class InfoService {
         xlmValue,
         pools,
       );
-      volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
-      volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPriceB.price;
+      volume +=
+        (parseFloat(event.amount_a) / 10 ** decimalsA) * tokenPriceA.price;
+      volume +=
+        (parseFloat(event.amount_b) / 10 ** decimalsB) * tokenPriceB.price;
     } else if (event.topic2 == 'swap') {
       for (let i = 0; i < event.amounts.length; i++) {
         const tokenPrice = await this.getTokenPriceInUSD(
@@ -588,7 +628,10 @@ export class InfoService {
           xlmValue,
           pools,
         );
-        volume += parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
+        const tokenData = await this.getTokenData(event.path[i], tokensList);
+        const decimals = tokenData.decimals || 7;
+        volume +=
+          (parseFloat(event.amounts[i]) / 10 ** decimals) * tokenPrice.price;
       }
     }
     return volume;
@@ -613,6 +656,8 @@ export class InfoService {
 
     let volume = 0;
 
+    const tokensList = await this.fetchTokensList(network);
+
     const variationLast24h = 0.03;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
@@ -622,6 +667,7 @@ export class InfoService {
           event,
           pools,
           xlmValue,
+          tokensList,
         );
         volume += eventVolume;
       }
@@ -636,6 +682,7 @@ export class InfoService {
     const pools = await this.getPools(network);
 
     const xlmValue = await this.getXlmValue();
+    const tokensList = await this.fetchTokensList(network);
 
     const volumeByDay = Promise.all(
       contractEventsByDay.map(async (day) => {
@@ -646,6 +693,7 @@ export class InfoService {
             event,
             pools,
             xlmValue,
+            tokensList,
           );
           volume += eventVolume;
         }
@@ -662,7 +710,12 @@ export class InfoService {
     token: string,
     xlmValue: number,
     pools: any[],
+    tokenList: TokenType[],
   ) {
+    const tokenData = await this.getTokenData(token, tokenList);
+
+    const decimals = tokenData.decimals || 7;
+
     let volume = 0;
     if (event.topic2 == 'add' || event.topic2 == 'remove') {
       if (event.token_a == token) {
@@ -672,7 +725,8 @@ export class InfoService {
           xlmValue,
           pools,
         );
-        volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPrice.price;
+        volume +=
+          (parseFloat(event.amount_a) / 10 ** decimals) * tokenPrice.price;
       } else if (event.token_b == token) {
         const tokenPrice = await this.getTokenPriceInUSD(
           network,
@@ -680,7 +734,8 @@ export class InfoService {
           xlmValue,
           pools,
         );
-        volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPrice.price;
+        volume +=
+          (parseFloat(event.amount_b) / 10 ** decimals) * tokenPrice.price;
       }
     } else if (event.topic2 == 'swap') {
       for (let i = 0; i < event.amounts.length; i++) {
@@ -691,7 +746,10 @@ export class InfoService {
             xlmValue,
             pools,
           );
-          volume += parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
+          const tokenData = await this.getTokenData(event.path[i], tokenList);
+          const decimals = tokenData.decimals || 7;
+          volume +=
+            (parseFloat(event.amounts[i]) / 10 ** decimals) * tokenPrice.price;
         }
       }
     }
@@ -716,6 +774,8 @@ export class InfoService {
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
 
+    const tokensList = await this.fetchTokensList(network);
+
     let volume = 0;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
@@ -726,6 +786,7 @@ export class InfoService {
           token,
           xlmValue,
           pools,
+          tokensList,
         );
         volume += eventVolume;
       }
@@ -742,6 +803,8 @@ export class InfoService {
 
     const xlmValue = await this.getXlmValue();
 
+    const tokensList = await this.fetchTokensList(network);
+
     const volumeByDay = Promise.all(
       contractEventsByDay.map(async (day) => {
         let volume = 0;
@@ -752,6 +815,7 @@ export class InfoService {
             tokenAddress,
             xlmValue,
             pools,
+            tokensList,
           );
           volume += eventVolume;
         }
@@ -768,7 +832,14 @@ export class InfoService {
     pool: any,
     pools: any[],
     xlmValue: number,
+    tokensList: TokenType[],
   ) {
+    const tokenDataA = await this.getTokenData(event.token_a, tokensList);
+    const tokenDataB = await this.getTokenData(event.token_b, tokensList);
+
+    const decimalsA = tokenDataA.decimals || 7;
+    const decimalsB = tokenDataB.decimals || 7;
+
     if (event.pair && event.pair != pool.contractId) return 0;
     let volume = 0;
     if (event.topic2 == 'add' || event.topic2 == 'remove') {
@@ -784,8 +855,10 @@ export class InfoService {
         xlmValue,
         pools,
       );
-      volume += parseFloat(event.amount_a) * 10 ** -7 * tokenPriceA.price;
-      volume += parseFloat(event.amount_b) * 10 ** -7 * tokenPriceB.price;
+      volume +=
+        (parseFloat(event.amount_a) / 10 ** decimalsA) * tokenPriceA.price;
+      volume +=
+        (parseFloat(event.amount_b) / 10 ** decimalsB) * tokenPriceB.price;
     } else if (event.topic2 == 'swap') {
       for (let i = 0; i < event.amounts.length; i++) {
         if (event.path[i] == pool.token0 || event.path[i] == pool.token1) {
@@ -795,7 +868,10 @@ export class InfoService {
             xlmValue,
             pools,
           );
-          volume += parseFloat(event.amounts[i]) * 10 ** -7 * tokenPrice.price;
+          const tokenData = await this.getTokenData(event.path[i], tokensList);
+          const decimals = tokenData.decimals || 7;
+          volume +=
+            (parseFloat(event.amounts[i]) / 10 ** decimals) * tokenPrice.price;
         }
       }
     }
@@ -817,6 +893,8 @@ export class InfoService {
 
     const xlmValue = await this.getXlmValue();
 
+    const tokensList = await this.fetchTokensList(network);
+
     const volumeByDay = Promise.all(
       contractEventsByDay.map(async (day) => {
         let volume = 0;
@@ -827,6 +905,7 @@ export class InfoService {
             pool,
             pools,
             xlmValue,
+            tokensList,
           );
           volume += eventVolume;
         }
@@ -857,7 +936,7 @@ export class InfoService {
         let fees = 0;
         for (const event of day.events) {
           if (event.pair && event.pair == pool.contractId) {
-            fees += parseFloat(event.fee) * 10 ** -7;
+            fees += parseFloat(event.fee) / 10 ** 7;
           }
         }
         return { date: day.date, fees: fees * xlmValue };
@@ -887,6 +966,8 @@ export class InfoService {
     const oneDay = 24 * 60 * 60 * 1000;
     const poolData = pools.find((item) => item.contractId == pool);
 
+    const tokensList = await this.fetchTokensList(network);
+
     let volume = 0;
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
@@ -897,6 +978,7 @@ export class InfoService {
           poolData,
           pools,
           xlmValue,
+          tokensList,
         );
 
         volume += eventVolume;
@@ -923,7 +1005,7 @@ export class InfoService {
     for (const event of contractEvents) {
       const timeDiff = now.getTime() - event.closeTime.getTime();
       if (timeDiff < oneDay * lastNDays) {
-        fees += parseFloat(event.fee) * 10 ** -7;
+        fees += parseFloat(event.fee) / 10 ** 7;
       }
     }
     const variationLast24h = 0.03;
@@ -941,7 +1023,7 @@ export class InfoService {
       contractEventsByDay.map(async (day) => {
         let fees = 0;
         for (const event of day.events) {
-          fees += parseFloat(event.fee) * 10 ** -7;
+          fees += parseFloat(event.fee) / 10 ** 7;
         }
         return { date: day.date, fees: fees * xlmValue };
       }),
@@ -977,7 +1059,7 @@ export class InfoService {
       const timeDiff = now.getTime() - closeTime.getTime();
       const hoursDiff = timeDiff / (1000 * 60 * 60);
       if (hoursDiff < hoursAgo) {
-        fees = fees += parseFloat(event.fee) * 10 ** -7;
+        fees = fees += parseFloat(event.fee) / 10 ** 7;
       }
     }
     return fees * xlmValue;
@@ -1044,8 +1126,8 @@ export class InfoService {
       pool: poolAddress,
       token0: token0,
       token1: token1,
-      reserve0: filteredPools[0].reserve0 * 10 ** -7,
-      reserve1: filteredPools[0].reserve1 * 10 ** -7,
+      reserve0: filteredPools[0].reserve0,
+      reserve1: filteredPools[0].reserve1,
       tvl: tvl.tvl,
       volume24h: volume24h,
       volume7d: volume7d,
@@ -1124,7 +1206,13 @@ export class InfoService {
     const relatedPools = pools.filter(
       (pool) => pool.token0 == token || pool.token1 == token,
     );
-    const tvl = await this.getTokenTvl(network, token, xlmValue, pools);
+    const tvl = await this.getTokenTvl(
+      network,
+      token,
+      tokensList,
+      xlmValue,
+      pools,
+    );
     const priceInUsd = await this.getTokenPriceInUSD(
       network,
       token,
