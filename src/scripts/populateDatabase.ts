@@ -42,7 +42,16 @@ export async function populateDatabase(network: Network) {
     return;
   }
 
-  const counters: { [x: string]: number } = {};
+  const counters: { [x: string]: number } = {
+    soroswapFactoryInstance: 0,
+    soroswapFactoryPersistent: 0,
+    phoenixFactoryInstance: 0,
+    phoenixFactoryConfig: 0,
+    phoenixFactoryLpVec: 0,
+    phoenixFactoryInitialized: 0,
+    pairStorage: 0,
+    others: 0,
+  };
 
   for (const sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
     .edges) {
@@ -102,28 +111,31 @@ export async function populateDatabase(network: Network) {
 
     if (!isSoroswapFactory && !isPhoenixFactory && !isPairStorage) {
       counters.others++;
-      return;
+    } else {
+      try {
+        await prisma.subscriptions.upsert({
+          where: {
+            contractId_keyXdr: {
+              contractId,
+              keyXdr,
+            },
+            network,
+          },
+          update: {},
+          create: {
+            contractId,
+            keyXdr,
+            contractType,
+            storageType,
+            network,
+          },
+        });
+      } catch (error) {
+        console.log({ error });
+      }
     }
-
-    await prisma.subscriptions.upsert({
-      where: {
-        contractId_keyXdr: {
-          contractId,
-          keyXdr,
-        },
-        network,
-      },
-      update: {},
-      create: {
-        contractId,
-        keyXdr,
-        contractType,
-        storageType,
-        network,
-      },
-    });
   }
   Logger.log('Database up to date!', `MERCURY ${network}`);
 
-  // console.log({ counters })
+  console.log({ counters });
 }
