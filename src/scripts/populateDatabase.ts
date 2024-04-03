@@ -14,8 +14,13 @@ import {
 import { constants, factoryAddresses } from '../constants';
 import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../utils/queries';
 
-export async function populateDatabase(network: Network) {
+export async function populateDatabase(
+  network: Network,
+  soroswapPairAddresses: string[],
+) {
   Logger.log('Updating database...', `MERCURY ${network}`);
+
+  console.log(soroswapPairAddresses);
 
   const mercuryInstance =
     network == Network.TESTNET
@@ -51,7 +56,20 @@ export async function populateDatabase(network: Network) {
     phoenixFactoryInitialized: 0,
     pairStorage: 0,
     others: 0,
+    removedPairs: 0,
   };
+
+  const removedPairs = await prisma.subscriptions.deleteMany({
+    where: {
+      network,
+      contractType: ContractType.PAIR,
+      contractId: {
+        notIn: soroswapPairAddresses,
+      },
+    },
+  });
+
+  counters.removedPairs = removedPairs.count;
 
   for (const sub of ledgerEntrySubscriptions.data.allLedgerEntrySubscriptions
     .edges) {
@@ -112,7 +130,12 @@ export async function populateDatabase(network: Network) {
     if (!isSoroswapFactory && !isPhoenixFactory && !isPairStorage) {
       counters.others++;
     } else {
-      try {
+      const shouldAdd =
+        isSoroswapFactory ||
+        isPhoenixFactory ||
+        (isPairStorage && soroswapPairAddresses.includes(contractId));
+
+      if (shouldAdd) {
         await prisma.subscriptions.upsert({
           where: {
             contractId_keyXdr: {
@@ -130,8 +153,6 @@ export async function populateDatabase(network: Network) {
             network,
           },
         });
-      } catch (error) {
-        console.log({ error });
       }
     }
   }
