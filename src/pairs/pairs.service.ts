@@ -663,7 +663,6 @@ export class PairsService {
     let allPools = [];
 
     const cachedPools: [] = await this.cacheManager.get(key);
-    console.log('Cached pools:', cachedPools);
     if (cachedPools) {
       console.log('Returning cached pools');
       return cachedPools;
