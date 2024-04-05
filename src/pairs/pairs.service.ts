@@ -1,8 +1,10 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { Cache } from 'cache-manager';
 import * as sdk from 'stellar-sdk';
 
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -30,10 +32,13 @@ import {
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
 import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
-
+import { PredefinedTTL } from 'src/config/predefinedTtl';
 @Injectable()
 export class PairsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('CACHE_MANAGER') private cacheManager: Cache,
+    ) {}
 
   /**
    * Function to get the keyXdr of a specific pair contract.
@@ -654,18 +659,28 @@ export class PairsService {
    * @returns Array with all liquidity pools.
    */
   async getAllPools(network: Network, protocols: string[]) {
+    const key = `LIQUIDITY-POOLS-${network}`;
     let allPools = [];
-    console.log('Protocols:', protocols);
-    if (protocols.includes('soroswap') || protocols.length === 0) {
-      const soroswapPools = await this.getAllSoroswapPools(network);
-      allPools = allPools.concat(soroswapPools);
-    }
-    if (protocols.includes('phoenix') || protocols.length === 0) {
-      const phoenixPools = await this.getAllPhoenixPools(network);
-      allPools = allPools.concat(phoenixPools);
-    }
 
-    console.log('Done fetching pools');
-    return allPools;
+    const cachedPools: [] = await this.cacheManager.get(key);
+    console.log('Cached pools:', cachedPools);
+    if (cachedPools) {
+      console.log('Returning cached pools');
+      return cachedPools;
+    } else { 
+      console.log('No cached pools found');
+      console.log('Protocols:', protocols);
+      if (protocols.includes('soroswap') || protocols.length === 0) {
+        const soroswapPools = await this.getAllSoroswapPools(network);
+        allPools = allPools.concat(soroswapPools);
+      }
+      if (protocols.includes('phoenix') || protocols.length === 0) {
+        const phoenixPools = await this.getAllPhoenixPools(network);
+        allPools = allPools.concat(phoenixPools);
+      }
+      await this.cacheManager.set(key, allPools, PredefinedTTL.OneMinute);
+      console.log('Done fetching pools');
+      return allPools;
+    }
   }
 }
