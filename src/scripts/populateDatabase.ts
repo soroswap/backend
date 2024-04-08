@@ -13,6 +13,7 @@ import {
 } from 'src/services/mercury';
 import { constants, factoryAddresses } from '../constants';
 import { GET_ALL_LEDGER_ENTRY_SUBSCRIPTIONS } from '../utils/queries';
+import { getFactoryAddress } from 'src/utils';
 
 export async function populateDatabase(
   network: Network,
@@ -83,7 +84,10 @@ export async function populateDatabase(
     let contractType: ContractType = undefined;
     let storageType: StorageType = undefined;
 
-    const isSoroswapFactory = factoryAddresses.soroswap.includes(contractId);
+    const factoryAddress = getFactoryAddress(network);
+
+    const isSoroswapFactory = factoryAddress === contractId;
+
     const isPhoenixFactory = factoryAddresses.phoenix.includes(contractId);
 
     const isInstanceStorage = keyXdr === constants.instanceStorageKeyXdr;
@@ -136,6 +140,10 @@ export async function populateDatabase(
         (isPairStorage && soroswapPairAddresses.includes(contractId));
 
       if (shouldAdd) {
+        if (!protocol) {
+          protocol = Protocol.SOROSWAP;
+        }
+
         await prisma.subscriptions.upsert({
           where: {
             contractId_keyXdr: {
@@ -144,8 +152,16 @@ export async function populateDatabase(
             },
             network,
           },
-          update: {},
+          update: {
+            protocol,
+            contractId,
+            keyXdr,
+            contractType,
+            storageType,
+            network,
+          },
           create: {
+            protocol,
             contractId,
             keyXdr,
             contractType,
