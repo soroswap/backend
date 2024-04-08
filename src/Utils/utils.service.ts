@@ -9,10 +9,7 @@ import {
   TradeType,
 } from "soroswap-router-sdk";
 import * as stellarSdk from 'stellar-sdk';
-import axios from 'axios';
 import { Cache } from 'cache-manager';
-import { PairsService } from 'src/pairs/pairs.service';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { fetchPathsDto } from './dto/fetchPaths.dto';
 import { configLoader } from '../config/config-loader';
 import { Protocols } from 'src/config/supportedProtocols';
@@ -41,10 +38,8 @@ export class UtilsService {
       default:
         throw new Error('Invalid network');
     }
-
-    const amount = 1000000;
  
-     const asset0 = new Token(
+    const asset0 = new Token(
       currentNetwork,
       payload.asset0.contract,
       payload.asset0.decimals,
@@ -59,6 +54,8 @@ export class UtilsService {
       payload.asset1.code,
       payload.asset1.name
     );
+    
+    const amount = 1*10**payload.asset0.decimals;
 
     const router = new Router({
       backendUrl: 'http://localhost:4000', //https:api.soroswap.finance/
@@ -77,7 +74,6 @@ export class UtilsService {
       TradeType.EXACT_INPUT
     );
 
-    console.log(route.trade.path);
-    return route.trade.path; 
+    return route.trade;
   }
 }
