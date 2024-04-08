@@ -342,14 +342,6 @@
   resolved "https://registry.npmjs.org/@colors/colors/-/colors-1.5.0.tgz"
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
-"@creit-tech/xbull-wallet-connect@github:Creit-Tech/xBull-Wallet-Connect":
-  version "0.2.0"
-  resolved "https://codeload.github.com/Creit-Tech/xBull-Wallet-Connect/tar.gz/a93e2e0d97c61bbd83fedcca0c71feef9f28b2d3"
-  dependencies:
-    rxjs "^7.5.5"
-    tweetnacl "^1.0.3"
-    tweetnacl-util "^0.15.1"
-
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.npmjs.org/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz"
@@ -1003,76 +995,15 @@
   resolved "https://registry.yarnpkg.com/@sinonjs/text-encoding/-/text-encoding-0.7.2.tgz#5981a8db18b56ba38ef0efb7d995b12aa7b51918"
   integrity sha512-sXXKG+uL9IrKqViTtao2Ws6dy0znu9sOaP1di/jKGW1M6VssO8vlpXCQcpZ+jisQ1tTFAC5Jo/EOzFbggBagFQ==
 
-"@soroban-react/contracts@^9.0.0":
-  version "9.0.4"
-  resolved "https://registry.yarnpkg.com/@soroban-react/contracts/-/contracts-9.0.4.tgz#51a3542feb2c250f2db8f7a7109a7af62acd73dd"
-  integrity sha512-bCZXyOK6hadTAn5nTKMF9TRSAeyUN6v9QBUkeMzCqcL3rD+pUkDeCE36xlYZcn44aM6rPoVo5P0/FHS+u8ViqA==
-  dependencies:
-    "@soroban-react/core" "^9.0.4"
-    "@stellar/stellar-sdk" "11.1.0"
-
-"@soroban-react/core@^9.0.4":
-  version "9.0.4"
-  resolved "https://registry.yarnpkg.com/@soroban-react/core/-/core-9.0.4.tgz#8efaa448d1e9361b71af707f9c08b232e575f48c"
-  integrity sha512-tCKn6f92+89gzNdGmBm7EJBWjWLC0cTubiXT32xBh/xzuVymE3eow8AtjfOXYP7Whb3l+LEKc1nAgIGWVnWfSQ==
-  dependencies:
-    "@soroban-react/freighter" "^9.0.4"
-    "@soroban-react/types" "^9.0.4"
-    "@soroban-react/xbull" "^1.0.1"
-    "@stellar/stellar-sdk" "11.1.0"
-
-"@soroban-react/freighter@^9.0.4":
-  version "9.0.4"
-  resolved "https://registry.yarnpkg.com/@soroban-react/freighter/-/freighter-9.0.4.tgz#62b05b217162c27c1562c3e4f988b06b487b36a6"
-  integrity sha512-WVh8l8jIMlQZJQTT/5fVH9rjEzj48b/bbY9FKshz3JYjV/cs+nPpXjijkEIodzCdKiLat077go3cy0ExVS8HOw==
-  dependencies:
-    "@soroban-react/types" "^9.0.4"
-    "@stellar/freighter-api" "1.7.1"
-
-"@soroban-react/types@8.0.0":
-  version "8.0.0"
-  resolved "https://registry.yarnpkg.com/@soroban-react/types/-/types-8.0.0.tgz#14cb25911d2d45e3448a0fc6c0b2a6ae16b4851e"
-  integrity sha512-t8eohOlmb4LAD1e3bfI01KKK7oCcm468QKsKrD0fL67fnZYcx9K61tSCqwWEbFCWGMGPkwaOwI3sE/bYKKDMIQ==
-
-"@soroban-react/types@^9.0.4":
-  version "9.0.4"
-  resolved "https://registry.yarnpkg.com/@soroban-react/types/-/types-9.0.4.tgz#c0cae5aa59ed212059a489312daf8279464d3ab1"
-  integrity sha512-WghuBJb6bG9ntHyFfXBu0XhpZEqRmrDZjUK3edCt4z9vSwusGiC/37ALzfJANA0LTbyysRs0S08SPJB1Hl+lgg==
-  dependencies:
-    "@stellar/stellar-sdk" "11.1.0"
-
-"@soroban-react/xbull@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@soroban-react/xbull/-/xbull-1.0.1.tgz#0468bf06e92d7d44c35265c42c93769f1066fe96"
-  integrity sha512-dk/qoF6CsRMgKWyO++woJmq5bTgo9ZCGBtGaNFOiljliQ7bX6MzvMoeZSwTvNNJZhL18AWpaiWmxCvv2bJJoQg==
-  dependencies:
-    "@creit-tech/xbull-wallet-connect" "github:Creit-Tech/xBull-Wallet-Connect"
-    "@soroban-react/types" "8.0.0"
-    stellar-sdk "11.1.0"
-
-"@stellar/freighter-api@1.7.1":
-  version "1.7.1"
-  resolved "https://registry.yarnpkg.com/@stellar/freighter-api/-/freighter-api-1.7.1.tgz#d62b432abc7e0140a6025cd672455ecee7b3199a"
-  integrity sha512-XvPO+XgEbkeP0VhP0U1edOkds+rGS28+y8GRGbCVXeZ9ZslbWqRFQoETAdX8IXGuykk2ib/aPokiLc5ZaWYP7w==
-
 "@stellar/js-xdr@^3.0.1":
   version "3.1.0"
   resolved "https://registry.npmjs.org/@stellar/js-xdr/-/js-xdr-3.1.0.tgz"
   integrity sha512-mYTyFnhgyQgyvpAYZRO1LurUn2MxcIZRj74zZz/BxKEk7zrL4axhQ1ez0HL2BRi0wlG6cHn5BeD/t9Xcyp7CSQ==
 
-"@stellar/stellar-base@10.0.1":
-  version "10.0.1"
-  resolved "https://registry.yarnpkg.com/@stellar/stellar-base/-/stellar-base-10.0.1.tgz#cf4458e081f694109422521562e53e642c29991b"
-  integrity sha512-BDbx7VHOEQh+4J3Q+gStNXgPaNckVFmD4aOlBBGwxlF6vPFmVnW8IoJdkX7T58zpX55eWI6DXvEhDBlrqTlhAQ==
-  dependencies:
-    "@stellar/js-xdr" "^3.0.1"
-    base32.js "^0.1.0"
-    bignumber.js "^9.1.2"
-    buffer "^6.0.3"
-    sha.js "^2.3.6"
-    tweetnacl "^1.0.3"
-  optionalDependencies:
-    sodium-native "^4.0.1"
+"@stellar/js-xdr@^3.1.1":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@stellar/js-xdr/-/js-xdr-3.1.1.tgz#be0ff90c8a861d6e1101bca130fa20e74d5599bb"
+  integrity sha512-3gnPjAz78htgqsNEDkEsKHKosV2BF2iZkoHCNxpmZwUxiPsw+2VaXMed8RRMe0rGk3d5GZe7RrSba8zV80J3Ag==
 
 "@stellar/stellar-base@^10.0.2":
   version "10.0.2"
@@ -1089,18 +1020,19 @@
   optionalDependencies:
     sodium-native "^4.0.5"
 
-"@stellar/stellar-sdk@11.1.0":
-  version "11.1.0"
-  resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-11.1.0.tgz#4a619fa645a7392204b6e80cb0a7f3ef94cdd077"
-  integrity sha512-Ufw+4udr7lqyzPIhqSAzBTgcl/YlgFZLgeBlDr5ZZy1v+g7AT4dOZFurcCrHt7Pz8DGtVcxNX7GLxYLdOC3GIg==
+"@stellar/stellar-base@^11.0.1":
+  version "11.0.1"
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-base/-/stellar-base-11.0.1.tgz#f6eba54e62aa3e827e55d8338b92cdbf5535cfd9"
+  integrity sha512-VQh+1KEtFjegD6spx08+lENt8tQOkQQQZoLtqExjpRXyWlqDhEe+bXMlBTYKDc5MIynHyD42RPEib27UG17trA==
   dependencies:
-    "@stellar/stellar-base" "10.0.1"
-    axios "^1.6.0"
+    "@stellar/js-xdr" "^3.1.1"
+    base32.js "^0.1.0"
     bignumber.js "^9.1.2"
-    eventsource "^2.0.2"
-    randombytes "^2.1.0"
-    toml "^3.0.0"
-    urijs "^1.19.1"
+    buffer "^6.0.3"
+    sha.js "^2.3.6"
+    tweetnacl "^1.0.3"
+  optionalDependencies:
+    sodium-native "^4.0.10"
 
 "@stellar/stellar-sdk@^11.1.0":
   version "11.2.1"
@@ -1114,6 +1046,19 @@
     randombytes "^2.1.0"
     toml "^3.0.0"
     typescript "^5.3.3"
+    urijs "^1.19.1"
+
+"@stellar/stellar-sdk@^11.3.0":
+  version "11.3.0"
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-11.3.0.tgz#7cb010651846a07e1853e0fe30e430ece4da340b"
+  integrity sha512-i+heopibJNRA7iM8rEPz0AXphBPYvy2HDo8rxbDwWpozwCfw8kglP9cLkkhgJe8YicgLrdExz/iQZaLpqLC+6w==
+  dependencies:
+    "@stellar/stellar-base" "^11.0.1"
+    axios "^1.6.8"
+    bignumber.js "^9.1.2"
+    eventsource "^2.0.2"
+    randombytes "^2.1.0"
+    toml "^3.0.0"
     urijs "^1.19.1"
 
 "@tsconfig/node10@^1.0.7":
@@ -1773,21 +1718,21 @@ asynckit@^0.4.0:
   resolved "https://registry.npmjs.org/asynckit/-/asynckit-0.4.0.tgz"
   integrity sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==
 
-axios@^1.6.0:
-  version "1.6.8"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.8.tgz#66d294951f5d988a00e87a0ffb955316a619ea66"
-  integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
-  dependencies:
-    follow-redirects "^1.15.6"
-    form-data "^4.0.0"
-    proxy-from-env "^1.1.0"
-
 axios@^1.6.2, axios@^1.6.5, axios@^1.6.7:
   version "1.6.7"
   resolved "https://registry.npmjs.org/axios/-/axios-1.6.7.tgz"
   integrity sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==
   dependencies:
     follow-redirects "^1.15.4"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
+axios@^1.6.8:
+  version "1.6.8"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.8.tgz#66d294951f5d988a00e87a0ffb955316a619ea66"
+  integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
+  dependencies:
+    follow-redirects "^1.15.6"
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
@@ -5063,7 +5008,7 @@ slash@^3.0.0:
   resolved "https://registry.npmjs.org/slash/-/slash-3.0.0.tgz"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
 
-sodium-native@^4.0.1:
+sodium-native@^4.0.10:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/sodium-native/-/sodium-native-4.1.1.tgz#109bc924dd55c13db87c6dd30da047487595723c"
   integrity sha512-LXkAfRd4FHtkQS4X6g+nRcVaN7mWVNepV06phIsC6+IZFvGh1voW5TNQiQp2twVaMf05gZqQjuS+uWLM6gHhNQ==
@@ -5077,12 +5022,12 @@ sodium-native@^4.0.5:
   dependencies:
     node-gyp-build "^4.6.0"
 
-soroswap-router-sdk@^1.1.19:
-  version "1.1.19"
-  resolved "https://registry.yarnpkg.com/soroswap-router-sdk/-/soroswap-router-sdk-1.1.19.tgz#8c52a74164854ab1e812f0a034f334242214ac8c"
-  integrity sha512-SU3jxgMgjpQ81MXuY6yGtB0kQm+iN4A8lUADlTb7IOBf8Urd2mqcwrSpUKRaNRNZGHLvoU8jDHralxGJl1ByDw==
+soroswap-router-sdk@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/soroswap-router-sdk/-/soroswap-router-sdk-1.2.1.tgz#aba9a1fdc880628e9b3644896f6f6e943fefaf5e"
+  integrity sha512-zKGQ27QriiiRMwzCgr5wcenMX7IhIsAdilNVh19iN1VXPMwt3OiywbAEruRNNnAT5u2JhdfwDzUUs1DP3wFT6A==
   dependencies:
-    "@soroban-react/contracts" "^9.0.0"
+    "@stellar/stellar-sdk" "^11.3.0"
     axios "^1.6.5"
     big.js "^6.2.1"
     bigint-conversion "^2.4.3"
@@ -5093,7 +5038,6 @@ soroswap-router-sdk@^1.1.19:
     jsbi "^4.3.0"
     lodash "^4.17.21"
     sinon "^17.0.1"
-    stellar-sdk "11.1.0"
     tiny-invariant "^1.3.1"
     toformat "^2.0.0"
 
@@ -5139,33 +5083,6 @@ statuses@2.0.1:
   version "2.0.1"
   resolved "https://registry.npmjs.org/statuses/-/statuses-2.0.1.tgz"
   integrity sha512-RwNA9Z/7PrK06rYLIzFMlaF+l73iwpzsqRIFgbMLbTcLD6cOao82TaWefPXQvB2fOC4AjuYSEndS7N/mTCbkdQ==
-
-stellar-sdk@11.1.0:
-  version "11.1.0"
-  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-11.1.0.tgz#04df0be3bfee2ffd1db068c92dc4f3ec27309103"
-  integrity sha512-fIdo77ogpU+ecHgs59pk9velpXd4F/ch0DzOI4QZw8zVZApc3oeNWP3+X6ui7BWpeRHAGsP2CHQzBLxm0JTIgg==
-  dependencies:
-    "@stellar/stellar-base" "10.0.1"
-    axios "^1.6.0"
-    bignumber.js "^9.1.2"
-    eventsource "^2.0.2"
-    randombytes "^2.1.0"
-    toml "^3.0.0"
-    urijs "^1.19.1"
-
-stellar-sdk@^11.1.0:
-  version "11.2.1"
-  resolved "https://registry.npmjs.org/stellar-sdk/-/stellar-sdk-11.2.1.tgz"
-  integrity sha512-wrHf9NMewDX6gZT4CTPfPIHsYlVl7CzIMEv1AVTPezB4VwUR6HX7wy8lpvdbmxe/zgHxJZ+YWnrxb2DG60Kpxg==
-  dependencies:
-    "@stellar/stellar-base" "^10.0.2"
-    axios "^1.6.5"
-    bignumber.js "^9.1.2"
-    eventsource "^2.0.2"
-    randombytes "^2.1.0"
-    toml "^3.0.0"
-    typescript "^5.3.3"
-    urijs "^1.19.1"
 
 streamsearch@^1.1.0:
   version "1.1.0"
@@ -5484,11 +5401,6 @@ tslib@2.6.2, tslib@^2.1.0, tslib@^2.6.2:
   version "2.6.2"
   resolved "https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz"
   integrity sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==
-
-tweetnacl-util@^0.15.1:
-  version "0.15.1"
-  resolved "https://registry.yarnpkg.com/tweetnacl-util/-/tweetnacl-util-0.15.1.tgz#b80fcdb5c97bcc508be18c44a4be50f022eea00b"
-  integrity sha512-RKJBIj8lySrShN4w6i/BonWp2Z/uxwC3h4y7xsRrpP59ZboCd0GpEVsOnMDYLMmKBpYhb5TgHzZXy7wTfYFBRw==
 
 tweetnacl@^1.0.3:
   version "1.0.3"

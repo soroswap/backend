@@ -3,6 +3,7 @@ import { PairsModule } from 'src/pairs/pairs.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { UtilsController } from './utils.controller';
 import { UtilsService } from './utils.service';
+
 @Module({
   imports: [PrismaModule, PairsModule],
   controllers: [UtilsController],
