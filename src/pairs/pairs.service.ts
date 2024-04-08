@@ -8,7 +8,7 @@ import * as sdk from 'stellar-sdk';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
-import { Network } from '@prisma/client';
+import { ContractType, Network, Protocol, StorageType } from '@prisma/client';
 import { constants } from 'src/constants';
 import {
   mercuryInstanceMainnet,
@@ -74,6 +74,7 @@ export class PairsService {
     const response = [];
     let subscribeResponse;
     let eventSubscribeResponse;
+
     for (let i = 0; i < data.contractId.length; i++) {
       const subscriptionExists = await this.prisma.subscriptions.findFirst({
         where: {
@@ -113,9 +114,9 @@ export class PairsService {
           data: {
             contractId: data.contractId[i],
             keyXdr: data.keyXdr,
-            protocol: 'SOROSWAP',
-            contractType: 'PAIR',
-            storageType: 'INSTANCE',
+            protocol: Protocol.SOROSWAP,
+            contractType: ContractType.PAIR,
+            storageType: StorageType.INSTANCE,
             network,
           },
         });
@@ -174,7 +175,7 @@ export class PairsService {
     first: number,
     last: number,
   ) {
-    const contractId = await getFactoryAddress(network);
+    const contractId = getFactoryAddress(network);
 
     const mercuryInstance =
       network == Network.TESTNET
@@ -215,9 +216,9 @@ export class PairsService {
           data: {
             contractId,
             keyXdr: key_xdr,
-            protocol: 'SOROSWAP',
-            contractType: 'FACTORY',
-            storageType: 'PERSISTENT',
+            protocol: Protocol.SOROSWAP,
+            contractType: ContractType.FACTORY,
+            storageType: StorageType.PERSISTENT,
             network,
           },
         });
@@ -235,7 +236,7 @@ export class PairsService {
    * @returns The total number of pairs created by the factory.
    */
   async getSoroswapPairsCountFromMercury(network: Network) {
-    const contractId = await getFactoryAddress(network);
+    const contractId = getFactoryAddress(network);
 
     const mercuryInstance =
       network == Network.TESTNET
@@ -274,10 +275,10 @@ export class PairsService {
     const count = await this.prisma.subscriptions.count({
       where: {
         network,
-        contractId: await getFactoryAddress(network),
-        protocol: 'SOROSWAP',
-        contractType: 'FACTORY',
-        storageType: 'PERSISTENT',
+        contractId: getFactoryAddress(network),
+        protocol: Protocol.SOROSWAP,
+        contractType: ContractType.FACTORY,
+        storageType: StorageType.PERSISTENT,
       },
     });
 
@@ -290,7 +291,7 @@ export class PairsService {
    * @returns Object with the query variables.
    */
   async createVariablesForPairsAddresses(network: Network, pairCount: number) {
-    const contractId = await getFactoryAddress(network);
+    const contractId = getFactoryAddress(network);
 
     const variables = { contractId };
 
@@ -588,9 +589,9 @@ export class PairsService {
     const phoenixFactories = await this.prisma.subscriptions.findMany({
       where: {
         network,
-        protocol: 'PHOENIX',
-        contractType: 'FACTORY',
-        storageType: 'INSTANCE',
+        protocol: Protocol.PHOENIX,
+        contractType: ContractType.FACTORY,
+        storageType: StorageType.INSTANCE,
       },
     });
 

@@ -3,10 +3,14 @@ import { Network } from '@prisma/client';
 import { OptimalRouteRequestBodyDto, OptimalRouteResponseDto } from './dto';
 import { PrismaService } from './prisma/prisma.service';
 import { populateDatabase } from './scripts/populateDatabase';
+import { PairsService } from './pairs/pairs.service';
 
 @Injectable()
 export class AppService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pairs: PairsService,
+  ) {}
 
   getHealth(): { status: string; time: string; database: string } {
     let dbStatus = 'Disconnected';
@@ -55,6 +59,8 @@ export class AppService {
   }
 
   async updateDatabase(network: Network) {
-    await populateDatabase(network);
+    const addresses = await this.pairs.getSoroswapPairAddresses(network);
+
+    await populateDatabase(network, addresses);
   }
 }

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { ContractType, PrismaClient } from '@prisma/client';
 import { selectMercuryInstance } from '../src/services/mercury';
 const networkInput = process.argv[2]; // 'mainnet' or 'testnet'
 
@@ -20,7 +20,7 @@ const network = networkMap[networkInput.toLowerCase()] || 'TESTNET';
   // Get pair addresses
   const pairs = await prisma.subscriptions.findMany({
     where: {
-      contractType: 'PAIR',
+      contractType: ContractType.PAIR,
       network,
     },
   });
