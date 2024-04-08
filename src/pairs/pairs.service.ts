@@ -669,28 +669,29 @@ export class PairsService {
     }
     let allPools = [];
 
-    const cachedPools = []
+    let cachedPools = []
     for(let key in keys){
-      const cachedPoolsFromProtocol = await this.cacheManager.get(key);
-      cachedPools.push(cachedPoolsFromProtocol);
+      const cachedPoolsFromProtocol: [] = await this.cacheManager.get(keys[key]);
+      if(cachedPoolsFromProtocol!){
+        cachedPools = [...cachedPoolsFromProtocol]
+      }
     }
     if (cachedPools.length > 0) {
       console.log('Returning cached pools');
       return cachedPools;
     } else {
-      console.log('No cached pools found');
       console.log('Protocols:', protocols);
       if (protocols.includes('soroswap') || protocols.length === 0) {
         const soroswapPools = await this.getAllSoroswapPools(network);
         allPools = allPools.concat(soroswapPools);
         const protocolKey = `${network}-SOROSWAP-LIQUIDITY-POOLS`;
-        await this.cacheManager.set(protocolKey, allPools, PredefinedTTL.OneMinute);
+        await this.cacheManager.set(protocolKey, soroswapPools, PredefinedTTL.OneMinute);
       }
       if (protocols.includes('phoenix') || protocols.length === 0) {
         const phoenixPools = await this.getAllPhoenixPools(network);
         allPools = allPools.concat(phoenixPools);
         const protocolKey = `${network}-PHOENIX-LIQUIDITY-POOLS`;
-        await this.cacheManager.set(protocolKey, allPools, PredefinedTTL.OneMinute);
+        await this.cacheManager.set(protocolKey, phoenixPools, PredefinedTTL.OneMinute);
       }
       console.log('Done fetching pools');
       return allPools;
