@@ -22,8 +22,8 @@ export const mainnetSoroswapContracts = {
 };
 
 export const testnetSoroswapContracts = {
-  router: '',
-  factory: '',
+  router: 'CDGHOS7DDZ7DB24J7TMFDEAIR7LS7GLMT5J5KEZMUF6MSX5BFHCXQIB3',
+  factory: 'CCXDHFYFBQ4WRG26X4SGWE63UPY7QEKBMD3HRRNGIH5EMDGGMYN7VWFD',
 };
 
 export const mainnetPhoenixContracts = {
