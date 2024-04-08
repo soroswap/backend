@@ -33,6 +33,7 @@ import {
 } from 'src/utils/queries';
 import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
 import { PredefinedTTL } from 'src/config/predefinedTtl';
+import { Protocols } from 'src/config/supportedProtocols';
 @Injectable()
 export class PairsService {
   constructor(
@@ -659,11 +660,20 @@ export class PairsService {
    * @returns Array with all liquidity pools.
    */
   async getAllPools(network: Network, protocols: string[]) {
-    const key = `LIQUIDITY-POOLS-${network}`;
+    let keys = []
+    for(let protocol in Protocols){
+      const protocolNameInUpperCase = protocol.toUpperCase();
+      const key = `${network}-${protocolNameInUpperCase}-LIQUIDITY-POOLS`;
+      keys.push(key);
+    }
     let allPools = [];
 
-    const cachedPools: [] = await this.cacheManager.get(key);
-    if (cachedPools) {
+    const cachedPools = []
+    for(let key in keys){
+      const cachedPoolsFromProtocol = await this.cacheManager.get(key);
+      cachedPools.push(cachedPoolsFromProtocol);
+    }
+    if (cachedPools.length > 0) {
       console.log('Returning cached pools');
       return cachedPools;
     } else { 
@@ -672,12 +682,15 @@ export class PairsService {
       if (protocols.includes('soroswap') || protocols.length === 0) {
         const soroswapPools = await this.getAllSoroswapPools(network);
         allPools = allPools.concat(soroswapPools);
+        const protocolKey = `${network}-SOROSWAP-LIQUIDITY-POOLS`;
+        await this.cacheManager.set(protocolKey, allPools, PredefinedTTL.OneMinute);
       }
       if (protocols.includes('phoenix') || protocols.length === 0) {
         const phoenixPools = await this.getAllPhoenixPools(network);
         allPools = allPools.concat(phoenixPools);
+        const protocolKey = `${network}-PHOENIX-LIQUIDITY-POOLS`;
+        await this.cacheManager.set(protocolKey, allPools, PredefinedTTL.OneMinute);
       }
-      await this.cacheManager.set(key, allPools, PredefinedTTL.OneMinute);
       console.log('Done fetching pools');
       return allPools;
     }
