@@ -7,6 +7,7 @@ import {
 import { Network } from '@prisma/client';
 import axios from 'axios';
 import { Cache } from 'cache-manager';
+import { UtilsService } from 'src/Utils/utils.service';
 import { PredefinedTTL } from 'src/config/predefinedTtl';
 import { xlmToken } from 'src/constants';
 import { PairsService } from 'src/pairs/pairs.service';
@@ -29,12 +30,14 @@ import {
   getContractEventsByDayParser,
   getEntriesByDayParser,
 } from 'src/utils/parsers';
+import { BigNumber } from 'bignumber.js';
 
 @Injectable()
 export class InfoService {
   constructor(
     private prisma: PrismaService,
     private pairsModule: PairsService,
+    private utilsModule: UtilsService,
     @Inject('CACHE_MANAGER') private cacheManager: Cache,
   ) {}
 
@@ -180,6 +183,7 @@ export class InfoService {
 
   async getXlmValue(inheritedXlmValue?: number) {
     if (!inheritedXlmValue) {
+      console.log('Fetching XLM value from the database')
       const dbXlm = await this.prisma.xlmUsdPrice.findFirst();
 
       if (!dbXlm) {
@@ -1335,5 +1339,34 @@ export class InfoService {
     );
 
     return contractPools;
+  }
+
+  async getUSDPriceOfAsset( asset: string, network: Network) {
+    const assets = await this.fetchTokensList(network);
+    const assetData = await this.getTokenData(asset, assets);
+    const XLM = xlmToken[network];
+    const pathPayload = {
+      asset0: {
+        name: XLM.name,
+        contract: XLM.contract,
+        code: XLM.code,
+        decimals: XLM.decimals
+      },
+      asset1: {
+        name: assetData.name,
+        contract: assetData.contract,
+        code: assetData.code,
+        decimals: assetData.decimals
+      },
+    }
+    const trade = await this.utilsModule.fetchPaths(network, pathPayload);
+    const tradeOutputAmount = new BigNumber(trade.amountOutMin);
+    const XLMPrice = tradeOutputAmount.multipliedBy(10 ** -XLM.decimals).toString();
+    const formattedAmount = await this.getXlmValue(Number(XLMPrice))
+    const response = {
+      asset: pathPayload.asset1,
+      USDPrice: formattedAmount
+    }
+    return response;
   }
 }

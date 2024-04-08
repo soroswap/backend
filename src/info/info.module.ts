@@ -3,8 +3,9 @@ import { PairsModule } from 'src/pairs/pairs.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { InfoController } from './info.controller';
 import { InfoService } from './info.service';
+import { UtilsModule } from 'src/Utils/utils.module';
 @Module({
-  imports: [PrismaModule, PairsModule],
+  imports: [PrismaModule, PairsModule, UtilsModule],
   controllers: [InfoController],
   providers: [InfoService],
   exports: [InfoService],

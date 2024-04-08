@@ -38,6 +38,7 @@
     "@stellar/stellar-sdk": "^11.1.0",
     "@types/passport-local": "^1.0.38",
     "axios": "^1.6.7",
+    "bignumber.js": "^9.1.2",
     "cache-manager": "^5.4.0",
     "cache-manager-redis-yet": "^4.2.0",
     "class-transformer": "^0.5.1",
