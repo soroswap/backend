@@ -1,15 +1,8 @@
-import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
-import {
-  ApiBody,
-  ApiHeader,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Body, Controller, Post, Query } from '@nestjs/common';
+import { ApiHeader, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { QueryNetworkDto } from 'src/dto';
-import { UtilsService } from './utils.service';
 import { fetchPathsDto } from './dto/fetchPaths.dto';
+import { UtilsService } from './utils.service';
 
 @ApiHeader({
   name: 'apiKey',
@@ -30,9 +23,6 @@ export class UtilsController {
     @Query() query: QueryNetworkDto,
     @Body() body: fetchPathsDto,
   ) {
-    return await this.utilsService.fetchPaths(
-      query.network,
-      body,
-    );
+    return await this.utilsService.fetchPaths(query.network, body);
   }
 }

@@ -2,17 +2,17 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
+import * as stellarSdk from '@stellar/stellar-sdk';
+import { Cache } from 'cache-manager';
 import {
+  CurrencyAmount,
   Router,
   Token,
-  CurrencyAmount,
   TradeType,
 } from "soroswap-router-sdk";
-import * as stellarSdk from 'stellar-sdk';
-import { Cache } from 'cache-manager';
-import { fetchPathsDto } from './dto/fetchPaths.dto';
-import { configLoader } from '../config/config-loader';
 import { Protocols } from 'src/config/supportedProtocols';
+import { configLoader } from '../config/config-loader';
+import { fetchPathsDto } from './dto/fetchPaths.dto';
 
 @Injectable()
 export class UtilsService {

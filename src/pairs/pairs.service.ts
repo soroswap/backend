@@ -4,13 +4,15 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import * as sdk from '@stellar/stellar-sdk';
 import { Cache } from 'cache-manager';
-import * as sdk from 'stellar-sdk';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
 import { Network } from '@prisma/client';
+import { PredefinedTTL } from 'src/config/predefinedTtl';
+import { Protocols } from 'src/config/supportedProtocols';
 import { constants } from 'src/constants';
 import {
   mercuryInstanceMainnet,
@@ -18,6 +20,7 @@ import {
 } from 'src/services/mercury';
 import { SubscribeToLedgerEntriesInterface } from 'src/types';
 import { getFactoryAddress } from 'src/utils';
+import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
 import {
   factoryInstanceParser,
   pairAddressesParser,
@@ -31,15 +34,13 @@ import {
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
-import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
-import { PredefinedTTL } from 'src/config/predefinedTtl';
-import { Protocols } from 'src/config/supportedProtocols';
+
 @Injectable()
 export class PairsService {
   constructor(
     private prisma: PrismaService,
     @Inject('CACHE_MANAGER') private cacheManager: Cache,
-    ) {}
+  ) {}
 
   /**
    * Function to get the keyXdr of a specific pair contract.
@@ -676,7 +677,7 @@ export class PairsService {
     if (cachedPools.length > 0) {
       console.log('Returning cached pools');
       return cachedPools;
-    } else { 
+    } else {
       console.log('No cached pools found');
       console.log('Protocols:', protocols);
       if (protocols.includes('soroswap') || protocols.length === 0) {
