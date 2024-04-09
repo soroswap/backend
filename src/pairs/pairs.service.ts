@@ -12,7 +12,6 @@ import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
 import { Network } from '@prisma/client';
 import { PredefinedTTL } from 'src/config/predefinedTtl';
-import { Protocols } from 'src/config/supportedProtocols';
 import { constants } from 'src/constants';
 import {
   mercuryInstanceMainnet,
@@ -661,40 +660,51 @@ export class PairsService {
    * @returns Array with all liquidity pools.
    */
   async getAllPools(network: Network, protocols: string[]) {
-    let keys = []
-    for(let protocol in Protocols){
-      const protocolNameInUpperCase = protocol.toUpperCase();
-      const key = `${network}-${protocolNameInUpperCase}-LIQUIDITY-POOLS`;
-      keys.push(key);
-    }
     let allPools = [];
 
-    let cachedPools = []
-    for(let key in keys){
-      const cachedPoolsFromProtocol: [] = await this.cacheManager.get(keys[key]);
-      if(cachedPoolsFromProtocol!){
-        cachedPools = [...cachedPoolsFromProtocol]
+    // Prepare to track which protocols need data fetching
+    const toFetch = new Set(
+      protocols.map((protocol) => protocol.toLowerCase()),
+    );
+
+    // Check cache for each protocol and accumulate results
+    for (const protocol of protocols) {
+      const protocolNameInUpperCase = protocol.toUpperCase();
+      const key = `${network}-${protocolNameInUpperCase}-LIQUIDITY-POOLS`;
+      const cachedPoolsFromProtocol: any[] = await this.cacheManager.get(key);
+
+      if (cachedPoolsFromProtocol && cachedPoolsFromProtocol.length > 0) {
+        allPools = [...allPools, ...cachedPoolsFromProtocol];
+        toFetch.delete(protocol.toLowerCase()); // Remove from fetch list as we have cached data
       }
     }
-    if (cachedPools.length > 0) {
-      console.log('Returning cached pools');
-      return cachedPools;
-    } else {
-      console.log('Protocols:', protocols);
-      if (protocols.includes('soroswap') || protocols.length === 0) {
-        const soroswapPools = await this.getAllSoroswapPools(network);
-        allPools = allPools.concat(soroswapPools);
+
+    // Fetch missing protocol pools
+    for (const protocol of toFetch) {
+      let fetchedPools = [];
+      if (protocol === 'soroswap') {
+        fetchedPools = await this.getAllSoroswapPools(network);
         const protocolKey = `${network}-SOROSWAP-LIQUIDITY-POOLS`;
-        await this.cacheManager.set(protocolKey, soroswapPools, PredefinedTTL.OneMinute);
-      }
-      if (protocols.includes('phoenix') || protocols.length === 0) {
-        const phoenixPools = await this.getAllPhoenixPools(network);
-        allPools = allPools.concat(phoenixPools);
+
+        await this.cacheManager.set(
+          protocolKey,
+          fetchedPools,
+          PredefinedTTL.OneMinute,
+        );
+      } else if (protocol === 'phoenix') {
+        fetchedPools = await this.getAllPhoenixPools(network);
         const protocolKey = `${network}-PHOENIX-LIQUIDITY-POOLS`;
-        await this.cacheManager.set(protocolKey, phoenixPools, PredefinedTTL.OneMinute);
+        await this.cacheManager.set(
+          protocolKey,
+          fetchedPools,
+          PredefinedTTL.OneMinute,
+        );
       }
-      console.log('Done fetching pools');
-      return allPools;
+
+      allPools = [...allPools, ...fetchedPools];
     }
+
+    console.log('Done processing pools');
+    return allPools;
   }
 }
