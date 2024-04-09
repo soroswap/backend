@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Network } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsOptional } from 'class-validator';
+import { Protocols } from 'src/config/supportedProtocols';
 
 export class QueryNetworkDto {
   @IsEnum(Network)
@@ -9,6 +10,7 @@ export class QueryNetworkDto {
   network: Network;
 
   @IsOptional()
+  @IsEnum(Protocols, { each: true })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value
@@ -20,5 +22,5 @@ export class QueryNetworkDto {
     }
     return [];
   })
-  protocols: string[] = [];
+  protocols: Protocols[] = [];
 }
