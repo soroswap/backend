@@ -1,4 +1,10 @@
-import { Network, PrismaClient } from '@prisma/client';
+import {
+  ContractType,
+  Network,
+  PrismaClient,
+  Protocol,
+  StorageType,
+} from '@prisma/client';
 import { constants } from '../src/constants';
 import {
   mercuryInstanceMainnet,
@@ -56,9 +62,9 @@ const network = networkMap[networkInput.toLowerCase()] || 'TESTNET';
       data: {
         contractId,
         keyXdr,
-        protocol: 'SOROSWAP',
-        contractType: 'FACTORY',
-        storageType: 'INSTANCE',
+        protocol: Protocol.SOROSWAP,
+        contractType: ContractType.FACTORY,
+        storageType: StorageType.INSTANCE,
         network,
       },
     });

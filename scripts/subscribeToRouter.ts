@@ -1,4 +1,4 @@
-import { Network, PrismaClient } from '@prisma/client';
+import { ContractType, Network, PrismaClient, Protocol } from '@prisma/client';
 import {
   mercuryInstanceMainnet,
   mercuryInstanceTestnet,
@@ -30,7 +30,7 @@ const network = networkMap[networkInput.toLowerCase()] || 'TESTNET';
   const subscriptionExists = await prisma.subscriptions.findFirst({
     where: {
       contractId,
-      contractType: 'ROUTER',
+      contractType: ContractType.ROUTER,
       network,
     },
   });
@@ -51,8 +51,8 @@ const network = networkMap[networkInput.toLowerCase()] || 'TESTNET';
     const subscribeStored = await prisma.subscriptions.create({
       data: {
         contractId,
-        protocol: 'SOROSWAP',
-        contractType: 'ROUTER',
+        protocol: Protocol.SOROSWAP,
+        contractType: ContractType.ROUTER,
         network,
       },
     });
