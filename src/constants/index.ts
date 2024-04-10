@@ -41,16 +41,16 @@ export const xlmToken = {
     contract: 'CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA',
     name: 'StellarLumens',
     code: 'XLM',
-    logoURI:
-      'https://assets.coingecko.com/coins/images/100/standard/Stellar_symbol_black_RGB.png',
+    icon: 'https://stellarchain.io/img/xlm.316d17cc.png',
     decimals: 7,
+    domain: 'stellar.org',
   },
   TESTNET: {
     contract: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
     name: 'StellarLumens',
     code: 'XLM',
-    logoURI:
-      'https://assets.coingecko.com/coins/images/100/standard/Stellar_symbol_black_RGB.png',
+    icon: 'https://stellarchain.io/img/xlm.316d17cc.png',
     decimals: 7,
+    domain: 'stellar.org',
   },
 };
