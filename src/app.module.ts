@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -10,7 +11,7 @@ import { EventsModule } from './events/events.module';
 import { InfoModule } from './info/info.module';
 import { PairsModule } from './pairs/pairs.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { redisStore } from 'cache-manager-redis-yet';
+import { UtilsModule } from './utils/utils.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { redisStore } from 'cache-manager-redis-yet';
     PairsModule,
     InfoModule,
     EventsModule,
+    UtilsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

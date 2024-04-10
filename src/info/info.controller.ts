@@ -517,4 +517,19 @@ export class InfoController {
   ) {
     return this.infoService.getPoolsOfGivenToken(query.network, token);
   }
+
+  @Get('USDPrice/:token')
+  @ApiOperation({
+    summary: 'Get tokens price in USDC',
+  })
+  @ApiOkResponse({
+    description: 'An object with the token info and the price in USD',
+  })
+  async getUSDPrice( 
+    @Query() query: QueryNetworkDto,
+    @Param('token') token: string){
+    return this.infoService.getUSDPriceOfAsset(token, query.network);
+  }
+
+
 }

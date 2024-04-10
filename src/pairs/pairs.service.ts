@@ -1,14 +1,17 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import * as sdk from 'stellar-sdk';
+import * as sdk from '@stellar/stellar-sdk';
+import { Cache } from 'cache-manager';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 import { subscribeToLedgerEntriesDto } from './dto/subscribe.dto';
 
 import { ContractType, Network, Protocol, StorageType } from '@prisma/client';
+import { PredefinedTTL } from 'src/config/predefinedTtl';
 import { constants } from 'src/constants';
 import {
   mercuryInstanceMainnet,
@@ -16,6 +19,7 @@ import {
 } from 'src/services/mercury';
 import { SubscribeToLedgerEntriesInterface } from 'src/types';
 import { getFactoryAddress } from 'src/utils';
+import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
 import {
   factoryInstanceParser,
   pairAddressesParser,
@@ -29,11 +33,13 @@ import {
   buildGetPairAddressesQuery,
   buildGetPairWithTokensAndReservesQuery,
 } from 'src/utils/queries';
-import { createVariablesForPairsTokensAndReserves } from 'src/utils/createVariablesForPairsTokensAndReserves';
 
 @Injectable()
 export class PairsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('CACHE_MANAGER') private cacheManager: Cache,
+  ) {}
 
   /**
    * Function to get the keyXdr of a specific pair contract.
@@ -656,17 +662,50 @@ export class PairsService {
    */
   async getAllPools(network: Network, protocols: string[]) {
     let allPools = [];
-    console.log('Protocols:', protocols);
-    if (protocols.includes('soroswap') || protocols.length === 0) {
-      const soroswapPools = await this.getAllSoroswapPools(network);
-      allPools = allPools.concat(soroswapPools);
-    }
-    if (protocols.includes('phoenix') || protocols.length === 0) {
-      const phoenixPools = await this.getAllPhoenixPools(network);
-      allPools = allPools.concat(phoenixPools);
+
+    // Prepare to track which protocols need data fetching
+    const toFetch = new Set(
+      protocols.map((protocol) => protocol.toLowerCase()),
+    );
+
+    // Check cache for each protocol and accumulate results
+    for (const protocol of protocols) {
+      const protocolNameInUpperCase = protocol.toUpperCase();
+      const key = `${network}-${protocolNameInUpperCase}-LIQUIDITY-POOLS`;
+      const cachedPoolsFromProtocol: any[] = await this.cacheManager.get(key);
+
+      if (cachedPoolsFromProtocol && cachedPoolsFromProtocol.length > 0) {
+        allPools = [...allPools, ...cachedPoolsFromProtocol];
+        toFetch.delete(protocol.toLowerCase()); // Remove from fetch list as we have cached data
+      }
     }
 
-    console.log('Done fetching pools');
+    // Fetch missing protocol pools
+    for (const protocol of toFetch) {
+      let fetchedPools = [];
+      if (protocol === 'soroswap') {
+        fetchedPools = await this.getAllSoroswapPools(network);
+        const protocolKey = `${network}-SOROSWAP-LIQUIDITY-POOLS`;
+
+        await this.cacheManager.set(
+          protocolKey,
+          fetchedPools,
+          PredefinedTTL.OneMinute,
+        );
+      } else if (protocol === 'phoenix') {
+        fetchedPools = await this.getAllPhoenixPools(network);
+        const protocolKey = `${network}-PHOENIX-LIQUIDITY-POOLS`;
+        await this.cacheManager.set(
+          protocolKey,
+          fetchedPools,
+          PredefinedTTL.OneMinute,
+        );
+      }
+
+      allPools = [...allPools, ...fetchedPools];
+    }
+
+    console.log('Done processing pools');
     return allPools;
   }
 }

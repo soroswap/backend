@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PairsModule } from 'src/pairs/pairs.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { UtilsModule } from 'src/utils/utils.module';
 import { InfoController } from './info.controller';
 import { InfoService } from './info.service';
 @Module({
-  imports: [PrismaModule, PairsModule],
+  imports: [PrismaModule, PairsModule, UtilsModule],
   controllers: [InfoController],
   providers: [InfoService],
   exports: [InfoService],
