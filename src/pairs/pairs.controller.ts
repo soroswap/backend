@@ -47,6 +47,9 @@ export class PairsController {
   @NetworkApiQuery()
   @Post('/all')
   getAllPools(@Query() query: QueryNetworkDto) {
+    if (query.protocols === undefined || query.protocols.length === 0) {
+      return this.pairsService.getAllPools(query.network);
+    }
     return this.pairsService.getAllPools(query.network, query.protocols);
   }
 }

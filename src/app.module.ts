@@ -11,7 +11,7 @@ import { EventsModule } from './events/events.module';
 import { InfoModule } from './info/info.module';
 import { PairsModule } from './pairs/pairs.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { UtilsModule } from './Utils/utils.module';
+import { UtilsModule } from './utilsModule/utils.module';
 
 @Module({
   imports: [
