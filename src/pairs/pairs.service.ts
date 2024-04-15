@@ -660,7 +660,7 @@ export class PairsService {
    * @param protocols Array with the protocols to be fetched. If none is provided, all protocols will be fetched.
    * @returns Array with all liquidity pools.
    */
-  async getAllPools(network: Network, protocols: string[]) {
+  async getAllPools(network: Network, protocols: string[] = ['soroswap', 'phoenix']) {
     let allPools = [];
 
     // Prepare to track which protocols need data fetching
