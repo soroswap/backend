@@ -31,7 +31,7 @@ import {
   getContractEventsByDayParser,
   getEntriesByDayParser,
 } from 'src/utils/parsers';
-import { UtilsService } from 'src/Utils/utils.service';
+import { UtilsService } from 'src/utilsModule/utils.service';
 
 @Injectable()
 export class InfoService {
