@@ -32,4 +32,5 @@ COPY --from=builder /app/prisma ./prisma
 # COPY --chmod=777 --from=builder /app/start_prod.sh ./start_prod.sh
 
 EXPOSE 4000
-CMD ./start_prod.sh
+CMD ["yarn", "start:migrate:prod"]
+# CMD ./start_prod.sh
