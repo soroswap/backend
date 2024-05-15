@@ -29,8 +29,8 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/yarn.lock ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-# COPY --chmod=777 --from=builder /app/start_prod.sh ./start_prod.sh
+COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --chmod=777 --from=builder /app/start_prod.sh ./start_prod.sh
 
 EXPOSE 4000
-CMD ["yarn", "start:migrate:prod"]
-# CMD ./start_prod.sh
+CMD ./start_prod.sh
